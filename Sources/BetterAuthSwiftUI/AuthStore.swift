@@ -1,0 +1,505 @@
+import BetterAuth
+import Foundation
+import Observation
+
+/// Observable SwiftUI state wrapper around ``BetterAuthClient``.
+///
+/// Provides `session`, `isLoading`, and `statusMessage` for driving UI,
+/// plus async methods that mirror every auth flow on the session manager.
+@Observable
+@MainActor
+public final class AuthStore {
+    /// The current authenticated session, or `nil` if signed out.
+    public private(set) var session: BetterAuthSession?
+    /// `true` while any auth operation is in flight.
+    public private(set) var isLoading = false
+    /// Human-readable status or error message from the last operation.
+    public private(set) var statusMessage: String?
+
+    private let client: BetterAuthClient
+
+    public init(client: BetterAuthClient) {
+        self.client = client
+    }
+
+    // MARK: - Session
+
+    public func restore() async {
+        await perform {
+            session = try await client.auth.restoreOrRefreshSession()
+            statusMessage = session == nil ? "No stored session" : "Session restored"
+        }
+    }
+
+    public func refresh() async {
+        await perform {
+            session = try await client.auth.refreshSession()
+            statusMessage = "Session refreshed"
+        }
+    }
+
+    public func fetchCurrentSession() async {
+        await perform {
+            session = try await client.auth.fetchCurrentSession()
+            statusMessage = "Session fetched"
+        }
+    }
+
+    public func signOut(remotely: Bool = true) async {
+        await perform {
+            try await client.auth.signOut(remotely: remotely)
+            session = nil
+            statusMessage = "Signed out"
+        }
+    }
+
+    // MARK: - Email + Password
+
+    @discardableResult
+    public func signUpWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult {
+        try await performThrowing {
+            let result = try await client.auth.signUpWithEmail(payload)
+            if case let .signedIn(s) = result { session = s }
+            statusMessage = "Signed up"
+            return result
+        }
+    }
+
+    public func signInWithEmail(_ payload: EmailSignInRequest) async {
+        await perform {
+            session = try await client.auth.signInWithEmail(payload)
+            statusMessage = "Signed in"
+        }
+    }
+
+    public func requestPasswordReset(_ payload: ForgotPasswordRequest) async {
+        await perform {
+            _ = try await client.auth.requestPasswordReset(payload)
+            statusMessage = "Password reset email sent"
+        }
+    }
+
+    public func resetPassword(_ payload: ResetPasswordRequest) async {
+        await perform {
+            _ = try await client.auth.resetPassword(payload)
+            statusMessage = "Password reset"
+        }
+    }
+
+    public func changePassword(_ payload: ChangePasswordRequest) async {
+        await perform {
+            _ = try await client.auth.changePassword(payload)
+            statusMessage = "Password changed"
+        }
+    }
+
+    // MARK: - Username
+
+    @discardableResult
+    public func isUsernameAvailable(_ payload: UsernameAvailabilityRequest) async throws -> Bool {
+        try await performThrowing {
+            let available = try await client.auth.isUsernameAvailable(payload)
+            statusMessage = available ? "Username available" : "Username taken"
+            return available
+        }
+    }
+
+    public func signInWithUsername(_ payload: UsernameSignInRequest) async {
+        await perform {
+            session = try await client.auth.signInWithUsername(payload)
+            statusMessage = "Signed in"
+        }
+    }
+
+    // MARK: - Apple
+
+    public func signInWithApple(_ payload: AppleNativeSignInPayload) async {
+        await perform {
+            session = try await client.auth.signInWithApple(payload)
+            statusMessage = "Signed in with Apple"
+        }
+    }
+
+    // MARK: - Social / OAuth
+
+    @discardableResult
+    public func signInWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult {
+        try await performThrowing {
+            let result = try await client.auth.signInWithSocial(payload)
+            if case .signedIn = result {
+                session = await client.auth.currentSession()
+            }
+            statusMessage = "Social sign-in initiated"
+            return result
+        }
+    }
+
+    @discardableResult
+    public func beginGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws -> GenericOAuthAuthorizationResponse {
+        try await performThrowing {
+            let response = try await client.auth.beginGenericOAuth(payload)
+            statusMessage = "OAuth flow started"
+            return response
+        }
+    }
+
+    @discardableResult
+    public func linkGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws -> GenericOAuthAuthorizationResponse {
+        try await performThrowing {
+            let response = try await client.auth.linkGenericOAuth(payload)
+            statusMessage = "OAuth link flow started"
+            return response
+        }
+    }
+
+    public func completeGenericOAuth(_ payload: GenericOAuthCallbackRequest) async {
+        await perform {
+            session = try await client.auth.completeGenericOAuth(payload)
+            statusMessage = "OAuth completed"
+        }
+    }
+
+    // MARK: - Anonymous
+
+    public func signInAnonymously() async {
+        await perform {
+            session = try await client.auth.signInAnonymously()
+            statusMessage = "Signed in anonymously"
+        }
+    }
+
+    public func deleteAnonymousUser() async {
+        await perform {
+            _ = try await client.auth.deleteAnonymousUser()
+            session = nil
+            statusMessage = "Anonymous user deleted"
+        }
+    }
+
+    // MARK: - Magic Link
+
+    public func requestMagicLink(_ payload: MagicLinkRequest) async {
+        await perform {
+            _ = try await client.auth.requestMagicLink(payload)
+            statusMessage = "Magic link sent"
+        }
+    }
+
+    public func verifyMagicLink(_ payload: MagicLinkVerifyRequest) async {
+        await perform {
+            let result = try await client.auth.verifyMagicLink(payload)
+            if case let .signedIn(s) = result { session = s }
+            statusMessage = "Magic link verified"
+        }
+    }
+
+    // MARK: - Email OTP
+
+    public func requestEmailOTP(_ payload: EmailOTPRequest) async {
+        await perform {
+            _ = try await client.auth.requestEmailOTP(payload)
+            statusMessage = "Email OTP sent"
+        }
+    }
+
+    public func signInWithEmailOTP(_ payload: EmailOTPSignInRequest) async {
+        await perform {
+            session = try await client.auth.signInWithEmailOTP(payload)
+            statusMessage = "Signed in with email OTP"
+        }
+    }
+
+    public func verifyEmailOTP(_ payload: EmailOTPVerifyRequest) async {
+        await perform {
+            let result = try await client.auth.verifyEmailOTP(payload)
+            if case let .signedIn(s) = result { session = s }
+            statusMessage = "Email OTP verified"
+        }
+    }
+
+    // MARK: - Phone OTP
+
+    public func requestPhoneOTP(_ payload: PhoneOTPRequest) async {
+        await perform {
+            _ = try await client.auth.requestPhoneOTP(payload)
+            statusMessage = "Phone OTP sent"
+        }
+    }
+
+    public func verifyPhoneNumber(_ payload: PhoneOTPVerifyRequest) async {
+        await perform {
+            _ = try await client.auth.verifyPhoneNumber(payload)
+            statusMessage = "Phone number verified"
+        }
+    }
+
+    public func signInWithPhoneOTP(_ payload: PhoneOTPSignInRequest) async {
+        await perform {
+            session = try await client.auth.signInWithPhoneOTP(payload)
+            statusMessage = "Signed in with phone OTP"
+        }
+    }
+
+    // MARK: - Two Factor
+
+    @discardableResult
+    public func enableTwoFactor(_ payload: TwoFactorEnableRequest) async throws -> TwoFactorEnableResponse {
+        try await performThrowing {
+            let response = try await client.auth.enableTwoFactor(payload)
+            statusMessage = "Two-factor enabled"
+            return response
+        }
+    }
+
+    public func sendTwoFactorOTP(_ payload: TwoFactorSendOTPRequest = .init()) async {
+        await perform {
+            _ = try await client.auth.sendTwoFactorOTP(payload)
+            statusMessage = "Two-factor OTP sent"
+        }
+    }
+
+    public func verifyTwoFactorTOTP(_ payload: TwoFactorVerifyTOTPRequest) async {
+        await perform {
+            session = try await client.auth.verifyTwoFactorTOTP(payload)
+            statusMessage = "Two-factor TOTP verified"
+        }
+    }
+
+    public func verifyTwoFactorOTP(_ payload: TwoFactorVerifyOTPRequest) async {
+        await perform {
+            session = try await client.auth.verifyTwoFactorOTP(payload)
+            statusMessage = "Two-factor OTP verified"
+        }
+    }
+
+    public func verifyTwoFactorRecoveryCode(_ payload: TwoFactorVerifyBackupCodeRequest) async {
+        await perform {
+            session = try await client.auth.verifyTwoFactorRecoveryCode(payload)
+            statusMessage = "Recovery code accepted"
+        }
+    }
+
+    @discardableResult
+    public func generateTwoFactorRecoveryCodes(password: String) async throws -> [String] {
+        try await performThrowing {
+            let codes = try await client.auth.generateTwoFactorRecoveryCodes(password: password)
+            statusMessage = "Backup codes generated"
+            return codes
+        }
+    }
+
+    // MARK: - Passkey
+
+    @discardableResult
+    public func passkeyRegistrationOptions(_ payload: PasskeyRegistrationOptionsRequest = .init()) async throws -> PasskeyRegistrationOptions {
+        try await performThrowing {
+            let options = try await client.auth.passkeyRegistrationOptions(payload)
+            statusMessage = "Passkey registration options fetched"
+            return options
+        }
+    }
+
+    @discardableResult
+    public func passkeyAuthenticateOptions() async throws -> PasskeyAuthenticationOptions {
+        try await performThrowing {
+            let options = try await client.auth.passkeyAuthenticateOptions()
+            statusMessage = "Passkey authentication options fetched"
+            return options
+        }
+    }
+
+    public func registerPasskey(_ payload: PasskeyRegistrationRequest) async {
+        await perform {
+            _ = try await client.auth.registerPasskey(payload)
+            statusMessage = "Passkey registered"
+        }
+    }
+
+    public func authenticateWithPasskey(_ payload: PasskeyAuthenticationRequest) async {
+        await perform {
+            session = try await client.auth.authenticateWithPasskey(payload)
+            statusMessage = "Signed in with passkey"
+        }
+    }
+
+    @discardableResult
+    public func listPasskeys() async throws -> [Passkey] {
+        try await performThrowing {
+            let passkeys = try await client.auth.listPasskeys()
+            statusMessage = "Passkeys loaded"
+            return passkeys
+        }
+    }
+
+    public func updatePasskey(_ payload: UpdatePasskeyRequest) async {
+        await perform {
+            _ = try await client.auth.updatePasskey(payload)
+            statusMessage = "Passkey updated"
+        }
+    }
+
+    public func deletePasskey(_ payload: DeletePasskeyRequest) async {
+        await perform {
+            _ = try await client.auth.deletePasskey(payload)
+            statusMessage = "Passkey deleted"
+        }
+    }
+
+    // MARK: - Email Verification
+
+    public func sendVerificationEmail(_ payload: SendVerificationEmailRequest = .init()) async {
+        await perform {
+            _ = try await client.auth.sendVerificationEmail(payload)
+            statusMessage = "Verification email sent"
+        }
+    }
+
+    public func verifyEmail(_ payload: VerifyEmailRequest) async {
+        await perform {
+            let result = try await client.auth.verifyEmail(payload)
+            if case let .signedIn(s) = result { session = s }
+            statusMessage = "Email verified"
+        }
+    }
+
+    public func changeEmail(_ payload: ChangeEmailRequest) async {
+        await perform {
+            _ = try await client.auth.changeEmail(payload)
+            statusMessage = "Change email requested"
+        }
+    }
+
+    // MARK: - Account Management
+
+    public func updateUser(_ payload: UpdateUserRequest) async {
+        await perform {
+            let response = try await client.auth.updateUser(payload)
+            if let current = session, let updatedUser = response.user {
+                session = BetterAuthSession(
+                    session: current.session,
+                    user: updatedUser
+                )
+            }
+            statusMessage = "Profile updated"
+        }
+    }
+
+    // MARK: - Linked Accounts
+
+    @discardableResult
+    public func listLinkedAccounts() async throws -> [LinkedAccount] {
+        try await performThrowing {
+            let accounts = try await client.auth.listLinkedAccounts()
+            statusMessage = "Linked accounts loaded"
+            return accounts
+        }
+    }
+
+    @discardableResult
+    public func linkSocialAccount(_ payload: LinkSocialAccountRequest) async throws -> LinkSocialAccountResponse {
+        try await performThrowing {
+            let response = try await client.auth.linkSocialAccount(payload)
+            statusMessage = "Social account linked"
+            return response
+        }
+    }
+
+    // MARK: - Sessions
+
+    @discardableResult
+    public func listSessions() async throws -> [BetterAuthSessionListEntry] {
+        try await performThrowing {
+            let sessions = try await client.auth.listSessions()
+            statusMessage = "Sessions loaded"
+            return sessions
+        }
+    }
+
+    @discardableResult
+    public func listDeviceSessions() async throws -> [BetterAuthDeviceSession] {
+        try await performThrowing {
+            let sessions = try await client.auth.listDeviceSessions()
+            statusMessage = "Device sessions loaded"
+            return sessions
+        }
+    }
+
+    public func setActiveDeviceSession(_ payload: BetterAuthSetActiveDeviceSessionRequest) async {
+        await perform {
+            session = try await client.auth.setActiveDeviceSession(payload)
+            statusMessage = "Active session switched"
+        }
+    }
+
+    public func revokeDeviceSession(_ payload: BetterAuthRevokeDeviceSessionRequest) async {
+        await perform {
+            _ = try await client.auth.revokeDeviceSession(payload)
+            statusMessage = "Device session revoked"
+        }
+    }
+
+    public func revokeSession(token: String) async {
+        await perform {
+            _ = try await client.auth.revokeSession(token: token)
+            statusMessage = "Session revoked"
+        }
+    }
+
+    public func revokeSessions() async {
+        await perform {
+            _ = try await client.auth.revokeSessions()
+            session = nil
+            statusMessage = "All sessions revoked"
+        }
+    }
+
+    public func revokeOtherSessions() async {
+        await perform {
+            _ = try await client.auth.revokeOtherSessions()
+            statusMessage = "Other sessions revoked"
+        }
+    }
+
+    // MARK: - JWT
+
+    @discardableResult
+    public func getSessionJWT() async throws -> BetterAuthJWT {
+        try await performThrowing {
+            let jwt = try await client.auth.getSessionJWT()
+            statusMessage = "JWT fetched"
+            return jwt
+        }
+    }
+
+    @discardableResult
+    public func getJWKS() async throws -> BetterAuthJWKS {
+        try await performThrowing {
+            let jwks = try await client.auth.getJWKS()
+            statusMessage = "JWKS fetched"
+            return jwks
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func perform(_ operation: () async throws -> Void) async {
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            try await operation()
+        } catch {
+            statusMessage = error.localizedDescription
+        }
+    }
+
+    private func performThrowing<T>(_ operation: () async throws -> T) async throws -> T {
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            return try await operation()
+        } catch {
+            statusMessage = error.localizedDescription
+            throw error
+        }
+    }
+}

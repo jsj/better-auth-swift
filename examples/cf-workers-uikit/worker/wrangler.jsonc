@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "better-auth-example-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-03-29",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "better-auth-example-worker",
+      "database_id": "local-better-auth-example-worker"
+    }
+  ],
+  "vars": {
+    "BETTER_AUTH_URL": "http://127.0.0.1:8787",
+    "BETTER_AUTH_SECRET": "dev-secret-change-me-32-chars-minimum",
+    "APPLE_AUTH_MODE": "emulated",
+    "APPLE_CLIENT_ID": "com.example.betterauth.web",
+    "APPLE_APP_BUNDLE_IDENTIFIER": "sh.jsj.better-auth-swift-swiftui-example.apple",
+    "APPLE_TEAM_ID": "TEAMID1234",
+    "APPLE_KEY_ID": "KEYID12345",
+    "APPLE_PRIVATE_KEY": "-----BEGIN PRIVATE KEY-----\\nREPLACE_ME\\n-----END PRIVATE KEY-----",
+    "APPLE_EMULATOR_BASE_URL": "http://127.0.0.1:4010",
+    "TRUSTED_ORIGIN": "http://127.0.0.1:8787",
+    "EMAIL_OTP_RUNTIME_MODE": "sign-up-enabled"
+  }
+}

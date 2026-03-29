@@ -1,0 +1,13 @@
+{
+  "name": "better-auth-cf-workers-swiftui-example",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "emulate": "^0.3.0"
+  },
+  "scripts": {
+    "dev": "node ./scripts/dev-stack.mjs",
+    "dev:tunnel": "node ./scripts/dev-stack.mjs --cloudflared",
+    "dev:status": "node ./scripts/dev-stack.mjs --status"
+  }
+}

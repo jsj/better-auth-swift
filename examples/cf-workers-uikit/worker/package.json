@@ -1,0 +1,32 @@
+{
+  "name": "better-auth-example-worker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest run",
+    "dev": "wrangler dev",
+    "typecheck": "tsc --noEmit",
+    "db:gen": "better-auth generate --config src/auth.ts --output src/db/auth-schema.ts -y",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@better-auth/passkey": "^1.4.21",
+    "better-auth": "^1.5.6",
+    "better-auth-cloudflare": "^0.2.9",
+    "drizzle-orm": "^0.45.1",
+    "hono": "^4.12.3",
+    "jose": "^6.1.0"
+  },
+  "devDependencies": {
+    "@better-auth/cli": "^1.4.21",
+    "@cloudflare/workers-types": "^4.20260301.1",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4",
+    "wrangler": "^4.69.0"
+  }
+}
