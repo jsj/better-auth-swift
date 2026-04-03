@@ -206,10 +206,6 @@ The core flow looks like this:
 
 This repo currently includes Cloudflare Workers-based example stacks, but the SDK itself is not coupled to Workers.
 
-## Status
-
-This package is under active development. The current focus is a solid core auth bridge between Better Auth backends and native Swift apps before broadening the API surface further.
-
 ## Contributing
 
 Issues and pull requests are welcome.
