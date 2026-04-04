@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - name: Install dependencies
-        run: python3 -m pip install --disable-pip-version-check --break-system-packages PyJWT cryptography
+        run: /opt/homebrew/bin/python3 -m pip install --disable-pip-version-check --break-system-packages PyJWT cryptography
 
       - name: Wait for matching Xcode Cloud run
         env:
@@ -30,7 +30,7 @@ jobs:
           XCODE_CLOUD_WORKFLOW_ID: ${{ vars.XCODE_CLOUD_WORKFLOW_ID }}
           TARGET_SHA: ${{ github.sha }}
         run: |
-          python3 - <<'PY'
+          /opt/homebrew/bin/python3 - <<'PY'
           import json
           import os
           import sys
