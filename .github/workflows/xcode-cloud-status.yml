@@ -20,8 +20,10 @@ jobs:
 
     steps:
       - name: Trigger and poll Xcode Cloud build
+        env:
+          XC: /Users/james/bin/xc
         run: |
-          xc ci cloud trigger \
+          "$XC" ci cloud trigger \
             --workflow-id "${{ vars.XCODE_CLOUD_WORKFLOW_ID }}" \
             --ref main \
             --json \
@@ -37,7 +39,7 @@ jobs:
           ")
 
           echo "Polling Xcode Cloud run: $RUN_ID"
-          xc ci cloud poll \
+          "$XC" ci cloud poll \
             --run-id "$RUN_ID" \
             --timeout-seconds 1200 \
             --interval-seconds 15 \
