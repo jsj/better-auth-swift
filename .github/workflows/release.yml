@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   release:
-    runs-on: macos-26
+    runs-on: [self-hosted, macOS, ARM64, mac-ci]
     timeout-minutes: 15
 
     steps:
