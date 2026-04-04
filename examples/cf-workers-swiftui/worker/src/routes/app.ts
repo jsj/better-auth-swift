@@ -1,11 +1,11 @@
 import { Hono } from 'hono';
 import type { Context } from 'hono';
 import type { AppAuth } from '../auth';
-import { buildFixtureCapture } from '../auth';
+import { buildFixtureCapture, generateAppleClientSecret, getAppleAuthBaseURL } from '../auth';
 import { getDb } from '../db';
 import { profiles, schema } from '../db/schema';
 import type { Env } from '../types';
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 
 export const appRoutes = new Hono<{ Bindings: Env; Variables: { auth: AppAuth } }>();
 
@@ -94,9 +94,47 @@ appRoutes.post('/api/auth/apple/native', async (c) => {
     return signInResponse;
   }
 
-  const accessToken = signInResponse.headers.get('set-auth-token');
-  if (!accessToken) {
+  const body = await signInResponse.json<{
+    token?: string;
+    user?: { id: string; email?: string; name?: string };
+  }>();
+  const accessToken = signInResponse.headers.get('set-auth-token') ?? body.token;
+  if (!accessToken || !body.user) {
     return c.json({ error: 'Missing bearer token from Better Auth sign-in response.' }, 500);
+  }
+
+  if (payload.authorizationCode && (c.env.APPLE_AUTH_MODE ?? 'real') === 'real') {
+    try {
+      const clientSecret = await generateAppleClientSecret(c.env);
+      if (clientSecret) {
+        const tokenRes = await fetch(`${getAppleAuthBaseURL(c.env)}/auth/token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            client_id: c.env.APPLE_CLIENT_ID,
+            client_secret: clientSecret,
+            code: payload.authorizationCode,
+            grant_type: 'authorization_code',
+          }),
+        });
+        if (tokenRes.ok) {
+          const tokens = await tokenRes.json<{ refresh_token?: string; access_token?: string }>();
+          if (tokens.refresh_token) {
+            const db = getDb(c.env);
+            await db.update(schema.account)
+              .set({
+                refreshToken: tokens.refresh_token,
+                accessToken: tokens.access_token ?? null,
+              })
+              .where(and(eq(schema.account.userId, body.user.id), eq(schema.account.providerId, 'apple')));
+          }
+        } else {
+          console.warn(`[auth] Apple token exchange failed: ${tokenRes.status} ${await tokenRes.text()}`);
+        }
+      }
+    } catch (error) {
+      console.warn(`[auth] Apple auth code exchange failed: ${String(error)}`);
+    }
   }
 
   const session = await getSessionForBearer(c, auth, accessToken);

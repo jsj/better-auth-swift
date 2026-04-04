@@ -25,7 +25,8 @@ type CapturedFixturePayload = {
     | 'magic-link'
     | 'email-otp'
     | 'phone-number'
-    | 'two-factor';
+    | 'two-factor'
+    | 'delete-account';
   token: string;
   identifier?: string;
   email?: string;
@@ -120,7 +121,7 @@ async function persistFixtureCapture(
 
 const decodePrivateKey = (privateKey: string) => privateKey.replace(/\\n/g, '\n');
 
-async function generateAppleClientSecret(env: Env) {
+export async function generateAppleClientSecret(env: Env) {
   if (!env.APPLE_PRIVATE_KEY || env.APPLE_PRIVATE_KEY.includes(applePrivateKeyPlaceholder)) {
     return undefined;
   }
@@ -136,6 +137,18 @@ async function generateAppleClientSecret(env: Env) {
     .setIssuedAt(now)
     .setExpirationTime(now + 60 * 60)
     .sign(key);
+}
+
+export function getAppleAuthBaseURL(env: Pick<Env, 'APPLE_AUTH_MODE' | 'APPLE_AUTH_PROXY_BASE_URL' | 'APPLE_EMULATOR_BASE_URL'>) {
+  if ((env.APPLE_AUTH_MODE ?? 'real') === 'emulated') {
+    return (env.APPLE_EMULATOR_BASE_URL ?? 'http://127.0.0.1:4010').replace(/\/$/, '');
+  }
+
+  if (env.APPLE_AUTH_PROXY_BASE_URL) {
+    return env.APPLE_AUTH_PROXY_BASE_URL.replace(/\/$/, '');
+  }
+
+  return 'https://appleid.apple.com';
 }
 
 function isEmulatedApple(env: Env) {
@@ -492,6 +505,19 @@ export function createAuthInstance({
                 userId: user.id,
                 url,
                 identifier: user.email?.toLowerCase(),
+              });
+            },
+          },
+          deleteUser: {
+            enabled: true,
+            sendDeleteAccountVerification: async ({ user, url, token }) => {
+              await buildFixtureCapture(env, {
+                channel: 'delete-account',
+                token,
+                email: user.email ?? undefined,
+                userId: user.id,
+                url,
+                identifier: user.email?.toLowerCase() ?? `delete-account:${user.id}`,
               });
             },
           },

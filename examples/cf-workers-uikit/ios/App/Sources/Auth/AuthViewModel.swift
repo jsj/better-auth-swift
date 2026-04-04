@@ -450,6 +450,14 @@ final class AuthViewModel {
         }
     }
 
+    func deleteUser() async {
+        await perform {
+            try await service.deleteUser()
+            session = try await service.restoreSession()
+            statusMessage = session == nil ? "Account deleted" : "Delete account verification requested"
+        }
+    }
+
     // MARK: - Private
 
     private func perform(_ operation: () async throws -> Void) async {

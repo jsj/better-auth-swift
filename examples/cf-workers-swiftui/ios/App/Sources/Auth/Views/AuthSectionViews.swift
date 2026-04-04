@@ -237,6 +237,8 @@ struct SessionManagementAuthSection: View {
                 .disabled(viewModel.isPerformingAuthAction || viewModel.session == nil)
             Button("Revoke All Sessions", role: .destructive) { Task { await viewModel.revokeSessions() } }
                 .disabled(viewModel.isPerformingAuthAction || viewModel.session == nil)
+            Button("Delete Account", role: .destructive) { Task { await viewModel.deleteUser() } }
+                .disabled(viewModel.isPerformingAuthAction || viewModel.session == nil)
         }
     }
 }

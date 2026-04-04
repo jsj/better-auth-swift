@@ -9,6 +9,7 @@ export interface Env {
   APPLE_KEY_ID: string;
   APPLE_PRIVATE_KEY: string;
   APPLE_EMULATOR_BASE_URL?: string;
+  APPLE_AUTH_PROXY_BASE_URL?: string;
   TRUSTED_ORIGIN: string;
   FIXTURE_CAPTURE_SECRET?: string;
   EMAIL_OTP_DISABLE_SIGN_UP?: string;
