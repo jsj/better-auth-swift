@@ -5,7 +5,7 @@
 <h1 align="center">better-auth-swift</h1>
 
 <p align="center">
-  A Swift SDK for <a href="https://www.better-auth.com/">Better Auth</a>
+  A Swift SDK for <a href="https://github.com/better-auth/better-auth">Better Auth</a>
 </p>
 
 <p align="center">
@@ -16,7 +16,7 @@
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
 </p>
 
-Swift SDK for [Better Auth](https://www.better-auth.com/) with first-class support for native Apple apps talking to any Better Auth backend reachable over HTTP.
+Swift SDK for [Better Auth](https://github.com/better-auth/better-auth) with first-class support for native Apple apps talking to any Better Auth backend reachable over HTTP.
 
 > [!WARNING]
 > This is an early release. The API may change before `1.0`, and the first tagged release will start at `0.0.1`.
