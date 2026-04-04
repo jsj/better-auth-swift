@@ -1,10 +1,20 @@
-# better-auth-swift
+<p align="center">
+  <img src="./.README/cover.png" alt="A Swift SDK for Better Auth" width="1024" />
+</p>
 
-[![Xcode Cloud Status](https://github.com/jsj/better-auth-swift/actions/workflows/xcode-cloud-status.yml/badge.svg?branch=main)](https://github.com/jsj/better-auth-swift/actions/workflows/xcode-cloud-status.yml)
-![Swift 6](https://img.shields.io/badge/Swift-6-orange.svg)
-![Platforms](https://img.shields.io/badge/platforms-iOS%2018%2B%20%7C%20macOS%2015%2B-blue.svg)
-![SwiftPM](https://img.shields.io/badge/SwiftPM-supported-brightgreen.svg)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+<h1 align="center">better-auth-swift</h1>
+
+<p align="center">
+  A Swift SDK for <a href="https://www.better-auth.com/">Better Auth</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/jsj/better-auth-swift/actions/workflows/xcode-cloud-status.yml"><img src="https://github.com/jsj/better-auth-swift/actions/workflows/xcode-cloud-status.yml/badge.svg?branch=main" alt="Xcode Cloud Status" /></a>
+  <img src="https://img.shields.io/badge/Swift-6-orange.svg" alt="Swift 6" />
+  <img src="https://img.shields.io/badge/platforms-iOS%2018%2B%20%7C%20macOS%2015%2B-blue.svg" alt="Platforms" />
+  <img src="https://img.shields.io/badge/SwiftPM-supported-brightgreen.svg" alt="SwiftPM" />
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
+</p>
 
 Swift SDK for [Better Auth](https://www.better-auth.com/) with first-class support for native Apple apps talking to any Better Auth backend reachable over HTTP.
 
