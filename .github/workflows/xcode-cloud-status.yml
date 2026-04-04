@@ -19,96 +19,26 @@ jobs:
     timeout-minutes: 25
 
     steps:
-      - name: Install dependencies
-        run: /opt/homebrew/bin/python3 -m pip install --disable-pip-version-check --break-system-packages PyJWT cryptography
-
-      - name: Wait for matching Xcode Cloud run
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
-          XCODE_CLOUD_WORKFLOW_ID: ${{ vars.XCODE_CLOUD_WORKFLOW_ID }}
-          TARGET_SHA: ${{ github.sha }}
+      - name: Trigger and poll Xcode Cloud build
         run: |
-          /opt/homebrew/bin/python3 - <<'PY'
-          import json
-          import os
-          import sys
-          import time
-          import urllib.parse
-          import urllib.request
+          xc ci cloud trigger \
+            --workflow-id "${{ vars.XCODE_CLOUD_WORKFLOW_ID }}" \
+            --ref main \
+            --json \
+          | tee /tmp/xc-trigger.ndjson
 
-          import jwt
-
-          key_id = os.environ['ASC_KEY_ID']
-          issuer_id = os.environ['ASC_ISSUER_ID']
-          private_key = os.environ['ASC_PRIVATE_KEY']
-          workflow_id = os.environ['XCODE_CLOUD_WORKFLOW_ID']
-          target_sha = os.environ['TARGET_SHA']
-
-          def make_token() -> str:
-              now = int(time.time())
-              return jwt.encode(
-                  {'iss': issuer_id, 'aud': 'appstoreconnect-v1', 'exp': now + 1200},
-                  private_key,
-                  algorithm='ES256',
-                  headers={'kid': key_id, 'typ': 'JWT'},
-              )
-
-          def fetch_runs() -> list[dict]:
-              token = make_token()
-              params = urllib.parse.urlencode({
-                  'fields[ciBuildRuns]': 'number,executionProgress,completionStatus,startedDate,finishedDate,sourceCommit,destinationBranch,isPullRequestBuild',
-                  'limit': '50',
-              })
-              url = f'https://api.appstoreconnect.apple.com/v1/ciWorkflows/{workflow_id}/buildRuns?{params}'
-              runs: list[dict] = []
-              while url:
-                  req = urllib.request.Request(
-                      url,
-                      headers={
-                          'Authorization': f'Bearer {token}',
-                          'Accept': 'application/json',
-                      },
-                  )
-                  with urllib.request.urlopen(req, timeout=30) as response:
-                      payload = json.load(response)
-                  runs.extend(payload.get('data', []))
-                  url = payload.get('links', {}).get('next')
-              return runs
-
-          timeout_seconds = 20 * 60
-          poll_interval = 30
-          deadline = time.time() + timeout_seconds
-
-          while time.time() < deadline:
-              runs = fetch_runs()
-              matching = []
-              for run in runs:
-                  attributes = run.get('attributes', {})
-                  source_commit = attributes.get('sourceCommit') or {}
-                  if source_commit.get('commitSha') == target_sha:
-                      matching.append(run)
-
-              if matching:
-                  matching.sort(key=lambda run: run.get('attributes', {}).get('startedDate') or '', reverse=True)
-                  run = matching[0]
-                  attributes = run.get('attributes', {})
-                  run_id = run['id']
-                  number = attributes.get('number')
-                  progress = attributes.get('executionProgress')
-                  completion = attributes.get('completionStatus')
-                  print(f'Found matching Xcode Cloud run #{number} ({run_id}) progress={progress} completion={completion}')
-                  if progress == 'COMPLETE':
-                      if completion == 'SUCCEEDED':
-                          sys.exit(0)
-                      print(f'Xcode Cloud run #{number} for {target_sha} completed with status {completion}', file=sys.stderr)
-                      sys.exit(1)
-              else:
-                  print(f'No Xcode Cloud run found yet for commit {target_sha}')
-
-              time.sleep(poll_interval)
-
-          print(f'Timed out waiting for Xcode Cloud run for commit {target_sha}', file=sys.stderr)
+          RUN_ID=$(/opt/homebrew/bin/python3 -c "
+          import json, sys
+          for line in open('/tmp/xc-trigger.ndjson'):
+              d = json.loads(line)
+              if d.get('event') == 'xcode_cloud_status':
+                  print(d['payload']['run_id']); sys.exit(0)
           sys.exit(1)
-          PY
+          ")
+
+          echo "Polling Xcode Cloud run: $RUN_ID"
+          xc ci cloud poll \
+            --run-id "$RUN_ID" \
+            --timeout-seconds 1200 \
+            --interval-seconds 15 \
+            --json
