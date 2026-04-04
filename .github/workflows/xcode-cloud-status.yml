@@ -15,17 +15,12 @@ concurrency:
 
 jobs:
   mirror:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macOS, ARM64, mac-ci]
     timeout-minutes: 25
 
     steps:
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
-
       - name: Install dependencies
-        run: python -m pip install --disable-pip-version-check PyJWT cryptography
+        run: python3 -m pip install --disable-pip-version-check --break-system-packages PyJWT cryptography
 
       - name: Wait for matching Xcode Cloud run
         env:
@@ -35,7 +30,7 @@ jobs:
           XCODE_CLOUD_WORKFLOW_ID: ${{ vars.XCODE_CLOUD_WORKFLOW_ID }}
           TARGET_SHA: ${{ github.sha }}
         run: |
-          python - <<'PY'
+          python3 - <<'PY'
           import json
           import os
           import sys
