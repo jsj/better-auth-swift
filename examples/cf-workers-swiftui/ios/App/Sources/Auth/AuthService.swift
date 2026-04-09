@@ -1,14 +1,6 @@
 import BetterAuth
 import Foundation
 
-private struct DeleteUserRequest: Encodable {
-    let callbackURL: String?
-
-    init(callbackURL: String? = nil) {
-        self.callbackURL = callbackURL
-    }
-}
-
 struct AuthService {
     private let client: BetterAuthClient
     private let session: URLSession
@@ -211,8 +203,7 @@ struct AuthService {
     }
 
     func deleteUser() async throws {
-        try await client.requests.sendWithoutDecoding(path: "/api/auth/delete-user",
-                                                      body: DeleteUserRequest())
+        _ = try await client.auth.deleteUser()
     }
 
     func isWorkerReachable() async -> Bool {

@@ -74,6 +74,7 @@ public extension BetterAuthConfiguration {
         public let socialSignInPath: String
         public let anonymousSignInPath: String
         public let deleteAnonymousUserPath: String
+        public let deleteUserPath: String
         public let genericOAuthSignInPath: String
         public let genericOAuthLinkPath: String
         public let listLinkedAccountsPath: String
@@ -127,6 +128,7 @@ public extension BetterAuthConfiguration {
                     socialSignInPath: String = "/api/auth/sign-in/social",
                     anonymousSignInPath: String = "/api/auth/sign-in/anonymous",
                     deleteAnonymousUserPath: String = "/api/auth/delete-anonymous-user",
+                    deleteUserPath: String = "/api/auth/delete-user",
                     genericOAuthSignInPath: String = "/api/auth/sign-in/oauth2",
                     genericOAuthLinkPath: String = "/api/auth/oauth2/link",
                     listLinkedAccountsPath: String = "/api/auth/list-accounts",
@@ -180,6 +182,7 @@ public extension BetterAuthConfiguration {
             self.socialSignInPath = socialSignInPath
             self.anonymousSignInPath = anonymousSignInPath
             self.deleteAnonymousUserPath = deleteAnonymousUserPath
+            self.deleteUserPath = deleteUserPath
             self.genericOAuthSignInPath = genericOAuthSignInPath
             self.genericOAuthLinkPath = genericOAuthLinkPath
             self.listLinkedAccountsPath = listLinkedAccountsPath

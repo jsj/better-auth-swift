@@ -213,6 +213,64 @@ public actor BetterAuthSessionManager {
         return response.status
     }
 
+    // MARK: - Delete User
+
+    @discardableResult
+    public func deleteUser(_ payload: DeleteUserRequest = .init()) async throws -> Bool {
+        let response: BetterAuthStatusResponse = try await network
+            .post(path: configuration.endpoints.deleteUserPath,
+                  body: payload,
+                  accessToken: current?.session.accessToken)
+        try setSession(nil, event: .signedOut)
+        return response.status
+    }
+
+    // MARK: - Anonymous Upgrade
+
+    @discardableResult
+    public func upgradeAnonymousWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult {
+        guard current != nil else { throw BetterAuthError.missingSession }
+        return try await signUpWithEmail(payload)
+    }
+
+    @discardableResult
+    public func upgradeAnonymousWithApple(_ payload: AppleNativeSignInPayload) async throws -> BetterAuthSession {
+        guard current != nil else { throw BetterAuthError.missingSession }
+        return try await signInWithApple(payload)
+    }
+
+    @discardableResult
+    public func upgradeAnonymousWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult {
+        guard current != nil else { throw BetterAuthError.missingSession }
+        return try await signInWithSocial(payload)
+    }
+
+    // MARK: - Re-authentication
+
+    @discardableResult
+    public func reauthenticate(password: String) async throws -> Bool {
+        guard let currentUser = current else { throw BetterAuthError.missingSession }
+        guard let email = currentUser.user.email else { throw BetterAuthError.missingSession }
+        let verificationSession: BetterAuthSession = try await network
+            .post(path: configuration.endpoints.emailSignInPath,
+                  body: EmailSignInRequest(email: email, password: password),
+                  accessToken: nil)
+        guard verificationSession.user.id == currentUser.user.id else {
+            throw BetterAuthError.invalidResponse
+        }
+        // Revoke the ephemeral verification session to avoid orphaned server-side sessions.
+        do {
+            let _: BetterAuthStatusResponse = try await network.post(
+                path: configuration.endpoints.revokeSessionPath,
+                body: RevokeSessionRequest(token: verificationSession.session.id),
+                accessToken: verificationSession.session.accessToken
+            )
+        } catch {
+            // Best-effort cleanup; credential verification already succeeded.
+        }
+        return true
+    }
+
     // MARK: - Generic OAuth
 
     public func beginGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws

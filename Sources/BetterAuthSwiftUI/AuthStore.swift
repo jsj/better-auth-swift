@@ -230,6 +230,57 @@ public final class AuthStore {
         }
     }
 
+    // MARK: - Delete User
+
+    public func deleteUser(_ payload: DeleteUserRequest = .init()) async {
+        await perform {
+            _ = try await client.auth.deleteUser(payload)
+            session = nil
+            launchState = .unauthenticated
+            statusMessage = "Account deleted"
+        }
+    }
+
+    // MARK: - Anonymous Upgrade
+
+    @discardableResult
+    public func upgradeAnonymousWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult {
+        try await performThrowing {
+            let result = try await client.auth.upgradeAnonymousWithEmail(payload)
+            if case let .signedIn(s) = result { session = s }
+            statusMessage = "Account upgraded"
+            return result
+        }
+    }
+
+    public func upgradeAnonymousWithApple(_ payload: AppleNativeSignInPayload) async {
+        await perform {
+            session = try await client.auth.upgradeAnonymousWithApple(payload)
+            statusMessage = "Account upgraded with Apple"
+        }
+    }
+
+    @discardableResult
+    public func upgradeAnonymousWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult {
+        try await performThrowing {
+            let result = try await client.auth.upgradeAnonymousWithSocial(payload)
+            if case .signedIn = result { session = await client.auth.currentSession() }
+            statusMessage = "Account upgraded"
+            return result
+        }
+    }
+
+    // MARK: - Re-authentication
+
+    @discardableResult
+    public func reauthenticate(password: String) async throws -> Bool {
+        try await performThrowing {
+            let result = try await client.auth.reauthenticate(password: password)
+            statusMessage = "Re-authenticated"
+            return result
+        }
+    }
+
     // MARK: - Magic Link
 
     public func requestMagicLink(_ payload: MagicLinkRequest) async {
