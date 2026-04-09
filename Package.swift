@@ -9,7 +9,8 @@ let package = Package(
     ],
     products: [
         .library(name: "BetterAuth", targets: ["BetterAuth"]),
-        .library(name: "BetterAuthSwiftUI", targets: ["BetterAuthSwiftUI"])
+        .library(name: "BetterAuthSwiftUI", targets: ["BetterAuthSwiftUI"]),
+        .library(name: "BetterAuthOrganization", targets: ["BetterAuthOrganization"])
     ],
     targets: [
         .target(
@@ -20,10 +21,18 @@ let package = Package(
             name: "BetterAuthSwiftUI",
             dependencies: ["BetterAuth"]
         ),
+        .target(
+            name: "BetterAuthOrganization",
+            dependencies: ["BetterAuth"]
+        ),
         .testTarget(
             name: "BetterAuthSwiftTests",
             dependencies: ["BetterAuth", "BetterAuthSwiftUI"],
             path: "Tests/BetterAuthSwiftTests"
+        ),
+        .testTarget(
+            name: "BetterAuthOrganizationTests",
+            dependencies: ["BetterAuth", "BetterAuthOrganization"]
         )
     ],
     swiftLanguageModes: [.v6]
