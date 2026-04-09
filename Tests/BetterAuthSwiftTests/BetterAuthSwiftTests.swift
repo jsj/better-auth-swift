@@ -1073,6 +1073,7 @@ struct BetterAuthSwiftTests {
         #expect(endpoints.twoFactorVerifyOTPPath == "/api/auth/two-factor/verify-otp")
         #expect(endpoints.twoFactorVerifyBackupCodePath == "/api/auth/two-factor/verify-backup-code")
         #expect(endpoints.twoFactorGenerateBackupCodesPath == "/api/auth/two-factor/generate-backup-codes")
+        #expect(endpoints.twoFactorDisablePath == "/api/auth/two-factor/disable")
         #expect(endpoints.listSessionsPath == "/api/auth/list-sessions")
         #expect(endpoints.listDeviceSessionsPath == "/api/auth/multi-session/list-device-sessions")
         #expect(endpoints.setActiveDeviceSessionPath == "/api/auth/multi-session/set-active")
@@ -1333,6 +1334,174 @@ struct BetterAuthSwiftTests {
                                                                       "message": "Invalid backup code"])
         {
             _ = try await client.auth.verifyTwoFactorRecoveryCode(.init(code: "backup-reused"))
+        }
+    }
+
+    // MARK: - 2FA Disable
+
+    @Test
+    func disableTwoFactorUsesConfiguredEndpointAndPassword() async throws {
+        let session = BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "token-1"),
+                                        user: .init(id: "user-1", email: "user@example.com"))
+
+        let transport = SequencedMockTransport([.handler { request in
+            #expect(request.url?.path == "/api/auth/two-factor/disable")
+            #expect(request.httpMethod == "POST")
+            #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer token-1")
+            let payload = try JSONDecoder().decode(TwoFactorDisableRequest.self, from: try #require(request.httpBody))
+            #expect(payload.password == "my-password")
+            return try response(for: request, statusCode: 200, data: encodeJSON(["status": true]))
+        }])
+
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
+                             sessionStore: InMemorySessionStore(),
+                             transport: transport)
+        try await client.auth.applyRestoredSession(session)
+
+        let result = try await client.auth.disableTwoFactor(TwoFactorDisableRequest(password: "my-password"))
+        #expect(result == true)
+        #expect(await client.auth.currentSession() != nil)
+    }
+
+    @Test
+    func disableTwoFactorPreservesFailureSemantics() async throws {
+        let session = BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "token-1"),
+                                        user: .init(id: "user-1", email: "user@example.com"))
+
+        let transport = SequencedMockTransport([.response(statusCode: 401,
+                                                          jsonObject: ["code": "INVALID_PASSWORD",
+                                                                       "message": "Invalid password"])])
+
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
+                             sessionStore: InMemorySessionStore(),
+                             transport: transport)
+        try await client.auth.applyRestoredSession(session)
+
+        let location = SourceLocation(fileID: #fileID, filePath: #filePath, line: #line + 1, column: #column)
+        do {
+            _ = try await client.auth.disableTwoFactor(TwoFactorDisableRequest(password: "wrong"))
+            Issue.record("Expected BetterAuthError.requestFailed", sourceLocation: location)
+        } catch let BetterAuthError.requestFailed(statusCode, _, _, response) {
+            #expect(statusCode == 401, sourceLocation: location)
+            #expect(response?.code == "INVALID_PASSWORD", sourceLocation: location)
+        }
+    }
+
+    @Test
+    func enableThenDisableTwoFactorRoundTrip() async throws {
+        let session = BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "token-1"),
+                                        user: .init(id: "user-1", email: "user@example.com"))
+
+        let transport = SequencedMockTransport([
+            // Enable 2FA
+            .handler { request in
+                #expect(request.url?.path == "/api/auth/two-factor/enable")
+                return try response(for: request, statusCode: 200,
+                                    data: encodeJSON(TwoFactorEnableResponse(totpURI: "otpauth://totp/Example:user@example.com?secret=ABC",
+                                                                              backupCodes: ["code-1", "code-2"])))
+            },
+            // Disable 2FA
+            .handler { request in
+                #expect(request.url?.path == "/api/auth/two-factor/disable")
+                return try response(for: request, statusCode: 200, data: encodeJSON(["status": true]))
+            },
+        ])
+
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
+                             sessionStore: InMemorySessionStore(),
+                             transport: transport)
+        try await client.auth.applyRestoredSession(session)
+
+        let enableResult = try await client.auth.enableTwoFactor(TwoFactorEnableRequest(password: "password"))
+        #expect(enableResult.totpURI.contains("otpauth://"))
+        #expect(enableResult.backupCodes.count == 2)
+
+        let disableResult = try await client.auth.disableTwoFactor(TwoFactorDisableRequest(password: "password"))
+        #expect(disableResult == true)
+        #expect(await client.auth.currentSession() != nil)
+    }
+
+    // MARK: - Session Revocation Edge Cases
+
+    @Test
+    func revokeSessionPreservesCurrentSessionWhenRevokingDifferentToken() async throws {
+        let session = BetterAuthSession(session: .init(id: "session-current", userId: "user-1", accessToken: "current-token"),
+                                        user: .init(id: "user-1", email: "user@example.com"))
+
+        let transport = SequencedMockTransport([.handler { request in
+            #expect(request.url?.path == "/api/auth/revoke-session")
+            let body = try JSONSerialization.jsonObject(with: try #require(request.httpBody)) as? [String: Any]
+            #expect(body?["token"] as? String == "other-device-token")
+            return try response(for: request, statusCode: 200, data: encodeJSON(["status": true]))
+        }])
+
+        let store = InMemorySessionStore()
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                    storage: .init(key: "test-key")),
+                             sessionStore: store,
+                             transport: transport)
+        try await client.auth.applyRestoredSession(session)
+        try store.saveSession(session, for: "test-key")
+
+        let result = try await client.auth.revokeSession(token: "other-device-token")
+        #expect(result == true)
+        #expect(await client.auth.currentSession()?.session.accessToken == "current-token")
+        #expect(try store.loadSession(for: "test-key")?.session.accessToken == "current-token")
+    }
+
+    @Test
+    func revokeSessionsClearsLocalStateAndSignsOut() async throws {
+        let session = BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "token-1"),
+                                        user: .init(id: "user-1", email: "user@example.com"))
+
+        let transport = SequencedMockTransport([.handler { request in
+            #expect(request.url?.path == "/api/auth/revoke-sessions")
+            return try response(for: request, statusCode: 200, data: encodeJSON(["status": true]))
+        }])
+
+        let store = InMemorySessionStore()
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                    storage: .init(key: "test-key")),
+                             sessionStore: store,
+                             transport: transport)
+        try await client.auth.applyRestoredSession(session)
+        try store.saveSession(session, for: "test-key")
+
+        let result = try await client.auth.revokeSessions()
+        #expect(result == true)
+        #expect(await client.auth.currentSession() == nil)
+        #expect(try store.loadSession(for: "test-key") == nil)
+    }
+
+    // MARK: - Passkey Error Edge Cases
+
+    @Test
+    func deletePasskeyPreservesNotFoundFailure() async throws {
+        let session = BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "token-1"),
+                                        user: .init(id: "user-1", email: "user@example.com"))
+
+        let transport = SequencedMockTransport([.response(statusCode: 404,
+                                                          jsonObject: ["code": "PASSKEY_NOT_FOUND",
+                                                                       "message": "Passkey not found"])])
+
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
+                             sessionStore: InMemorySessionStore(),
+                             transport: transport)
+        try await client.auth.applyRestoredSession(session)
+
+        let location = SourceLocation(fileID: #fileID, filePath: #filePath, line: #line + 1, column: #column)
+        do {
+            _ = try await client.auth.deletePasskey(DeletePasskeyRequest(id: "nonexistent"))
+            Issue.record("Expected BetterAuthError.requestFailed", sourceLocation: location)
+        } catch let BetterAuthError.requestFailed(statusCode, _, _, response) {
+            #expect(statusCode == 404, sourceLocation: location)
+            #expect(response?.code == "PASSKEY_NOT_FOUND", sourceLocation: location)
         }
     }
 

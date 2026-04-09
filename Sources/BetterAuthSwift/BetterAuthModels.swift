@@ -914,6 +914,14 @@ public struct TwoFactorEnableResponse: Codable, Sendable, Equatable {
     }
 }
 
+public struct TwoFactorDisableRequest: Codable, Sendable, Equatable {
+    public let password: String
+
+    public init(password: String) {
+        self.password = password
+    }
+}
+
 public struct TwoFactorVerifyTOTPRequest: Codable, Sendable, Equatable {
     public let code: String
     public let trustDevice: Bool?

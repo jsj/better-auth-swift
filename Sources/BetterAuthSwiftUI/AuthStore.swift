@@ -390,6 +390,13 @@ public final class AuthStore {
         }
     }
 
+    public func disableTwoFactor(_ payload: TwoFactorDisableRequest) async {
+        await perform {
+            _ = try await client.auth.disableTwoFactor(payload)
+            statusMessage = "Two-factor disabled"
+        }
+    }
+
     @discardableResult
     public func generateTwoFactorRecoveryCodes(password: String) async throws -> [String] {
         try await performThrowing {

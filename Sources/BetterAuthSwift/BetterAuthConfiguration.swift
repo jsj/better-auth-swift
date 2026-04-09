@@ -100,6 +100,7 @@ public extension BetterAuthConfiguration {
         public let twoFactorVerifyOTPPath: String
         public let twoFactorVerifyBackupCodePath: String
         public let twoFactorGenerateBackupCodesPath: String
+        public let twoFactorDisablePath: String
         public let forgotPasswordPath: String
         public let resetPasswordPath: String
         public let sendVerificationEmailPath: String
@@ -154,6 +155,7 @@ public extension BetterAuthConfiguration {
                     twoFactorVerifyOTPPath: String = "/api/auth/two-factor/verify-otp",
                     twoFactorVerifyBackupCodePath: String = "/api/auth/two-factor/verify-backup-code",
                     twoFactorGenerateBackupCodesPath: String = "/api/auth/two-factor/generate-backup-codes",
+                    twoFactorDisablePath: String = "/api/auth/two-factor/disable",
                     forgotPasswordPath: String = "/api/auth/forget-password",
                     resetPasswordPath: String = "/api/auth/reset-password",
                     sendVerificationEmailPath: String = "/api/auth/send-verification-email",
@@ -208,6 +210,7 @@ public extension BetterAuthConfiguration {
             self.twoFactorVerifyOTPPath = twoFactorVerifyOTPPath
             self.twoFactorVerifyBackupCodePath = twoFactorVerifyBackupCodePath
             self.twoFactorGenerateBackupCodesPath = twoFactorGenerateBackupCodesPath
+            self.twoFactorDisablePath = twoFactorDisablePath
             self.forgotPasswordPath = forgotPasswordPath
             self.resetPasswordPath = resetPasswordPath
             self.sendVerificationEmailPath = sendVerificationEmailPath

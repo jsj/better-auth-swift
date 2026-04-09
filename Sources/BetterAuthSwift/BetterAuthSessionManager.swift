@@ -714,6 +714,15 @@ public actor BetterAuthSessionManager {
         return session
     }
 
+    @discardableResult
+    public func disableTwoFactor(_ payload: TwoFactorDisableRequest) async throws -> Bool {
+        let response: BetterAuthStatusResponse = try await network
+            .post(path: configuration.endpoints.twoFactorDisablePath,
+                  body: payload,
+                  accessToken: current?.session.accessToken)
+        return response.status
+    }
+
     public func generateTwoFactorRecoveryCodes(password: String) async throws -> [String] {
         struct Request: Encodable, Sendable { let password: String }
         let response: TwoFactorGenerateBackupCodesResponse = try await network
