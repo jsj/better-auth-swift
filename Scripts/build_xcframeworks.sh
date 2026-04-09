@@ -8,7 +8,7 @@ PROJECT="$ROOT/better-auth-swift.xcodeproj"
 OUTPUT_DIR="${1:-$ROOT/build/xcframeworks}"
 DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-$ROOT/.build/xcode-derived-data}"
 ARCHIVE_ROOT="$ROOT/.build/archives"
-SCHEMES=("BetterAuth" "BetterAuthSwiftUI")
+SCHEMES=("BetterAuth" "BetterAuthSwiftUI" "BetterAuthOrganization")
 
 rm -rf "$OUTPUT_DIR" "$ARCHIVE_ROOT"
 mkdir -p "$OUTPUT_DIR" "$ARCHIVE_ROOT"

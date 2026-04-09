@@ -28,7 +28,10 @@ jobs:
       - name: Generate Xcode project
         run: ./Scripts/generate_xcodeproj.sh
 
-      - name: Run tests
+      - name: Run SPM tests (all targets)
+        run: swift test
+
+      - name: Run Xcode tests
         run: |
           xcodebuild test \
             -project better-auth-swift.xcodeproj \
@@ -45,3 +48,4 @@ jobs:
           files: |
             release-artifacts/BetterAuth.xcframework.zip
             release-artifacts/BetterAuthSwiftUI.xcframework.zip
+            release-artifacts/BetterAuthOrganization.xcframework.zip

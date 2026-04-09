@@ -97,6 +97,24 @@ targets:
           - "@executable_path/Frameworks"
           - "@loader_path/Frameworks"
 
+  BetterAuthOrganization:
+    type: framework
+    supportedDestinations: [iOS, iOSSimulator, macOS]
+    sources:
+      - Sources/BetterAuthOrganization
+    dependencies:
+      - target: BetterAuth
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jsj.betterauthswift.BetterAuthOrganization
+        GENERATE_INFOPLIST_FILE: YES
+        DEFINES_MODULE: YES
+        SKIP_INSTALL: NO
+        LD_RUNPATH_SEARCH_PATHS:
+          - $(inherited)
+          - "@executable_path/Frameworks"
+          - "@loader_path/Frameworks"
+
   BetterAuthSwiftTests:
     type: bundle.unit-test
     platform: macOS
@@ -108,6 +126,25 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.jsj.betterauthswift.tests
+        GENERATE_INFOPLIST_FILE: YES
+        BUNDLE_LOADER: ""
+        TEST_HOST: ""
+        LD_RUNPATH_SEARCH_PATHS:
+          - $(inherited)
+          - "@loader_path/../Frameworks"
+          - "@executable_path/../Frameworks"
+
+  BetterAuthOrganizationTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - Tests/BetterAuthOrganizationTests
+    dependencies:
+      - target: BetterAuth
+      - target: BetterAuthOrganization
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jsj.betterauthswift.organization-tests
         GENERATE_INFOPLIST_FILE: YES
         BUNDLE_LOADER: ""
         TEST_HOST: ""
@@ -133,16 +170,27 @@ schemes:
       config: Debug
     archive:
       config: Release
+  BetterAuthOrganization:
+    build:
+      targets:
+        BetterAuthOrganization: all
+    run:
+      config: Debug
+    archive:
+      config: Release
   BetterAuth-Package:
     build:
       targets:
         BetterAuth: all
         BetterAuthSwiftUI: all
+        BetterAuthOrganization: all
         BetterAuthSwiftTests: [test]
+        BetterAuthOrganizationTests: [test]
     test:
       config: Debug
       targets:
         - BetterAuthSwiftTests
+        - BetterAuthOrganizationTests
     run:
       config: Debug
     archive:

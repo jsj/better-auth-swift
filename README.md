@@ -16,7 +16,7 @@
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
 </p>
 
-Swift SDK for [Better Auth](https://github.com/better-auth/better-auth) with first-class support for native Apple apps talking to any Better Auth backend reachable over HTTP.
+Native Swift SDK for [Better Auth](https://github.com/better-auth/better-auth) with first-class support for Apple platforms.
 
 > [!WARNING]
 > This is an early release. The API may change before `1.0`, and the first tagged release will start at `0.0.1`.
@@ -24,15 +24,26 @@ Swift SDK for [Better Auth](https://github.com/better-auth/better-auth) with fir
 > [!NOTE]
 > This is an independent community SDK and is not officially affiliated with or maintained by the Better Auth team.
 
-## Why this exists
+## Features
 
-`better-auth-swift` gives Swift apps a native-feeling auth client for Better Auth:
-
-- secure session persistence
-- session restore and refresh flows
-- native Apple sign-in payload exchange
-- authenticated requests with retry after `401`
-- optional SwiftUI state management helpers
+| Category | What's supported |
+|----------|-----------------|
+| **Email + Password** | Sign up, sign in, password reset, password change |
+| **Username** | Username sign in, availability check |
+| **Apple Sign In** | Native credential exchange (no web redirect) |
+| **Social / OAuth** | Social sign in, generic OAuth initiation + completion |
+| **Anonymous** | Anonymous sign in, upgrade to permanent account |
+| **Magic Link** | Request and verify magic links |
+| **Email OTP** | Request, sign in, and verify email OTP codes |
+| **Phone OTP** | Request, sign in, and verify phone OTP codes |
+| **Passkeys** | Register, authenticate, list, update, delete |
+| **Two-Factor** | Enable, disable, TOTP verify, OTP verify, backup codes |
+| **Session Management** | List, revoke current/other/all, device sessions, JWT/JWKS |
+| **Account Lifecycle** | Delete account, re-authenticate, change email, update profile |
+| **Account Linking** | Link social accounts, list linked accounts |
+| **Organizations** | Create, list, update, delete orgs; manage members and invitations (plugin module) |
+| **SwiftUI** | Observable `AuthStore` with launch state, session, loading |
+| **Keychain** | Reinstall-aware session persistence with configurable accessibility |
 
 ## Quick start
 
@@ -51,19 +62,24 @@ dependencies: [
 ]
 ```
 
-Then add the products you want:
+Three products are available:
+
+| Product | Use case |
+|---------|----------|
+| `BetterAuth` | Core SDK — session, auth flows, authenticated requests |
+| `BetterAuthSwiftUI` | Observable `AuthStore` for SwiftUI apps |
+| `BetterAuthOrganization` | Organization plugin — teams, members, invitations |
 
 ```swift
 .target(
     name: "YourApp",
     dependencies: [
         .product(name: "BetterAuth", package: "better-auth-swift"),
-        .product(name: "BetterAuthSwiftUI", package: "better-auth-swift")
+        .product(name: "BetterAuthSwiftUI", package: "better-auth-swift"),
+        .product(name: "BetterAuthOrganization", package: "better-auth-swift")
     ]
 )
 ```
-
-Use `BetterAuth` if you only want the core SDK. Add `BetterAuthSwiftUI` only if you want the observable `AuthStore` helper for SwiftUI app state.
 
 ### Create a client
 
@@ -78,143 +94,91 @@ let client = BetterAuthClient(
 ### Restore a session at app launch
 
 ```swift
-let session = try await client.auth.restoreOrRefreshSession()
+let result = try await client.auth.restoreSessionOnLaunch()
 ```
 
-### Make an authenticated request
+### Sign in
 
 ```swift
-struct Profile: Decodable {
-    let id: String
-    let email: String
-}
+// Email + password
+let session = try await client.auth.signInWithEmail(
+    EmailSignInRequest(email: "user@example.com", password: "password")
+)
 
+// Apple native sign in
+let session = try await client.auth.signInWithApple(payload)
+
+// Anonymous (upgrade later)
+let session = try await client.auth.signInAnonymously()
+```
+
+### Make authenticated requests
+
+```swift
 let profile: Profile = try await client.requests.sendJSON(path: "/api/me")
 ```
 
-## Choose your path
+The request client automatically attaches bearer tokens and retries once on `401` after refreshing the session.
 
-### Core SDK
-
-Use `BetterAuth` if you want framework-agnostic auth primitives for UIKit, SwiftUI, or your own architecture.
+## SwiftUI integration
 
 ```swift
-import BetterAuth
-
-let client = BetterAuthClient(
-    configuration: BetterAuthConfiguration(
-        baseURL: URL(string: "https://your-api.example.com")!,
-        storage: .init(
-            key: "better-auth.session",
-            service: "com.example.myapp.auth"
-        ),
-        endpoints: .init(
-            socialSignInPath: "/api/auth/social/sign-in",
-            nativeAppleSignInPath: "/api/auth/apple/native",
-            sessionRefreshPath: "/api/auth/session/refresh",
-            currentSessionPath: "/api/auth/session",
-            signOutPath: "/api/auth/sign-out"
-        ),
-        clockSkew: 60
-    )
-)
-```
-
-### SwiftUI state helper
-
-Use `BetterAuthSwiftUI` if you want an observable store for app-layer state.
-
-```swift
-import BetterAuth
 import BetterAuthSwiftUI
 
 @MainActor
-let authStore = AuthStore(
-    client: BetterAuthClient(
-        baseURL: URL(string: "https://your-api.example.com")!
-    )
-)
-```
+let store = AuthStore(client: client)
 
-Common actions:
+// Launch
+await store.bootstrap()
 
-```swift
-await authStore.restore()
-await authStore.refresh()
-await authStore.signOut()
-```
-
-State exposed by `AuthStore`:
-
-- `session`
-- `isLoading`
-- `statusMessage`
-
-## First sign-in example
-
-The SDK includes `AppleNativeSignInPayload` for exchanging native Apple credentials with a Better Auth backend.
-
-> [!IMPORTANT]
-> Native Apple Sign In requires [better-auth/better-auth#8870](https://github.com/better-auth/better-auth/pull/8870) to be merged. Without this fix, Apple's hashed nonce in the ID token will fail server-side verification against the raw nonce. If you're running a local or patched better-auth instance this works today; stock releases will need the fix first.
-
-```swift
-let payload = AppleNativeSignInPayload(
-    token: identityToken,
-    nonce: rawNonce,
-    authorizationCode: authorizationCode,
-    email: email,
-    givenName: givenName,
-    familyName: familyName
-)
-
-let session = try await client.auth.signInWithApple(payload)
-```
-
-## Authenticated requests
-
-Send JSON:
-
-```swift
-struct UpdateProfileRequest: Encodable {
-    let name: String
+// Drive UI from typed launch state
+switch store.launchState {
+case .authenticated(let session): // show app
+case .unauthenticated:            // show sign in
+case .restoring:                   // show loading
+default: break
 }
-
-try await client.requests.sendWithoutDecoding(
-    path: "/api/profile",
-    method: "PATCH",
-    body: UpdateProfileRequest(name: "James")
-)
 ```
 
-Call public endpoints without authentication:
+## Organization plugin
 
 ```swift
-let health: Healthcheck = try await client.requests.sendJSON(
-    path: "/api/health",
-    requiresAuthentication: false
+import BetterAuthOrganization
+
+let orgs = OrganizationManager(client: client)
+
+let org = try await orgs.createOrganization(
+    CreateOrganizationRequest(name: "Acme", slug: "acme")
+)
+let members = try await orgs.listMembers(organizationId: org.id)
+```
+
+## Apple Sign In
+
+> [!NOTE]
+> Native Apple Sign In nonce hashing fix ([better-auth/better-auth#8870](https://github.com/better-auth/better-auth/pull/8870)) has been approved and merged to `next`. It will ship in the next Better Auth release.
+
+```swift
+let session = try await client.auth.signInWithApple(
+    AppleNativeSignInPayload(
+        token: identityToken,
+        nonce: rawNonce,
+        authorizationCode: authorizationCode,
+        email: email,
+        givenName: givenName,
+        familyName: familyName
+    )
 )
 ```
 
 ## Example apps
 
-For full working examples in this repo:
-
-- [`examples/cf-workers-swiftui`](./examples/cf-workers-swiftui) — SwiftUI app + Cloudflare Workers example backend
-- [`examples/cf-workers-uikit`](./examples/cf-workers-uikit) — UIKit app + Cloudflare Workers example backend
+- [`examples/cf-workers-swiftui`](./examples/cf-workers-swiftui) — SwiftUI app + Cloudflare Workers backend
+- [`examples/cf-workers-uikit`](./examples/cf-workers-uikit) — UIKit app + Cloudflare Workers backend
 
 ## Backend compatibility
 
-This SDK is designed to work with Better Auth backends in general, including deployments on Vercel, Node servers, Cloudflare Workers, or other environments, as long as your Swift app can reach the backend over HTTP.
-
-The core flow looks like this:
-
-- sign in from iPhone, iPad, or Mac
-- exchange credentials with a Better Auth backend
-- persist the session securely
-- refresh tokens when needed
-- make authenticated requests from app code
-
-This repo currently includes Cloudflare Workers-based example stacks, but the SDK itself is not coupled to Workers.
+This SDK works with any Better Auth backend reachable over HTTP — Vercel, Node, Cloudflare Workers, or any other host. The SDK handles session persistence, token refresh, and authenticated requests; the backend handles the auth logic.
 
 ## Contributing
 

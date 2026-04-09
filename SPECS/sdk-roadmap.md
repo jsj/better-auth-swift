@@ -27,31 +27,35 @@ Success means:
 - the SDK provides native UX advantages beyond generic web wrappers
 - app teams can start simple and grow into advanced auth features without replacing their client stack
 
-## Current state
+## Current state (as of April 2026)
 
-The repository already appears broader than the public README suggests.
+All five original roadmap phases are implemented. The SDK ships 108 tests across two test targets with zero failures.
 
-Current implemented areas include:
+Implemented areas include:
 
 - session persistence, restoration, refresh, and authenticated requests
-- SwiftUI state management via `AuthStore`
+- SwiftUI state management via `AuthStore` with typed launch state
+- reinstall-aware Keychain restore with explicit restore result model
+- app-launch bootstrap semantics
+- deep-link and callback helpers for OAuth, magic link, and email verification
 - email/password sign up and sign in
 - password reset and password change flows
 - username availability and username sign in
 - native Apple sign in exchange
 - social sign in and generic OAuth
-- anonymous auth
+- anonymous auth with upgrade to permanent account
 - magic link flows
 - email OTP flows
 - phone OTP flows
-- two-factor auth flows, including backup codes
+- two-factor auth flows, including enable, disable, TOTP, OTP, and backup codes
 - passkey registration, authentication, listing, update, and deletion
 - email verification and change email flows
 - linked account flows
 - session and device session management
+- account deletion with optional password confirmation
+- re-authentication for sensitive operations
 - JWT and JWKS helpers
-
-This means the near-term roadmap should emphasize productization, polish, and native differentiation more than raw breadth.
+- organization plugin module (CRUD, members, invitations, active org)
 
 ## Product principles
 
@@ -222,180 +226,38 @@ Why this matters:
 
 Plugin support should be systematic. The SDK should avoid one-off additions that create long-term inconsistency.
 
-## Phased roadmap
+## Completed phases (1-5)
 
-## Phase 1: Stabilize current breadth
+Phases 1 through 5 of the original roadmap are implemented and merged to main:
 
-Goal:
+1. **Stabilize current breadth** — normalized the auth surface, aligned tests and examples
+2. **Native differentiators** — reinstall-aware restore, launch state, callback helpers
+3. **Account lifecycle** — delete user, anonymous upgrade, re-authentication
+4. **Security and session control** — 2FA disable, hardened revocation and error tests
+5. **Plugin expansion** — organization plugin module validating the extension pattern
 
-Turn the current broad implementation into a clearly shaped, reliable SDK surface.
+108 tests across two targets, zero failures.
 
-Deliverables:
+## Phase 6: Polish
 
-- verify and normalize the implemented auth surface
-- create a feature coverage matrix
-- align examples, tests, and public messaging with actual capabilities
-- tighten state, error, and event semantics where needed
+Goal: make the shipped work visible and reliable.
 
-Exit criteria:
+- README rewrite reflecting full SDK surface
+- CI coverage for all test targets including the organization plugin
+- XcodeGen project and release workflow updated for the organization module
+- Roadmap updated to current state
 
-- the SDK surface is internally coherent
-- feature support is discoverable
-- there is confidence that implemented flows behave consistently
+## Phase 7: Upstream sync automation
 
-## Phase 2: Ship native differentiators
+Goal: detect when upstream Better Auth changes affect the Swift SDK.
 
-Goal:
+Candidate approach: a scheduled agent that diffs the upstream `better-auth` source against the SDK's endpoint contracts and model shapes, then flags breaking changes or new plugin opportunities.
 
-Make the SDK feel unmistakably native on Apple platforms.
-
-Deliverables:
-
-- reinstall-aware restore strategy
-- optional Keychain synchronization strategy where appropriate
-- explicit app-launch restoration states
-- OAuth, magic link, and OTP callback helpers
-
-Exit criteria:
-
-- app teams can implement native restore and callback flows with minimal custom glue
-- the SDK clearly improves on web-wrapper ergonomics
-
-Detailed reference:
-
-- `SPECS/native-differentiators-v0.2.md`
-
-## Phase 3: Complete account lifecycle flows
-
-Goal:
-
-Support the full journey from lightweight onboarding to durable account ownership.
-
-Deliverables:
-
-- anonymous-to-permanent account upgrade patterns
-- account linking flows
-- re-auth flows for sensitive operations
-- stronger guidance and examples for lifecycle-sensitive transitions
-
-Exit criteria:
-
-- apps can onboard quickly without forcing immediate account creation
-- users can safely upgrade and link accounts without losing continuity
-
-## Phase 4: Production-grade security and session control
-
-Goal:
-
-Make post-sign-in security and session management a first-class part of the SDK.
-
-Deliverables:
-
-- device/session management polish
-- robust passkey management flows
-- robust 2FA management flows
-- clearer semantics for revocation and active-session behavior
-
-Exit criteria:
-
-- the SDK supports operationally mature account security use cases
-- session control feels deliberate and complete
-
-## Phase 5: Plugin expansion model
-
-Goal:
-
-Create a repeatable way to expand with the Better Auth ecosystem.
-
-Deliverables:
-
-- extension architecture for plugin-specific capability
-- first plugin prioritization list
-- first plugin implementation specs once the extension story is stable
-
-Exit criteria:
-
-- plugin support can grow without fragmenting the SDK design
-
-## Recommended implementation order
-
-If work is split into focused coding sessions, the order should be:
-
-1. feature audit and stability pass
-2. reinstall-aware restore and launch semantics
-3. anonymous upgrade and account linking
-4. deep-link and callback helpers
-5. security and device/session polish
-6. plugin extension architecture
-7. first plugin implementations
-
-## Candidate follow-up specs
-
-This file should stay high level. The following should be broken into their own specs when implementation starts:
-
-- `SPECS/reinstall-aware-restore.md`
-- `SPECS/feature-coverage-matrix.md`
-- `SPECS/anonymous-upgrade-flows.md`
-- `SPECS/account-linking-and-reauth.md`
-- `SPECS/deep-link-callback-helpers.md`
-- `SPECS/session-device-management.md`
-- `SPECS/plugin-extension-architecture.md`
-
-## Competitive references
-
-### Firebase
-
-Useful reference ideas:
-
-- anonymous auth as a strong onboarding pattern
-- upgrade and linking flows that preserve user continuity
-- durable device identity via Keychain-backed restoration behavior
-
-Takeaway:
-
-Firebase is a strong benchmark for lifecycle completeness and low-friction onboarding.
-
-### Supabase Swift
-
-Useful reference ideas:
-
-- explicit auth state changes and session lifecycle behavior
-- broad auth method coverage
-- PKCE and mobile OAuth ergonomics
-- SSO and identity linking patterns
-
-Takeaway:
-
-Supabase is a strong benchmark for state semantics, breadth, and auth system shape.
+This is deferred until the tooling story (GitHub Actions, Claude Code triggers, or similar) is clearer.
 
 ## Open questions
 
-These questions should be resolved as the roadmap is implemented:
-
-1. How much should reinstall recovery rely on default Keychain persistence versus explicit opt-in synchronization behavior?
-2. What auth state model should be exposed publicly for launch and restore flows?
-3. Which plugin category should be first once the extension architecture is ready?
-4. How opinionated should the SwiftUI state layer become versus keeping the core SDK primitive and flexible?
-5. Which flows require dedicated native helpers rather than staying at the raw request-model layer?
-
-## Working rule for future sessions
-
-When future coding sessions use this spec, they should:
-
-- choose one roadmap theme or sub-problem
-- produce a focused implementation spec for that area
-- implement the smallest useful slice
-- validate the result with tests and examples
-- update this roadmap if priorities or assumptions change
-
-## Summary
-
-The roadmap should not be framed as “add more endpoints.”
-
-It should be framed as:
-
-- stabilize the already broad SDK surface
-- ship native Apple-platform differentiators
-- complete account lifecycle flows
-- strengthen security and session control
+1. How should the SDK track upstream Better Auth endpoint additions and breaking changes?
+2. Which additional plugins should get dedicated Swift targets next (admin, api-key, SSO)?
+3. Should the SwiftUI layer grow into richer view components or stay as a thin observable wrapper?
 - expand into plugins through a clean extension model
