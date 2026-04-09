@@ -22,8 +22,48 @@ struct AuthService {
         try await client.auth.restoreOrRefreshSession()
     }
 
+    func restoreSessionOnLaunch() async throws -> BetterAuthRestoreResult {
+        try await client.auth.restoreSessionOnLaunch()
+    }
+
     func refreshSession() async throws -> BetterAuthSession? {
         try await client.auth.refreshSession()
+    }
+
+    func isSupportedIncomingURL(_ url: URL) -> Bool {
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: true) else {
+            return false
+        }
+
+        let path = components.path
+        let queryItems = components.queryItems ?? []
+
+        if queryItems.first(where: { $0.name == "code" })?.value != nil,
+           queryItems.first(where: { $0.name == "state" })?.value != nil
+        {
+            let pathComponents = path.split(separator: "/")
+            if let callbackIndex = pathComponents.firstIndex(of: "callback"), callbackIndex + 1 < pathComponents.count {
+                return true
+            }
+        }
+
+        if path.hasSuffix(client.configuration.endpoints.magicLinkVerifyPath),
+           queryItems.first(where: { $0.name == "token" })?.value != nil
+        {
+            return true
+        }
+
+        if path.hasSuffix(client.configuration.endpoints.verifyEmailPath),
+           queryItems.first(where: { $0.name == "token" })?.value != nil
+        {
+            return true
+        }
+
+        return false
+    }
+
+    func handleIncomingURL(_ url: URL) async throws -> BetterAuthHandledURLResult {
+        try await client.auth.handleIncomingURL(url)
     }
 
     func signOut(remotely: Bool) async throws {
@@ -171,10 +211,8 @@ struct AuthService {
     }
 
     func deleteUser() async throws {
-        try await client.requests.sendWithoutDecoding(
-            path: "/api/auth/delete-user",
-            body: DeleteUserRequest()
-        )
+        try await client.requests.sendWithoutDecoding(path: "/api/auth/delete-user",
+                                                      body: DeleteUserRequest())
     }
 
     func isWorkerReachable() async -> Bool {

@@ -9,35 +9,38 @@ enum AuthOption: Identifiable {
     case linkedAccounts
     case jwt
 
-    static let allCases: [AuthOption] = [
-        .authMethod(.apple),
-        .authMethod(.emailPassword),
-        .authMethod(.usernamePassword),
-        .authMethod(.magicLink),
-        .authMethod(.emailOTP),
-        .authMethod(.phoneOTP),
-        .authMethod(.twoFactor),
-        .emailVerification,
-        .profile,
-        .sessionManagement,
-        .linkedAccounts,
-        .authMethod(.passkey),
-        .jwt,
-        .authMethod(.anonymous)
-    ]
+    static let allCases: [AuthOption] = [.authMethod(.apple),
+                                         .authMethod(.emailPassword),
+                                         .authMethod(.usernamePassword),
+                                         .authMethod(.magicLink),
+                                         .authMethod(.emailOTP),
+                                         .authMethod(.phoneOTP),
+                                         .authMethod(.twoFactor),
+                                         .emailVerification,
+                                         .profile,
+                                         .sessionManagement,
+                                         .linkedAccounts,
+                                         .authMethod(.passkey),
+                                         .jwt,
+                                         .authMethod(.anonymous)]
 
     var id: String {
         switch self {
         case let .authMethod(method):
             "method.\(method.rawValue)"
+
         case .emailVerification:
             "emailVerification"
+
         case .profile:
             "profile"
+
         case .sessionManagement:
             "sessionManagement"
+
         case .linkedAccounts:
             "linkedAccounts"
+
         case .jwt:
             "jwt"
         }

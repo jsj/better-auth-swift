@@ -6,14 +6,12 @@ import Testing
 struct AuthModelsTests {
     @Test
     func payloadFieldsAreAccessible() {
-        let payload = AppleNativeSignInPayload(
-            token: "abcdefghijklmnopqrstuvwxyz0123456789",
-            nonce: "nonce",
-            authorizationCode: "authorization-code",
-            email: "jane@example.com",
-            givenName: "Jane",
-            familyName: "Doe"
-        )
+        let payload = AppleNativeSignInPayload(token: "abcdefghijklmnopqrstuvwxyz0123456789",
+                                               nonce: "nonce",
+                                               authorizationCode: "authorization-code",
+                                               email: "jane@example.com",
+                                               givenName: "Jane",
+                                               familyName: "Doe")
 
         #expect(payload.email == "jane@example.com")
         #expect(payload.givenName == "Jane")
@@ -25,10 +23,8 @@ struct AuthModelsTests {
 
     @Test
     func repeatAuthorizationPayloadCanOmitFirstUseProfileHints() {
-        let payload = AppleNativeSignInPayload(
-            token: "abcdefghijklmnopqrstuvwxyz0123456789",
-            nonce: "nonce"
-        )
+        let payload = AppleNativeSignInPayload(token: "abcdefghijklmnopqrstuvwxyz0123456789",
+                                               nonce: "nonce")
 
         #expect(payload.email == nil)
         #expect(payload.givenName == nil)
@@ -40,38 +36,26 @@ struct AuthModelsTests {
 
     @Test
     @MainActor
-    func restorePreservesStoredSessionAndAvoidsUnauthorizedState() async throws {
-        let storedSession = BetterAuthSession(
-            session: .init(
-                id: "stored-session",
-                userId: "user-1",
-                accessToken: "stored-token",
-                expiresAt: Date().addingTimeInterval(3600)
-            ),
-            user: .init(id: "user-1", email: "jane@example.com", name: "Jane")
-        )
+    func restorePreservesStoredSessionAndAvoidsUnauthorizedState() async {
+        let storedSession = BetterAuthSession(session: .init(id: "stored-session",
+                                                             userId: "user-1",
+                                                             accessToken: "stored-token",
+                                                             expiresAt: Date().addingTimeInterval(3600)),
+                                              user: .init(id: "user-1", email: "jane@example.com", name: "Jane"))
 
-        let model = AuthViewModel(
-            configuration: AuthConfiguration(
-                apiBaseURL: URL(string: "https://example.com")!,
-                source: .infoPlist
-            ),
-            client: BetterAuthClient(
-                configuration: BetterAuthConfiguration(
-                    baseURL: URL(string: "https://example.com")!,
-                    storage: .init(key: "test-key")
-                ),
-                sessionStore: configuredStore(session: storedSession),
-                transport: MockTransport { _ in
-                    Issue.record(Comment(rawValue: "Restore should not hit the network for a fresh session"))
-                    return response(
-                        for: URLRequest(url: URL(string: "https://example.com")!),
-                        statusCode: 500,
-                        data: Data()
-                    )
-                }
-            )
-        )
+        let model =
+            AuthViewModel(configuration: AuthConfiguration(apiBaseURL: try #require(URL(string: "https://example.com")),
+                                                           source: .infoPlist),
+                          client: BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                                          storage: .init(key: "test-key")),
+                                                   sessionStore: configuredStore(session: storedSession),
+                                                   transport: MockTransport { _ in
+                                                       Issue
+                                                           .record(Comment(rawValue: "Restore should not hit the network for a fresh session"))
+                                                       return response(for: URLRequest(url: URL(string: "https://example.com")!),
+                                                                       statusCode: 500,
+                                                                       data: Data())
+                                                   }))
 
         await model.restore()
 
@@ -82,84 +66,72 @@ struct AuthModelsTests {
 
     @Test
     @MainActor
-    func refreshFailureClearsVisibleSessionState() async throws {
-        let staleSession = BetterAuthSession(
-            session: .init(
-                id: "session-stale",
-                userId: "user-1",
-                accessToken: "stale-token",
-                expiresAt: Date().addingTimeInterval(-60)
-            ),
-            user: .init(id: "user-1", email: "jane@example.com", name: "Jane")
-        )
+    func refreshFailureClearsVisibleSessionState() async {
+        let staleSession = BetterAuthSession(session: .init(id: "session-stale",
+                                                            userId: "user-1",
+                                                            accessToken: "stale-token",
+                                                            expiresAt: Date().addingTimeInterval(-60)),
+                                             user: .init(id: "user-1", email: "jane@example.com", name: "Jane"))
 
-        let model = AuthViewModel(
-            configuration: AuthConfiguration(
-                apiBaseURL: URL(string: "https://example.com")!,
-                source: .infoPlist
-            ),
-            client: BetterAuthClient(
-                configuration: BetterAuthConfiguration(
-                    baseURL: URL(string: "https://example.com")!,
-                    storage: .init(key: "test-key")
-                ),
-                sessionStore: configuredStore(session: staleSession),
-                transport: MockTransport { request in
-                    #expect(request.url?.path == "/api/auth/get-session")
-                    let body = ["code": "UNAUTHORIZED", "message": "expired session"]
-                    return response(for: request, statusCode: 401, data: try JSONSerialization.data(withJSONObject: body))
-                }
-            )
-        )
+        let model =
+            AuthViewModel(configuration: AuthConfiguration(apiBaseURL: try #require(URL(string: "https://example.com")),
+                                                           source: .infoPlist),
+                          client: BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                                          storage: .init(key: "test-key")),
+                                                   sessionStore: configuredStore(session: staleSession),
+                                                   transport: MockTransport { request in
+                                                       #expect(request.url?.path == "/api/auth/get-session")
+                                                       let body = ["code": "UNAUTHORIZED",
+                                                                   "message": "expired session"]
+                                                       return try response(for: request, statusCode: 401,
+                                                                           data: JSONSerialization
+                                                                               .data(withJSONObject: body))
+                                                   }))
 
         model.session = staleSession
         await model.refresh()
 
         #expect(model.session == staleSession)
-        #expect(model.statusMessage?.isEmpty == false, Comment(rawValue: "Expected refresh failure to surface a user-visible error"))
+        #expect(model.statusMessage?.isEmpty == false,
+                Comment(rawValue: "Expected refresh failure to surface a user-visible error"))
         #expect(model.isPerformingAuthAction == false, Comment(rawValue: "Expected refresh activity flag to reset"))
     }
 
     @Test
     @MainActor
     func signOutClearsVisibleSessionStateEvenWhenRemoteCallFails() async throws {
-        let activeSession = BetterAuthSession(
-            session: .init(
-                id: "session-active",
-                userId: "user-1",
-                accessToken: "active-token",
-                expiresAt: Date().addingTimeInterval(3600)
-            ),
-            user: .init(id: "user-1", email: "jane@example.com", name: "Jane")
-        )
+        let activeSession = BetterAuthSession(session: .init(id: "session-active",
+                                                             userId: "user-1",
+                                                             accessToken: "active-token",
+                                                             expiresAt: Date().addingTimeInterval(3600)),
+                                              user: .init(id: "user-1", email: "jane@example.com", name: "Jane"))
 
         let store = configuredStore(session: activeSession)
-        let model = AuthViewModel(
-            configuration: AuthConfiguration(
-                apiBaseURL: URL(string: "https://example.com")!,
-                source: .infoPlist
-            ),
-            client: BetterAuthClient(
-                configuration: BetterAuthConfiguration(
-                    baseURL: URL(string: "https://example.com")!,
-                    storage: .init(key: "test-key")
-                ),
-                sessionStore: store,
-                transport: MockTransport { request in
-                    #expect(request.url?.path == "/api/auth/sign-out")
-                    #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer active-token")
-                    let body = ["code": "SERVER_ERROR", "message": "temporary failure"]
-                    return response(for: request, statusCode: 500, data: try JSONSerialization.data(withJSONObject: body))
-                }
-            )
-        )
+        let model =
+            AuthViewModel(configuration: AuthConfiguration(apiBaseURL: try #require(URL(string: "https://example.com")),
+                                                           source: .infoPlist),
+                          client: BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                                          storage: .init(key: "test-key")),
+                                                   sessionStore: store,
+                                                   transport: MockTransport { request in
+                                                       #expect(request.url?.path == "/api/auth/sign-out")
+                                                       #expect(request
+                                                           .value(forHTTPHeaderField: "Authorization") ==
+                                                           "Bearer active-token")
+                                                       let body = ["code": "SERVER_ERROR",
+                                                                   "message": "temporary failure"]
+                                                       return try response(for: request, statusCode: 500,
+                                                                           data: JSONSerialization
+                                                                               .data(withJSONObject: body))
+                                                   }))
 
         model.session = activeSession
         try await model.debugClient.auth.updateSession(activeSession)
         await model.signOut()
 
         #expect(model.session == nil)
-        #expect(model.statusMessage?.isEmpty == false, Comment(rawValue: "Expected local sign-out fallback to surface status"))
+        #expect(model.statusMessage?.isEmpty == false,
+                Comment(rawValue: "Expected local sign-out fallback to surface status"))
         let persisted = try store.loadSession(for: "test-key")
         #expect(persisted == nil, Comment(rawValue: "Expected sign-out to clear persisted session state"))
         #expect(model.isPerformingAuthAction == false, Comment(rawValue: "Expected sign-out activity flag to reset"))
@@ -211,12 +183,10 @@ private func configuredStore(session: BetterAuthSession) -> InMemorySessionStore
 }
 
 private func response(for request: URLRequest, statusCode: Int, data: Data) -> (Data, URLResponse) {
-    let response = HTTPURLResponse(
-        url: request.url ?? URL(string: "https://example.com")!,
-        statusCode: statusCode,
-        httpVersion: nil,
-        headerFields: nil
-    )!
+    let response = HTTPURLResponse(url: request.url ?? URL(string: "https://example.com")!,
+                                   statusCode: statusCode,
+                                   httpVersion: nil,
+                                   headerFields: nil)!
     return (data, response)
 }
 
@@ -228,22 +198,19 @@ private func makeURLSession() -> URLSession {
 
 extension AuthModelsTests {
     @Test
-    func workerReachabilityTreatsSuccessfulHeadResponseAsReachable() async {
+    func workerReachabilityTreatsSuccessfulHeadResponseAsReachable() async throws {
         MockURLProtocol.requestHandler = { request in
             #expect(request.httpMethod == "HEAD")
-            let response = HTTPURLResponse(
-                url: request.url ?? URL(string: "https://example.com")!,
-                statusCode: 200,
-                httpVersion: nil,
-                headerFields: nil
-            )!
+            let response = HTTPURLResponse(url: request.url ?? URL(string: "https://example.com")!,
+                                           statusCode: 200,
+                                           httpVersion: nil,
+                                           headerFields: nil)!
             return (response, Data())
         }
 
-        let service = AuthService(
-            client: BetterAuthClient(baseURL: URL(string: "https://example.com")!),
-            session: makeURLSession()
-        )
+        let service =
+            try AuthService(client: BetterAuthClient(baseURL: try #require(URL(string: "https://example.com"))),
+                            session: makeURLSession())
 
         let reachable = await service.isWorkerReachable()
 
@@ -252,15 +219,14 @@ extension AuthModelsTests {
     }
 
     @Test
-    func workerReachabilityTreatsTransportFailureAsUnreachable() async {
+    func workerReachabilityTreatsTransportFailureAsUnreachable() async throws {
         MockURLProtocol.requestHandler = { _ in
             throw URLError(.cannotConnectToHost)
         }
 
-        let service = AuthService(
-            client: BetterAuthClient(baseURL: URL(string: "https://example.com")!),
-            session: makeURLSession()
-        )
+        let service =
+            try AuthService(client: BetterAuthClient(baseURL: try #require(URL(string: "https://example.com"))),
+                            session: makeURLSession())
 
         let reachable = await service.isWorkerReachable()
 

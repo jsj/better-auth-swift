@@ -10,13 +10,16 @@ public enum BetterAuthError: LocalizedError, Sendable {
         switch self {
         case .invalidURL:
             return "Invalid Better Auth URL."
+
         case .invalidResponse:
             return "Invalid Better Auth response."
+
         case let .requestFailed(statusCode, message, errorCode, _):
             if let errorCode {
                 return errorCode.description
             }
             return message ?? "Better Auth request failed with status \(statusCode)."
+
         case .missingSession:
             return "No current Better Auth session."
         }
@@ -54,9 +57,10 @@ public enum BetterAuthError: LocalizedError, Sendable {
     public var isSessionExpired: Bool {
         switch authErrorCode {
         case .sessionExpired, .sessionNotFound, .refreshTokenExpired:
-            return true
+            true
+
         default:
-            return isUnauthorized
+            isUnauthorized
         }
     }
 }
@@ -135,40 +139,40 @@ public enum AuthErrorCode: String, Codable, Sendable, Equatable {
 
     public var description: String {
         switch self {
-        case .sessionExpired: return "Session has expired."
-        case .sessionNotFound: return "Session not found."
-        case .refreshTokenExpired: return "Refresh token has expired."
-        case .invalidRefreshToken: return "Invalid refresh token."
-        case .invalidCredentials: return "Invalid credentials."
-        case .invalidPassword: return "Invalid password."
-        case .weakPassword: return "Password is too weak."
-        case .userNotFound: return "User not found."
-        case .userAlreadyExists: return "User already exists."
-        case .emailAlreadyExists: return "Email already in use."
-        case .usernameAlreadyTaken: return "Username already taken."
-        case .emailNotVerified: return "Email not verified."
-        case .accountNotLinked: return "Account not linked."
-        case .otpExpired: return "OTP has expired."
-        case .invalidOTP: return "Invalid OTP code."
-        case .verificationExpired: return "Verification has expired."
-        case .invalidVerificationToken: return "Invalid verification token."
-        case .twoFactorRequired: return "Two-factor authentication required."
-        case .twoFactorNotEnabled: return "Two-factor authentication not enabled."
-        case .invalidTOTP: return "Invalid TOTP code."
-        case .invalidBackupCode: return "Invalid backup code."
-        case .mfaChallengeExpired: return "MFA challenge has expired."
-        case .oauthProviderNotFound: return "OAuth provider not found."
-        case .oauthAccountAlreadyLinked: return "OAuth account already linked."
-        case .oauthCodeExchangeFailed: return "OAuth code exchange failed."
-        case .oauthStateMismatch: return "OAuth state mismatch."
-        case .rateLimited, .tooManyRequests: return "Too many requests. Please try again later."
-        case .passkeyRegistrationFailed: return "Passkey registration failed."
-        case .passkeyAuthenticationFailed: return "Passkey authentication failed."
-        case .passkeyNotFound: return "Passkey not found."
-        case .forbidden: return "Access denied."
-        case .badRequest: return "Bad request."
-        case .internalServerError: return "Internal server error."
-        case .unknown: return "An unknown error occurred."
+        case .sessionExpired: "Session has expired."
+        case .sessionNotFound: "Session not found."
+        case .refreshTokenExpired: "Refresh token has expired."
+        case .invalidRefreshToken: "Invalid refresh token."
+        case .invalidCredentials: "Invalid credentials."
+        case .invalidPassword: "Invalid password."
+        case .weakPassword: "Password is too weak."
+        case .userNotFound: "User not found."
+        case .userAlreadyExists: "User already exists."
+        case .emailAlreadyExists: "Email already in use."
+        case .usernameAlreadyTaken: "Username already taken."
+        case .emailNotVerified: "Email not verified."
+        case .accountNotLinked: "Account not linked."
+        case .otpExpired: "OTP has expired."
+        case .invalidOTP: "Invalid OTP code."
+        case .verificationExpired: "Verification has expired."
+        case .invalidVerificationToken: "Invalid verification token."
+        case .twoFactorRequired: "Two-factor authentication required."
+        case .twoFactorNotEnabled: "Two-factor authentication not enabled."
+        case .invalidTOTP: "Invalid TOTP code."
+        case .invalidBackupCode: "Invalid backup code."
+        case .mfaChallengeExpired: "MFA challenge has expired."
+        case .oauthProviderNotFound: "OAuth provider not found."
+        case .oauthAccountAlreadyLinked: "OAuth account already linked."
+        case .oauthCodeExchangeFailed: "OAuth code exchange failed."
+        case .oauthStateMismatch: "OAuth state mismatch."
+        case .rateLimited, .tooManyRequests: "Too many requests. Please try again later."
+        case .passkeyRegistrationFailed: "Passkey registration failed."
+        case .passkeyAuthenticationFailed: "Passkey authentication failed."
+        case .passkeyNotFound: "Passkey not found."
+        case .forbidden: "Access denied."
+        case .badRequest: "Bad request."
+        case .internalServerError: "Internal server error."
+        case .unknown: "An unknown error occurred."
         }
     }
 }
@@ -178,15 +182,12 @@ enum ErrorParsing {
         let message = String(data: data, encoding: .utf8)
         let serverError = try? BetterAuthCoding.makeDecoder().decode(ServerErrorResponse.self, from: data)
         let errorCode = serverError?.code.flatMap(AuthErrorCode.init(rawValue:))
-        return .requestFailed(
-            statusCode: statusCode,
-            message: serverError?.message ?? message,
-            errorCode: errorCode,
-            response: serverError
-        )
+        return .requestFailed(statusCode: statusCode,
+                              message: serverError?.message ?? message,
+                              errorCode: errorCode,
+                              response: serverError)
     }
 
-    static let sessionCleanupCodes: Set<AuthErrorCode> = [
-        .sessionExpired, .sessionNotFound, .refreshTokenExpired, .invalidRefreshToken,
-    ]
+    static let sessionCleanupCodes: Set<AuthErrorCode> = [.sessionExpired, .sessionNotFound, .refreshTokenExpired,
+                                                          .invalidRefreshToken]
 }

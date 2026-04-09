@@ -30,13 +30,12 @@ public struct BetterAuthSession: Codable, Sendable, Equatable {
             case expiresAt
         }
 
-        public init(
-            id: String,
-            userId: String,
-            accessToken: String,
-            refreshToken: String? = nil,
-            expiresAt: Date? = nil
-        ) {
+        public init(id: String,
+                    userId: String,
+                    accessToken: String,
+                    refreshToken: String? = nil,
+                    expiresAt: Date? = nil)
+        {
             self.id = id
             self.userId = userId
             self.accessToken = accessToken
@@ -71,13 +70,12 @@ public struct BetterAuthSession: Codable, Sendable, Equatable {
         public let username: String?
         public let displayUsername: String?
 
-        public init(
-            id: String,
-            email: String? = nil,
-            name: String? = nil,
-            username: String? = nil,
-            displayUsername: String? = nil
-        ) {
+        public init(id: String,
+                    email: String? = nil,
+                    name: String? = nil,
+                    username: String? = nil,
+                    displayUsername: String? = nil)
+        {
             self.id = id
             self.email = email
             self.name = name
@@ -86,13 +84,11 @@ public struct BetterAuthSession: Codable, Sendable, Equatable {
         }
 
         public func merged(with other: User) -> User {
-            User(
-                id: other.id,
-                email: other.email ?? email,
-                name: other.name ?? name,
-                username: other.username ?? username,
-                displayUsername: other.displayUsername ?? displayUsername
-            )
+            User(id: other.id,
+                 email: other.email ?? email,
+                 name: other.name ?? name,
+                 username: other.username ?? username,
+                 displayUsername: other.displayUsername ?? displayUsername)
         }
     }
 }
@@ -107,16 +103,15 @@ public struct BetterAuthSessionListEntry: Codable, Sendable, Equatable {
     public let ipAddress: String?
     public let userAgent: String?
 
-    public init(
-        id: String,
-        userId: String,
-        token: String? = nil,
-        expiresAt: Date? = nil,
-        createdAt: Date? = nil,
-        updatedAt: Date? = nil,
-        ipAddress: String? = nil,
-        userAgent: String? = nil
-    ) {
+    public init(id: String,
+                userId: String,
+                token: String? = nil,
+                expiresAt: Date? = nil,
+                createdAt: Date? = nil,
+                updatedAt: Date? = nil,
+                ipAddress: String? = nil,
+                userAgent: String? = nil)
+    {
         self.id = id
         self.userId = userId
         self.token = token
@@ -181,17 +176,16 @@ public struct JWK: Codable, Sendable, Equatable {
     public let x: String?
     public let y: String?
 
-    public init(
-        keyID: String? = nil,
-        keyType: String? = nil,
-        algorithm: String? = nil,
-        use: String? = nil,
-        modulus: String? = nil,
-        exponent: String? = nil,
-        curve: String? = nil,
-        x: String? = nil,
-        y: String? = nil
-    ) {
+    public init(keyID: String? = nil,
+                keyType: String? = nil,
+                algorithm: String? = nil,
+                use: String? = nil,
+                modulus: String? = nil,
+                exponent: String? = nil,
+                curve: String? = nil,
+                x: String? = nil,
+                y: String? = nil)
+    {
         self.keyID = keyID
         self.keyType = keyType
         self.algorithm = algorithm
@@ -232,14 +226,13 @@ public struct AppleNativeSignInPayload: Codable, Sendable, Equatable {
     public let givenName: String?
     public let familyName: String?
 
-    public init(
-        token: String,
-        nonce: String? = nil,
-        authorizationCode: String? = nil,
-        email: String? = nil,
-        givenName: String? = nil,
-        familyName: String? = nil
-    ) {
+    public init(token: String,
+                nonce: String? = nil,
+                authorizationCode: String? = nil,
+                email: String? = nil,
+                givenName: String? = nil,
+                familyName: String? = nil)
+    {
         self.token = token
         self.nonce = nonce
         self.authorizationCode = authorizationCode
@@ -277,14 +270,13 @@ public struct SocialIDTokenPayload: Codable, Sendable, Equatable {
     public let scopes: [String]?
     public let user: UserProfile?
 
-    public init(
-        token: String,
-        nonce: String? = nil,
-        accessToken: String? = nil,
-        refreshToken: String? = nil,
-        scopes: [String]? = nil,
-        user: UserProfile? = nil
-    ) {
+    public init(token: String,
+                nonce: String? = nil,
+                accessToken: String? = nil,
+                refreshToken: String? = nil,
+                scopes: [String]? = nil,
+                user: UserProfile? = nil)
+    {
         self.token = token
         self.nonce = nonce
         self.accessToken = accessToken
@@ -305,17 +297,16 @@ public struct SocialSignInRequest: Codable, Sendable, Equatable {
     public let additionalData: [String: String]?
     public let idToken: SocialIDTokenPayload?
 
-    public init(
-        provider: String,
-        callbackURL: String? = nil,
-        errorCallbackURL: String? = nil,
-        disableRedirect: Bool? = nil,
-        requestSignUp: Bool? = nil,
-        scopes: [String]? = nil,
-        loginHint: String? = nil,
-        additionalData: [String: String]? = nil,
-        idToken: SocialIDTokenPayload? = nil
-    ) {
+    public init(provider: String,
+                callbackURL: String? = nil,
+                errorCallbackURL: String? = nil,
+                disableRedirect: Bool? = nil,
+                requestSignUp: Bool? = nil,
+                scopes: [String]? = nil,
+                loginHint: String? = nil,
+                additionalData: [String: String]? = nil,
+                idToken: SocialIDTokenPayload? = nil)
+    {
         self.provider = provider
         self.callbackURL = callbackURL
         self.errorCallbackURL = errorCallbackURL
@@ -364,13 +355,12 @@ public struct SocialSignInTransportResponse: Codable, Sendable, Equatable {
     public let user: BetterAuthSession.User?
     public let session: BetterAuthSession?
 
-    public init(
-        redirect: Bool,
-        token: String? = nil,
-        url: String? = nil,
-        user: BetterAuthSession.User? = nil,
-        session: BetterAuthSession? = nil
-    ) {
+    public init(redirect: Bool,
+                token: String? = nil,
+                url: String? = nil,
+                user: BetterAuthSession.User? = nil,
+                session: BetterAuthSession? = nil)
+    {
         self.redirect = redirect
         self.token = token
         self.url = url
@@ -386,24 +376,20 @@ public struct SocialSignInTransportResponse: Codable, Sendable, Equatable {
         }
 
         let value = try container.decode(DecodedValue.self)
-        self.init(
-            redirect: value.redirect,
-            token: value.token,
-            url: value.url,
-            user: value.user,
-            session: value.session
-        )
+        self.init(redirect: value.redirect,
+                  token: value.token,
+                  url: value.url,
+                  user: value.user,
+                  session: value.session)
     }
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
-        try container.encode(DecodedValue(
-            redirect: redirect,
-            token: token,
-            url: url,
-            user: user,
-            session: session
-        ))
+        try container.encode(DecodedValue(redirect: redirect,
+                                          token: token,
+                                          url: url,
+                                          user: user,
+                                          session: session))
     }
 
     public var signedIn: SocialSignInSuccessResponse? {
@@ -417,12 +403,13 @@ public struct SocialSignInTransportResponse: Codable, Sendable, Equatable {
 
     public var authorizationURL: Result<SocialAuthorizationResponse, Error> {
         guard let url else {
-            return .failure(DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Missing social sign-in response URL")))
+            return .failure(DecodingError.dataCorrupted(.init(codingPath: [],
+                                                              debugDescription: "Missing social sign-in response URL")))
         }
         return .success(SocialAuthorizationResponse(url: url, redirect: redirect))
     }
 
-    private struct DecodedValue: Codable, Sendable, Equatable {
+    private struct DecodedValue: Codable, Equatable {
         let redirect: Bool
         let token: String?
         let url: String?
@@ -453,16 +440,15 @@ public struct GenericOAuthSignInRequest: Codable, Sendable, Equatable {
     public let scopes: [String]?
     public let additionalData: [String: String]?
 
-    public init(
-        providerId: String,
-        callbackURL: String? = nil,
-        errorCallbackURL: String? = nil,
-        newUserCallbackURL: String? = nil,
-        disableRedirect: Bool? = nil,
-        requestSignUp: Bool? = nil,
-        scopes: [String]? = nil,
-        additionalData: [String: String]? = nil
-    ) {
+    public init(providerId: String,
+                callbackURL: String? = nil,
+                errorCallbackURL: String? = nil,
+                newUserCallbackURL: String? = nil,
+                disableRedirect: Bool? = nil,
+                requestSignUp: Bool? = nil,
+                scopes: [String]? = nil,
+                additionalData: [String: String]? = nil)
+    {
         self.providerId = providerId
         self.callbackURL = callbackURL
         self.errorCallbackURL = errorCallbackURL
@@ -507,15 +493,14 @@ public struct LinkedAccount: Codable, Sendable, Equatable {
     public let userId: String
     public let scopes: [String]
 
-    public init(
-        id: String,
-        providerId: String,
-        createdAt: Date? = nil,
-        updatedAt: Date? = nil,
-        accountId: String,
-        userId: String,
-        scopes: [String] = []
-    ) {
+    public init(id: String,
+                providerId: String,
+                createdAt: Date? = nil,
+                updatedAt: Date? = nil,
+                accountId: String,
+                userId: String,
+                scopes: [String] = [])
+    {
         self.id = id
         self.providerId = providerId
         self.createdAt = createdAt
@@ -536,16 +521,15 @@ public struct LinkSocialAccountRequest: Codable, Sendable, Equatable {
     public let additionalData: [String: String]?
     public let idToken: SocialIDTokenPayload?
 
-    public init(
-        provider: String,
-        callbackURL: String? = nil,
-        errorCallbackURL: String? = nil,
-        disableRedirect: Bool? = nil,
-        requestSignUp: Bool? = nil,
-        scopes: [String]? = nil,
-        additionalData: [String: String]? = nil,
-        idToken: SocialIDTokenPayload? = nil
-    ) {
+    public init(provider: String,
+                callbackURL: String? = nil,
+                errorCallbackURL: String? = nil,
+                disableRedirect: Bool? = nil,
+                requestSignUp: Bool? = nil,
+                scopes: [String]? = nil,
+                additionalData: [String: String]? = nil,
+                idToken: SocialIDTokenPayload? = nil)
+    {
         self.provider = provider
         self.callbackURL = callbackURL
         self.errorCallbackURL = errorCallbackURL
@@ -645,14 +629,13 @@ public struct PasskeyCredentialResponse: Codable, Sendable, Equatable {
     public let userHandle: String?
     public let transports: [String]?
 
-    public init(
-        clientDataJSON: String,
-        attestationObject: String? = nil,
-        authenticatorData: String? = nil,
-        signature: String? = nil,
-        userHandle: String? = nil,
-        transports: [String]? = nil
-    ) {
+    public init(clientDataJSON: String,
+                attestationObject: String? = nil,
+                authenticatorData: String? = nil,
+                signature: String? = nil,
+                userHandle: String? = nil,
+                transports: [String]? = nil)
+    {
         self.clientDataJSON = clientDataJSON
         self.attestationObject = attestationObject
         self.authenticatorData = authenticatorData
@@ -670,14 +653,13 @@ public struct PasskeyRegistrationCredential: Codable, Sendable, Equatable {
     public let response: PasskeyCredentialResponse
     public let clientExtensionResults: [String: String]?
 
-    public init(
-        id: String,
-        rawId: String,
-        type: String = "public-key",
-        authenticatorAttachment: String? = nil,
-        response: PasskeyCredentialResponse,
-        clientExtensionResults: [String: String]? = nil
-    ) {
+    public init(id: String,
+                rawId: String,
+                type: String = "public-key",
+                authenticatorAttachment: String? = nil,
+                response: PasskeyCredentialResponse,
+                clientExtensionResults: [String: String]? = nil)
+    {
         self.id = id
         self.rawId = rawId
         self.type = type
@@ -695,14 +677,13 @@ public struct PasskeyAuthenticationCredential: Codable, Sendable, Equatable {
     public let response: PasskeyCredentialResponse
     public let clientExtensionResults: [String: String]?
 
-    public init(
-        id: String,
-        rawId: String,
-        type: String = "public-key",
-        authenticatorAttachment: String? = nil,
-        response: PasskeyCredentialResponse,
-        clientExtensionResults: [String: String]? = nil
-    ) {
+    public init(id: String,
+                rawId: String,
+                type: String = "public-key",
+                authenticatorAttachment: String? = nil,
+                response: PasskeyCredentialResponse,
+                clientExtensionResults: [String: String]? = nil)
+    {
         self.id = id
         self.rawId = rawId
         self.type = type
@@ -774,14 +755,13 @@ public struct MagicLinkRequest: Codable, Sendable, Equatable {
     public let errorCallbackURL: String?
     public let metadata: [String: String]?
 
-    public init(
-        email: String,
-        name: String? = nil,
-        callbackURL: String? = nil,
-        newUserCallbackURL: String? = nil,
-        errorCallbackURL: String? = nil,
-        metadata: [String: String]? = nil
-    ) {
+    public init(email: String,
+                name: String? = nil,
+                callbackURL: String? = nil,
+                newUserCallbackURL: String? = nil,
+                errorCallbackURL: String? = nil,
+                metadata: [String: String]? = nil)
+    {
         self.email = email
         self.name = name
         self.callbackURL = callbackURL
@@ -797,12 +777,11 @@ public struct MagicLinkVerifyRequest: Codable, Sendable, Equatable {
     public let newUserCallbackURL: String?
     public let errorCallbackURL: String?
 
-    public init(
-        token: String,
-        callbackURL: String? = nil,
-        newUserCallbackURL: String? = nil,
-        errorCallbackURL: String? = nil
-    ) {
+    public init(token: String,
+                callbackURL: String? = nil,
+                newUserCallbackURL: String? = nil,
+                errorCallbackURL: String? = nil)
+    {
         self.token = token
         self.callbackURL = callbackURL
         self.newUserCallbackURL = newUserCallbackURL
@@ -879,12 +858,11 @@ public struct PhoneOTPVerifyRequest: Codable, Sendable, Equatable {
     public let disableSession: Bool?
     public let updatePhoneNumber: Bool?
 
-    public init(
-        phoneNumber: String,
-        code: String,
-        disableSession: Bool? = nil,
-        updatePhoneNumber: Bool? = nil
-    ) {
+    public init(phoneNumber: String,
+                code: String,
+                disableSession: Bool? = nil,
+                updatePhoneNumber: Bool? = nil)
+    {
         self.phoneNumber = phoneNumber
         self.code = code
         self.disableSession = disableSession
@@ -1012,14 +990,13 @@ public struct TwoFactorUser: Codable, Sendable, Equatable {
     public let displayUsername: String?
     public let twoFactorEnabled: Bool
 
-    public init(
-        id: String,
-        email: String? = nil,
-        name: String? = nil,
-        username: String? = nil,
-        displayUsername: String? = nil,
-        twoFactorEnabled: Bool
-    ) {
+    public init(id: String,
+                email: String? = nil,
+                name: String? = nil,
+                username: String? = nil,
+                displayUsername: String? = nil,
+                twoFactorEnabled: Bool)
+    {
         self.id = id
         self.email = email
         self.name = name
@@ -1039,7 +1016,9 @@ public enum EmailOTPVerifyResult: Codable, Sendable, Equatable {
             self = .signedIn(session)
             return
         }
-        if let response = try? container.decode(SocialSignInTransportResponse.self), let session = response.materializedSession {
+        if let response = try? container.decode(SocialSignInTransportResponse.self),
+           let session = response.materializedSession
+        {
             self = .signedIn(session)
             return
         }
@@ -1056,6 +1035,7 @@ public enum EmailOTPVerifyResult: Codable, Sendable, Equatable {
         switch self {
         case let .verified(user):
             try container.encode(EmailOTPVerifyResponse(status: true, session: nil, user: user))
+
         case let .signedIn(session):
             try container.encode(EmailOTPVerifyResponse(status: true, session: session, user: session.user))
         }
@@ -1072,12 +1052,14 @@ public enum MagicLinkVerificationResult: Codable, Sendable, Equatable {
             self = .signedIn(session)
             return
         }
-        if let response = try? container.decode(SocialSignInTransportResponse.self), let session = response.materializedSession {
+        if let response = try? container.decode(SocialSignInTransportResponse.self),
+           let session = response.materializedSession
+        {
             self = .signedIn(session)
             return
         }
 
-        self = .failure(try container.decode(MagicLinkFailure.self))
+        self = try .failure(container.decode(MagicLinkFailure.self))
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -1085,6 +1067,7 @@ public enum MagicLinkVerificationResult: Codable, Sendable, Equatable {
         switch self {
         case let .signedIn(session):
             try container.encode(session)
+
         case let .failure(failure):
             try container.encode(failure)
         }
@@ -1110,13 +1093,12 @@ public struct EmailSignUpRequest: Codable, Sendable, Equatable {
     public let username: String?
     public let displayUsername: String?
 
-    public init(
-        email: String,
-        password: String,
-        name: String,
-        username: String? = nil,
-        displayUsername: String? = nil
-    ) {
+    public init(email: String,
+                password: String,
+                name: String,
+                username: String? = nil,
+                displayUsername: String? = nil)
+    {
         self.email = email
         self.password = password
         self.name = name
@@ -1138,10 +1120,10 @@ public enum EmailSignUpResult: Codable, Sendable, Equatable {
         }
 
         let held = try container.decode(VerificationHeldEmailSignUp.self)
-        self = held.requiresVerification ? .verificationHeld(held) : .signedUp(.init(
-            requiresVerification: held.requiresVerification,
-            user: held.user
-        ))
+        self = held
+            .requiresVerification ? .verificationHeld(held) :
+            .signedUp(.init(requiresVerification: held.requiresVerification,
+                            user: held.user))
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -1149,8 +1131,10 @@ public enum EmailSignUpResult: Codable, Sendable, Equatable {
         switch self {
         case let .signedIn(session):
             try container.encode(session)
+
         case let .signedUp(signedUp):
             try container.encode(signedUp)
+
         case let .verificationHeld(held):
             try container.encode(held)
         }
@@ -1219,12 +1203,11 @@ public struct UpdateUserRequest: Codable, Sendable, Equatable {
     public let username: String?
     public let displayUsername: String?
 
-    public init(
-        name: String? = nil,
-        image: String? = nil,
-        username: String? = nil,
-        displayUsername: String? = nil
-    ) {
+    public init(name: String? = nil,
+                image: String? = nil,
+                username: String? = nil,
+                displayUsername: String? = nil)
+    {
         self.name = name
         self.image = image
         self.username = username
@@ -1265,7 +1248,6 @@ public struct ChangePasswordResponse: Codable, Sendable, Equatable {
         self.session = session
     }
 }
-
 
 public struct ForgotPasswordRequest: Codable, Sendable, Equatable {
     public let email: String
@@ -1315,7 +1297,9 @@ public enum VerifyEmailResult: Codable, Sendable, Equatable {
             self = .signedIn(session)
             return
         }
-        if let response = try? container.decode(SocialSignInTransportResponse.self), let session = response.materializedSession {
+        if let response = try? container.decode(SocialSignInTransportResponse.self),
+           let session = response.materializedSession
+        {
             self = .signedIn(session)
             return
         }
@@ -1332,6 +1316,7 @@ public enum VerifyEmailResult: Codable, Sendable, Equatable {
         switch self {
         case .verified:
             try container.encode(VerifyEmailResponse(status: true, session: nil))
+
         case let .signedIn(session):
             try container.encode(VerifyEmailResponse(status: true, session: session))
         }
@@ -1348,7 +1333,7 @@ public struct ChangeEmailRequest: Codable, Sendable, Equatable {
     }
 }
 
-private struct VerifyEmailResponse: Codable, Sendable, Equatable {
+private struct VerifyEmailResponse: Codable, Equatable {
     let status: Bool
     let session: BetterAuthSession?
 }

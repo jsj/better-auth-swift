@@ -9,6 +9,7 @@ struct ContentView: View {
         NavigationStack {
             List {
                 workerSection
+                launchSection
                 statusSection
                 if let session = viewModel.session {
                     SessionSummarySection(viewModel: viewModel, session: session)
@@ -20,11 +21,7 @@ struct ContentView: View {
             }
             .navigationTitle("Better Auth")
             .refreshable {
-                await viewModel.restore()
-            }
-            .task {
-                guard !viewModel.isReady else { return }
-                await viewModel.restore()
+                await viewModel.bootstrap()
             }
         }
     }
@@ -44,6 +41,21 @@ struct ContentView: View {
             Text(viewModel.workerReachability.statusText)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
+        }
+    }
+
+    private var launchSection: some View {
+        Section("Launch") {
+            Text(viewModel.launchStateText)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+
+            if let restoreSummary = viewModel.restoreSummaryText {
+                Text(restoreSummary)
+                    .font(.footnote.monospaced())
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+            }
         }
     }
 
@@ -95,8 +107,10 @@ private extension ContentView {
         switch viewModel.workerReachability {
         case .checking:
             .orange
+
         case .reachable:
             .green
+
         case .unreachable:
             .red
         }
@@ -104,13 +118,7 @@ private extension ContentView {
 }
 
 #Preview {
-    ContentView(
-        viewModel: AuthViewModel(
-            configuration: AuthConfiguration(
-                apiBaseURL: URL(string: "http://127.0.0.1:8787")!,
-                source: .developmentDefault
-            )
-        ),
-        launchError: nil
-    )
+    ContentView(viewModel: AuthViewModel(configuration: AuthConfiguration(apiBaseURL: URL(string: "http://127.0.0.1:8787")!,
+                                                                          source: .developmentDefault)),
+                launchError: nil)
 }

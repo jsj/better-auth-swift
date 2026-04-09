@@ -6,12 +6,11 @@ public struct RetryPolicy: Sendable {
     public let maxDelay: TimeInterval
     public let retryableStatusCodes: Set<Int>
 
-    public init(
-        maxRetries: Int = 2,
-        baseDelay: TimeInterval = 0.5,
-        maxDelay: TimeInterval = 10,
-        retryableStatusCodes: Set<Int> = [408, 500, 502, 503, 504]
-    ) {
+    public init(maxRetries: Int = 2,
+                baseDelay: TimeInterval = 0.5,
+                maxDelay: TimeInterval = 10,
+                retryableStatusCodes: Set<Int> = [408, 500, 502, 503, 504])
+    {
         self.maxRetries = maxRetries
         self.baseDelay = baseDelay
         self.maxDelay = maxDelay
@@ -32,14 +31,12 @@ public struct RetryPolicy: Sendable {
     public func isRetryable(error: Error) -> Bool {
         let nsError = error as NSError
         guard nsError.domain == NSURLErrorDomain else { return false }
-        let retryableCodes: Set<Int> = [
-            NSURLErrorTimedOut,
-            NSURLErrorCannotConnectToHost,
-            NSURLErrorCannotFindHost,
-            NSURLErrorNetworkConnectionLost,
-            NSURLErrorNotConnectedToInternet,
-            NSURLErrorDNSLookupFailed,
-        ]
+        let retryableCodes: Set<Int> = [NSURLErrorTimedOut,
+                                        NSURLErrorCannotConnectToHost,
+                                        NSURLErrorCannotFindHost,
+                                        NSURLErrorNetworkConnectionLost,
+                                        NSURLErrorNotConnectedToInternet,
+                                        NSURLErrorDNSLookupFailed]
         return retryableCodes.contains(nsError.code)
     }
 }

@@ -1,0 +1,40 @@
+included:
+  - Sources
+  - Tests
+  - examples
+
+excluded:
+  - .build
+  - Derived
+  - SPECS
+  - docs
+  - better-auth-swift.xcodeproj
+
+opt_in_rules:
+  - vertical_whitespace_between_cases
+  - vertical_whitespace_closing_braces
+  - vertical_whitespace_opening_braces
+
+analyzer_rules:
+  - unused_declaration
+  - unused_import
+
+disabled_rules:
+  - line_length
+  - trailing_whitespace
+  - opening_brace
+  - trailing_comma
+  - identifier_name
+  - type_name
+  - function_body_length
+  - function_parameter_count
+  - nesting
+  - cyclomatic_complexity
+  - type_body_length
+  - file_length
+  - force_unwrapping
+  - force_try
+  - force_cast
+  - todo
+  - static_over_final_class
+  - non_optional_string_data_conversion

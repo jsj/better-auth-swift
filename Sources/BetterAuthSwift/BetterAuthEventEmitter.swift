@@ -18,7 +18,8 @@ public protocol AuthStateChangeRegistration: Sendable {
 public final class AuthEventEmitter: @unchecked Sendable {
     private let lock = NSLock()
     private var listeners: [UUID: AuthStateChangeListener] = [:]
-    private var continuations: [UUID: AsyncStream<(event: AuthChangeEvent, session: BetterAuthSession?)>.Continuation] = [:]
+    private var continuations: [UUID: AsyncStream<(event: AuthChangeEvent, session: BetterAuthSession?)>.Continuation] =
+        [:]
 
     public init() {}
 
@@ -56,14 +57,10 @@ public final class AuthEventEmitter: @unchecked Sendable {
             continuation.yield((event: event, session: session))
         }
 
-        NotificationCenter.default.post(
-            name: .betterAuthStateDidChange,
-            object: nil,
-            userInfo: [
-                "event": event.rawValue,
-                "session": session as Any,
-            ]
-        )
+        NotificationCenter.default.post(name: .betterAuthStateDidChange,
+                                        object: nil,
+                                        userInfo: ["event": event.rawValue,
+                                                   "session": session as Any])
     }
 
     private func removeListener(_ id: UUID) {

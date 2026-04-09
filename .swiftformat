@@ -1,0 +1,10 @@
+--swiftversion 6.0
+--indent 4
+--maxwidth 120
+--linebreaks lf
+--wraparguments after-first
+--wrapcollections after-first
+--stripunusedargs closure-only
+--importgrouping testable-bottom
+--exclude .build,Derived,**/Derived,SPECS,docs,**/*.xcodeproj,Package.swift
+--disable redundantSelf,hoistTry

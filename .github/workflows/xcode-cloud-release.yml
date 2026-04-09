@@ -1,0 +1,124 @@
+name: Xcode Cloud Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: xcode-cloud-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-cloud:
+    runs-on: [self-hosted, macOS, ARM64, mac-ci]
+    timeout-minutes: 45
+
+    steps:
+      - name: Trigger and poll Xcode Cloud release build
+        env:
+          XC: /Users/james/bin/xc
+          WORKFLOW_ID: ${{ vars.XCODE_CLOUD_RELEASE_WORKFLOW_ID || vars.XCODE_CLOUD_WORKFLOW_ID }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          test -n "$WORKFLOW_ID"
+
+          "$XC" ci cloud trigger \
+            --workflow-id "$WORKFLOW_ID" \
+            --ref "$REF_NAME" \
+            --clean \
+            --json \
+          | tee /tmp/xc-trigger.ndjson
+
+          RUN_ID=$(/opt/homebrew/bin/python3 - <<'PY'
+          import json, sys
+          for line in open('/tmp/xc-trigger.ndjson'):
+              d = json.loads(line)
+              payload = d.get('payload', {})
+              if d.get('event') == 'xcode_cloud_status' and payload.get('run_id'):
+                  print(payload['run_id'])
+                  sys.exit(0)
+          sys.exit(1)
+          PY
+          )
+
+          echo "Triggered Xcode Cloud release run: $RUN_ID"
+          echo "RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
+
+          "$XC" ci cloud poll \
+            --run-id "$RUN_ID" \
+            --timeout-seconds 2400 \
+            --interval-seconds 20 \
+            --json \
+          | tee /tmp/xc-poll.ndjson
+
+      - name: List Xcode Cloud actions and artifacts
+        env:
+          XC: /Users/james/bin/xc
+        run: |
+          "$XC" ci cloud actions --run-id "$RUN_ID" --json | tee /tmp/xc-actions.ndjson
+
+          /opt/homebrew/bin/python3 - <<'PY'
+          import json, pathlib, subprocess, os
+
+          action_ids = []
+          for line in open('/tmp/xc-actions.ndjson'):
+              d = json.loads(line)
+              payload = d.get('payload', {})
+              if d.get('event') == 'xcode_cloud_status' and payload.get('action') == 'actions':
+                  for action in payload.get('actions', []):
+                      action_id = action.get('id')
+                      if action_id:
+                          action_ids.append(action_id)
+
+          out_dir = pathlib.Path('/tmp/xc-cloud-artifacts')
+          out_dir.mkdir(parents=True, exist_ok=True)
+          xc = os.environ['XC']
+          for action_id in action_ids:
+              target = out_dir / f'{action_id}.ndjson'
+              with target.open('w') as handle:
+                  subprocess.run([xc, 'ci', 'cloud', 'artifacts', '--action-id', action_id, '--json'], check=True, stdout=handle)
+          PY
+
+      - name: Publish workflow summary
+        run: |
+          /opt/homebrew/bin/python3 - <<'PY'
+          import json, pathlib, os
+
+          lines = [
+              '# Xcode Cloud release run',
+              '',
+              f'- Run ID: `{os.environ["RUN_ID"]}`',
+              f'- Ref: `{os.environ.get("GITHUB_REF_NAME", "")}`',
+              ''
+          ]
+
+          for path in sorted(pathlib.Path('/tmp/xc-cloud-artifacts').glob('*.ndjson')):
+              action_id = path.stem
+              artifacts = []
+              for line in path.read_text().splitlines():
+                  d = json.loads(line)
+                  payload = d.get('payload', {})
+                  if d.get('event') == 'xcode_cloud_status' and payload.get('action') == 'artifacts':
+                      artifacts = payload.get('artifacts', [])
+                      break
+              lines.append(f'## Action `{action_id}`')
+              if artifacts:
+                  for artifact in artifacts:
+                      name = artifact.get('file_name') or 'unnamed'
+                      kind = artifact.get('file_type') or 'unknown'
+                      lines.append(f'- `{name}` ({kind})')
+              else:
+                  lines.append('- No artifacts listed')
+              lines.append('')
+
+          summary = os.environ.get('GITHUB_STEP_SUMMARY')
+          if summary:
+              pathlib.Path(summary).write_text('\n'.join(lines) + '\n')
+          else:
+              print('\n'.join(lines))
+          PY

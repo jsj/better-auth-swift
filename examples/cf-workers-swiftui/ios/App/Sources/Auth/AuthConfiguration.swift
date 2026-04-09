@@ -15,26 +15,26 @@ struct AuthConfiguration {
     }
 
     init(bundle: Bundle = .main, environment: ProcessInfo = .processInfo) throws {
-        if let configuredURL = try Self.url(
-            forKey: "API_BASE_URL",
-            in: bundle,
-            missingValueError: AuthConfigurationError.missingValue(key: "API_BASE_URL")
-        ) {
+        if let configuredURL = try Self.url(forKey: "API_BASE_URL",
+                                            in: bundle,
+                                            missingValueError: AuthConfigurationError.missingValue(key: "API_BASE_URL"))
+        {
             apiBaseURL = configuredURL
             source = .infoPlist
             return
         }
 
         #if DEBUG
-        if let developmentURL = try Self.url(
-            forKey: "BETTER_AUTH_BASE_URL",
-            in: environment.environment,
-            missingValueError: AuthConfigurationError.missingValue(key: "BETTER_AUTH_BASE_URL")
-        ) ?? URL(string: "http://127.0.0.1:8787") {
-            apiBaseURL = developmentURL
-            source = .developmentDefault
-            return
-        }
+            if let developmentURL = try Self.url(forKey: "BETTER_AUTH_BASE_URL",
+                                                 in: environment.environment,
+                                                 missingValueError: AuthConfigurationError
+                                                     .missingValue(key: "BETTER_AUTH_BASE_URL")) ??
+                URL(string: "http://127.0.0.1:8787")
+            {
+                apiBaseURL = developmentURL
+                source = .developmentDefault
+                return
+            }
         #endif
 
         throw AuthConfigurationError.missingValue(key: "API_BASE_URL")
@@ -48,16 +48,16 @@ struct AuthConfiguration {
         switch source {
         case .infoPlist:
             nil
+
         case .developmentDefault:
             "Using development default: \(displayBaseURL)"
         }
     }
 
-    private static func url(
-        forKey key: String,
-        in bundle: Bundle,
-        missingValueError: AuthConfigurationError
-    ) throws -> URL? {
+    private static func url(forKey key: String,
+                            in bundle: Bundle,
+                            missingValueError: AuthConfigurationError) throws -> URL?
+    {
         guard let rawValue = bundle.object(forInfoDictionaryKey: key) as? String else {
             return nil
         }
@@ -65,11 +65,10 @@ struct AuthConfiguration {
         return try url(forKey: key, rawValue: rawValue, missingValueError: missingValueError)
     }
 
-    private static func url(
-        forKey key: String,
-        in environment: [String: String],
-        missingValueError: AuthConfigurationError
-    ) throws -> URL? {
+    private static func url(forKey key: String,
+                            in environment: [String: String],
+                            missingValueError: AuthConfigurationError) throws -> URL?
+    {
         guard let rawValue = environment[key] else {
             return nil
         }
@@ -77,11 +76,10 @@ struct AuthConfiguration {
         return try url(forKey: key, rawValue: rawValue, missingValueError: missingValueError)
     }
 
-    private static func url(
-        forKey key: String,
-        rawValue: String,
-        missingValueError: AuthConfigurationError
-    ) throws -> URL? {
+    private static func url(forKey key: String,
+                            rawValue: String,
+                            missingValueError: AuthConfigurationError) throws -> URL?
+    {
         let trimmedValue = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !trimmedValue.isEmpty else {
@@ -103,9 +101,10 @@ enum AuthConfigurationError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case let .missingValue(key):
-            return "Missing configuration value: \(key)"
+            "Missing configuration value: \(key)"
+
         case let .invalidURL(key, value):
-            return "Invalid URL for \(key): \(value)"
+            "Invalid URL for \(key): \(value)"
         }
     }
 }

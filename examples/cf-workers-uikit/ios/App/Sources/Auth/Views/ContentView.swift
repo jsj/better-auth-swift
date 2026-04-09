@@ -95,8 +95,10 @@ private extension ContentView {
         switch viewModel.workerReachability {
         case .checking:
             .orange
+
         case .reachable:
             .green
+
         case .unreachable:
             .red
         }
@@ -104,13 +106,7 @@ private extension ContentView {
 }
 
 #Preview {
-    ContentView(
-        viewModel: AuthViewModel(
-            configuration: AuthConfiguration(
-                apiBaseURL: URL(string: "http://127.0.0.1:8787")!,
-                source: .developmentDefault
-            )
-        ),
-        launchError: nil
-    )
+    ContentView(viewModel: AuthViewModel(configuration: AuthConfiguration(apiBaseURL: URL(string: "http://127.0.0.1:8787")!,
+                                                                          source: .developmentDefault)),
+                launchError: nil)
 }

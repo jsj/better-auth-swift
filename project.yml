@@ -1,0 +1,149 @@
+name: better-auth-swift
+options:
+  minimumXcodeGenVersion: 2.45.0
+  deploymentTarget:
+    iOS: "18.0"
+    macOS: "15.0"
+configs:
+  Debug: debug
+  Release: release
+settings:
+  base:
+    SWIFT_VERSION: 6.0
+    ENABLE_MODULE_VERIFIER: NO
+    BUILD_LIBRARY_FOR_DISTRIBUTION: YES
+    SUPPORTS_MACCATALYST: NO
+    CODE_SIGNING_ALLOWED: NO
+    CODE_SIGNING_REQUIRED: NO
+attributes:
+  BuildIndependentTargetsInParallel: true
+targets:
+  BetterAuth:
+    type: framework
+    supportedDestinations: [iOS, iOSSimulator, macOS]
+    sources:
+      - Sources/BetterAuthSwift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jsj.betterauthswift.BetterAuth
+        GENERATE_INFOPLIST_FILE: YES
+        DEFINES_MODULE: YES
+        SKIP_INSTALL: NO
+        LD_RUNPATH_SEARCH_PATHS:
+          - $(inherited)
+          - "@executable_path/Frameworks"
+          - "@loader_path/Frameworks"
+    preBuildScripts:
+      - name: SwiftLint
+        script: |
+          export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+          SWIFTLINT_PATH="$(command -v swiftlint 2>/dev/null || xcrun --find swiftlint 2>/dev/null)"
+          FILE_LIST_PATH="$DERIVED_FILE_DIR/BetterAuth-swiftlint.xcfilelist"
+          mkdir -p "$DERIVED_FILE_DIR"
+          if [ -d "$SRCROOT/Sources" ]; then
+            find "$SRCROOT/Sources" -type f -name "*.swift" | sort > "$FILE_LIST_PATH"
+          else
+            : > "$FILE_LIST_PATH"
+          fi
+          if [ -n "$SWIFTLINT_PATH" ]; then
+            if [ -s "$FILE_LIST_PATH" ]; then
+              index=0
+              while IFS= read -r file; do
+                if [ -n "$file" ]; then
+                  var="SCRIPT_INPUT_FILE_${index}"
+                  export "$var=$file"
+                  index=$((index + 1))
+                fi
+              done < "$FILE_LIST_PATH"
+              export SCRIPT_INPUT_FILE_COUNT=$index
+              "$SWIFTLINT_PATH" --config "$SRCROOT/.swiftlint.yml" --strict --use-script-input-files
+            else
+              "$SWIFTLINT_PATH" --config "$SRCROOT/.swiftlint.yml" --strict
+            fi
+          else
+            echo "SwiftLint not found, skipping linting"
+          fi
+        outputFiles:
+          - $(DERIVED_FILE_DIR)/swiftlint.log
+      - name: SwiftFormat
+        script: |
+          export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+          SWIFTFORMAT_PATH="$(command -v swiftformat 2>/dev/null || xcrun --find swiftformat 2>/dev/null)"
+          if [ -n "$SWIFTFORMAT_PATH" ]; then
+            cd "$SRCROOT"
+            "$SWIFTFORMAT_PATH" . --config .swiftformat || exit 1
+            "$SWIFTFORMAT_PATH" . --lint --config .swiftformat
+          else
+            echo "SwiftFormat not found, skipping formatting check"
+          fi
+        outputFiles:
+          - $(DERIVED_FILE_DIR)/swiftformat.log
+
+  BetterAuthSwiftUI:
+    type: framework
+    supportedDestinations: [iOS, iOSSimulator, macOS]
+    sources:
+      - Sources/BetterAuthSwiftUI
+    dependencies:
+      - target: BetterAuth
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jsj.betterauthswift.BetterAuthSwiftUI
+        GENERATE_INFOPLIST_FILE: YES
+        DEFINES_MODULE: YES
+        SKIP_INSTALL: NO
+        LD_RUNPATH_SEARCH_PATHS:
+          - $(inherited)
+          - "@executable_path/Frameworks"
+          - "@loader_path/Frameworks"
+
+  BetterAuthSwiftTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - Tests/BetterAuthSwiftTests
+    dependencies:
+      - target: BetterAuth
+      - target: BetterAuthSwiftUI
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jsj.betterauthswift.tests
+        GENERATE_INFOPLIST_FILE: YES
+        BUNDLE_LOADER: ""
+        TEST_HOST: ""
+        LD_RUNPATH_SEARCH_PATHS:
+          - $(inherited)
+          - "@loader_path/../Frameworks"
+          - "@executable_path/../Frameworks"
+
+schemes:
+  BetterAuth:
+    build:
+      targets:
+        BetterAuth: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+  BetterAuthSwiftUI:
+    build:
+      targets:
+        BetterAuthSwiftUI: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+  BetterAuth-Package:
+    build:
+      targets:
+        BetterAuth: all
+        BetterAuthSwiftUI: all
+        BetterAuthSwiftTests: [test]
+    test:
+      config: Debug
+      targets:
+        - BetterAuthSwiftTests
+    run:
+      config: Debug
+    archive:
+      config: Release

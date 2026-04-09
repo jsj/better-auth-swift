@@ -8,8 +8,8 @@ final class AuthOptionsController {
         self.viewModel = viewModel
     }
 
-    func restore() async {
-        await viewModel.restore()
+    func bootstrap() async {
+        await viewModel.bootstrap()
     }
 
     func refresh() async {

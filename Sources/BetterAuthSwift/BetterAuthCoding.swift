@@ -18,7 +18,8 @@ public enum BetterAuthCoding {
 
             let string = try container.decode(String.self)
             if let date = makeISO8601Formatter(withFractionalSeconds: true).date(from: string)
-                ?? makeISO8601Formatter(withFractionalSeconds: false).date(from: string) {
+                ?? makeISO8601Formatter(withFractionalSeconds: false).date(from: string)
+            {
                 return date
             }
 
@@ -26,10 +27,8 @@ public enum BetterAuthCoding {
                 return Date(timeIntervalSince1970: timestamp)
             }
 
-            throw DecodingError.dataCorruptedError(
-                in: container,
-                debugDescription: "Unsupported date value: \(string)"
-            )
+            throw DecodingError.dataCorruptedError(in: container,
+                                                   debugDescription: "Unsupported date value: \(string)")
         }
         return decoder
     }

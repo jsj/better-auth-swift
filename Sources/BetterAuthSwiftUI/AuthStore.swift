@@ -11,6 +11,10 @@ import Observation
 public final class AuthStore {
     /// The current authenticated session, or `nil` if signed out.
     public private(set) var session: BetterAuthSession?
+    /// Explicit app-launch state for bootstrapping root UI.
+    public private(set) var launchState: AuthLaunchState = .idle
+    /// The last detailed restore outcome returned by the core SDK.
+    public private(set) var lastRestoreResult: BetterAuthRestoreResult?
     /// `true` while any auth operation is in flight.
     public private(set) var isLoading = false
     /// Human-readable status or error message from the last operation.
@@ -25,9 +29,21 @@ public final class AuthStore {
     // MARK: - Session
 
     public func restore() async {
-        await perform {
-            session = try await client.auth.restoreOrRefreshSession()
-            statusMessage = session == nil ? "No stored session" : "Session restored"
+        await bootstrap()
+    }
+
+    public func bootstrap() async {
+        isLoading = true
+        launchState = .restoring
+        defer { isLoading = false }
+        do {
+            let result = try await client.auth.restoreSessionOnLaunch()
+            lastRestoreResult = result
+            applyRestoreResult(result)
+        } catch {
+            session = nil
+            launchState = .failed
+            statusMessage = error.localizedDescription
         }
     }
 
@@ -49,6 +65,7 @@ public final class AuthStore {
         await perform {
             try await client.auth.signOut(remotely: remotely)
             session = nil
+            launchState = .unauthenticated
             statusMessage = "Signed out"
         }
     }
@@ -135,7 +152,9 @@ public final class AuthStore {
     }
 
     @discardableResult
-    public func beginGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws -> GenericOAuthAuthorizationResponse {
+    public func beginGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws
+        -> GenericOAuthAuthorizationResponse
+    {
         try await performThrowing {
             let response = try await client.auth.beginGenericOAuth(payload)
             statusMessage = "OAuth flow started"
@@ -144,7 +163,9 @@ public final class AuthStore {
     }
 
     @discardableResult
-    public func linkGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws -> GenericOAuthAuthorizationResponse {
+    public func linkGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws
+        -> GenericOAuthAuthorizationResponse
+    {
         try await performThrowing {
             let response = try await client.auth.linkGenericOAuth(payload)
             statusMessage = "OAuth link flow started"
@@ -155,7 +176,40 @@ public final class AuthStore {
     public func completeGenericOAuth(_ payload: GenericOAuthCallbackRequest) async {
         await perform {
             session = try await client.auth.completeGenericOAuth(payload)
+            launchState = session.map(AuthLaunchState.authenticated) ?? .unauthenticated
             statusMessage = "OAuth completed"
+        }
+    }
+
+    public func handleIncomingURL(_ url: URL) async {
+        await perform {
+            let result = try await client.auth.handleIncomingURL(url)
+            switch result {
+            case let .genericOAuth(restoredSession):
+                session = restoredSession
+                launchState = .authenticated(restoredSession)
+                statusMessage = "OAuth completed"
+
+            case let .magicLink(verificationResult):
+                if case let .signedIn(restoredSession) = verificationResult {
+                    session = restoredSession
+                    launchState = .authenticated(restoredSession)
+                }
+                statusMessage = "Magic link handled"
+
+            case let .verifyEmail(verificationResult):
+                if case let .signedIn(restoredSession) = verificationResult {
+                    session = restoredSession
+                    launchState = .authenticated(restoredSession)
+                }
+                statusMessage = "Verification handled"
+
+            case .ignored:
+                statusMessage = "Ignored URL"
+
+            @unknown default:
+                statusMessage = "Unhandled URL result"
+            }
         }
     }
 
@@ -188,7 +242,10 @@ public final class AuthStore {
     public func verifyMagicLink(_ payload: MagicLinkVerifyRequest) async {
         await perform {
             let result = try await client.auth.verifyMagicLink(payload)
-            if case let .signedIn(s) = result { session = s }
+            if case let .signedIn(s) = result {
+                session = s
+                launchState = .authenticated(s)
+            }
             statusMessage = "Magic link verified"
         }
     }
@@ -212,7 +269,10 @@ public final class AuthStore {
     public func verifyEmailOTP(_ payload: EmailOTPVerifyRequest) async {
         await perform {
             let result = try await client.auth.verifyEmailOTP(payload)
-            if case let .signedIn(s) = result { session = s }
+            if case let .signedIn(s) = result {
+                session = s
+                launchState = .authenticated(s)
+            }
             statusMessage = "Email OTP verified"
         }
     }
@@ -291,7 +351,9 @@ public final class AuthStore {
     // MARK: - Passkey
 
     @discardableResult
-    public func passkeyRegistrationOptions(_ payload: PasskeyRegistrationOptionsRequest = .init()) async throws -> PasskeyRegistrationOptions {
+    public func passkeyRegistrationOptions(_ payload: PasskeyRegistrationOptionsRequest = .init()) async throws
+        -> PasskeyRegistrationOptions
+    {
         try await performThrowing {
             let options = try await client.auth.passkeyRegistrationOptions(payload)
             statusMessage = "Passkey registration options fetched"
@@ -375,10 +437,8 @@ public final class AuthStore {
         await perform {
             let response = try await client.auth.updateUser(payload)
             if let current = session, let updatedUser = response.user {
-                session = BetterAuthSession(
-                    session: current.session,
-                    user: updatedUser
-                )
+                session = BetterAuthSession(session: current.session,
+                                            user: updatedUser)
             }
             statusMessage = "Profile updated"
         }
@@ -481,6 +541,42 @@ public final class AuthStore {
     }
 
     // MARK: - Helpers
+
+    private func applyRestoreResult(_ result: BetterAuthRestoreResult) {
+        switch result {
+        case .noStoredSession:
+            session = nil
+            launchState = .unauthenticated
+            statusMessage = "No stored session"
+
+        case let .restored(restoredSession, _, refresh):
+            session = restoredSession
+            launchState = .authenticated(restoredSession)
+            switch refresh {
+            case .notNeeded:
+                statusMessage = "Session restored"
+
+            case .refreshed:
+                statusMessage = "Session restored and refreshed"
+
+            case .deferred:
+                statusMessage = "Session restored; refresh deferred"
+
+            @unknown default:
+                statusMessage = "Session restored"
+            }
+
+        case .cleared:
+            session = nil
+            launchState = .unauthenticated
+            statusMessage = "Stored session cleared"
+
+        @unknown default:
+            session = nil
+            launchState = .unauthenticated
+            statusMessage = "Session state updated"
+        }
+    }
 
     private func perform(_ operation: () async throws -> Void) async {
         isLoading = true

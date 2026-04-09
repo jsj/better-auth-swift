@@ -28,25 +28,35 @@ final class AuthOptionsViewController: UITableViewController {
         super.viewDidAppear(animated)
         guard !controller.viewModel.isReady else { return }
         Task {
-            await controller.restore()
+            await controller.bootstrap()
             tableView.reloadData()
         }
     }
 
+    func reloadState() {
+        tableView.reloadData()
+    }
+
     override func numberOfSections(in tableView: UITableView) -> Int {
-        return 3
+        4
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch section {
         case 0:
             return 1
+
         case 1:
+            return launchMessages().count
+
+        case 2:
             var count = controller.viewModel.statusMessage == nil ? 0 : 1
             if launchError != nil { count += 1 }
             return count
-        case 2:
+
+        case 3:
             return AuthOption.allCases.count
+
         default:
             return 0
         }
@@ -56,19 +66,24 @@ final class AuthOptionsViewController: UITableViewController {
         switch section {
         case 0:
             "Worker"
+
         case 1:
-            "Status"
+            "Launch"
+
         case 2:
+            "Status"
+
+        case 3:
             "Auth Options"
+
         default:
             nil
         }
     }
 
-    override func tableView(
-        _ tableView: UITableView,
-        cellForRowAt indexPath: IndexPath
-    ) -> UITableViewCell {
+    override func tableView(_ tableView: UITableView,
+                            cellForRowAt indexPath: IndexPath) -> UITableViewCell
+    {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
         var content = cell.defaultContentConfiguration()
         content.textProperties.numberOfLines = 0
@@ -82,14 +97,26 @@ final class AuthOptionsViewController: UITableViewController {
             content.image = UIImage(systemName: workerStatusSymbolName)
             content.imageProperties.tintColor = workerStatusColor
             content.secondaryTextProperties.color = workerStatusColor
+
         case 1:
+            let messages = launchMessages()
+            let message = messages[indexPath.row]
+            content.text = message.title
+            content.secondaryText = message.detail
+            content.image = UIImage(systemName: message.symbolName)
+            content.imageProperties.tintColor = message.tintColor
+            content.textProperties.color = message.tintColor
+            content.secondaryTextProperties.color = .secondaryLabel
+
+        case 2:
             let messages = statusMessages()
             content.text = messages[indexPath.row]
             content.image = UIImage(systemName: statusSymbolName(for: messages[indexPath.row]))
             content.imageProperties.tintColor = statusColor(for: messages[indexPath.row])
             content.textProperties.color = statusColor(for: messages[indexPath.row])
             content.secondaryText = nil
-        case 2:
+
+        case 3:
             let option = AuthOption.allCases[indexPath.row]
             content.text = option.title
             content.secondaryText = option.subtitle
@@ -97,6 +124,7 @@ final class AuthOptionsViewController: UITableViewController {
             content.imageProperties.tintColor = .tintColor
             content.secondaryTextProperties.color = .secondaryLabel
             cell.accessoryType = .disclosureIndicator
+
         default:
             break
         }
@@ -107,29 +135,43 @@ final class AuthOptionsViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         defer { tableView.deselectRow(at: indexPath, animated: true) }
-        guard indexPath.section == 2 else { return }
+        guard indexPath.section == 3 else { return }
         let option = AuthOption.allCases[indexPath.row]
-        navigationController?.pushViewController(
-            AuthOptionViewController(viewModel: controller.viewModel, option: option),
-            animated: true
-        )
+        navigationController?.pushViewController(AuthOptionViewController(viewModel: controller.viewModel,
+                                                                          option: option),
+                                                 animated: true)
     }
 
     private func configureNavigationItems() {
-        navigationItem.rightBarButtonItems = [
-            UIBarButtonItem(
-                title: "Sign Out",
-                style: .plain,
-                target: self,
-                action: #selector(signOutTapped)
-            ),
-            UIBarButtonItem(
-                title: "Refresh",
-                style: .plain,
-                target: self,
-                action: #selector(refreshTapped)
-            )
-        ]
+        navigationItem.rightBarButtonItems = [UIBarButtonItem(title: "Sign Out",
+                                                              style: .plain,
+                                                              target: self,
+                                                              action: #selector(signOutTapped)),
+                                              UIBarButtonItem(title: "Refresh",
+                                                              style: .plain,
+                                                              target: self,
+                                                              action: #selector(refreshTapped))]
+    }
+
+    private struct LaunchMessage {
+        let title: String
+        let detail: String?
+        let symbolName: String
+        let tintColor: UIColor
+    }
+
+    private func launchMessages() -> [LaunchMessage] {
+        var messages: [LaunchMessage] = [LaunchMessage(title: controller.viewModel.launchStateText,
+                                                       detail: controller.viewModel.restoreSummaryText,
+                                                       symbolName: launchSymbolName,
+                                                       tintColor: launchColor)]
+        if controller.viewModel.isPerformingAuthAction {
+            messages.append(LaunchMessage(title: "Working…",
+                                          detail: "Auth operation in progress",
+                                          symbolName: "arrow.triangle.2.circlepath",
+                                          tintColor: .systemOrange))
+        }
+        return messages
     }
 
     private func statusMessages() -> [String] {
@@ -146,31 +188,74 @@ final class AuthOptionsViewController: UITableViewController {
     private var workerStatusColor: UIColor {
         switch controller.viewModel.workerReachability {
         case .checking:
-            return .systemOrange
+            .systemOrange
+
         case .reachable:
-            return .systemGreen
+            .systemGreen
+
         case .unreachable:
-            return .systemRed
+            .systemRed
+        }
+    }
+
+    private var launchColor: UIColor {
+        switch controller.viewModel.launchState {
+        case .idle, .restoring, .recoverableFailure:
+            .systemOrange
+
+        case .authenticated, .unauthenticated:
+            .systemGreen
+
+        case .failed:
+            .systemRed
+        }
+    }
+
+    private var launchSymbolName: String {
+        switch controller.viewModel.launchState {
+        case .idle:
+            "power"
+
+        case .restoring:
+            "arrow.clockwise.circle"
+
+        case .authenticated:
+            "checkmark.circle.fill"
+
+        case .unauthenticated:
+            "person.crop.circle.badge.xmark"
+
+        case .recoverableFailure:
+            "wifi.exclamationmark"
+
+        case .failed:
+            "xmark.octagon.fill"
         }
     }
 
     private var workerStatusSymbolName: String {
         switch controller.viewModel.workerReachability {
         case .checking:
-            return "clock.badge.questionmark"
+            "clock.badge.questionmark"
+
         case .reachable:
-            return "checkmark.circle.fill"
+            "checkmark.circle.fill"
+
         case .unreachable:
-            return "xmark.octagon.fill"
+            "xmark.octagon.fill"
         }
     }
 
     private func statusColor(for message: String) -> UIColor {
         let text = message.lowercased()
-        if text.contains("error") || text.contains("invalid") || text.contains("failed") || text.contains("missing") || text.contains("unreachable") {
+        if text.contains("error") || text.contains("invalid") || text.contains("failed") || text
+            .contains("missing") || text.contains("unreachable")
+        {
             return .systemRed
         }
-        if text.contains("signed in") || text.contains("restored") || text.contains("verified") || text.contains("loaded") || text.contains("enabled") {
+        if text.contains("signed in") || text.contains("restored") || text.contains("verified") || text
+            .contains("loaded") || text.contains("enabled")
+        {
             return .systemGreen
         }
         return .systemOrange
@@ -178,10 +263,14 @@ final class AuthOptionsViewController: UITableViewController {
 
     private func statusSymbolName(for message: String) -> String {
         let text = message.lowercased()
-        if text.contains("error") || text.contains("invalid") || text.contains("failed") || text.contains("missing") || text.contains("unreachable") {
+        if text.contains("error") || text.contains("invalid") || text.contains("failed") || text
+            .contains("missing") || text.contains("unreachable")
+        {
             return "exclamationmark.triangle.fill"
         }
-        if text.contains("signed in") || text.contains("restored") || text.contains("verified") || text.contains("loaded") || text.contains("enabled") {
+        if text.contains("signed in") || text.contains("restored") || text.contains("verified") || text
+            .contains("loaded") || text.contains("enabled")
+        {
             return "checkmark.circle.fill"
         }
         return "info.circle.fill"

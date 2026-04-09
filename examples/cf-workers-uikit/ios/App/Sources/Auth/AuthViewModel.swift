@@ -15,16 +15,29 @@ final class AuthViewModel {
             switch self {
             case .checking:
                 "Checking worker"
+
             case .reachable:
                 "Worker reachable"
+
             case .unreachable:
                 "Worker unreachable"
             }
         }
     }
 
+    enum LaunchState: Equatable {
+        case idle
+        case restoring
+        case authenticated(BetterAuthSession)
+        case unauthenticated
+        case recoverableFailure(BetterAuthSession?)
+        case failed
+    }
+
     let configuration: AuthConfiguration
     var session: BetterAuthSession?
+    var launchState: LaunchState = .idle
+    var lastRestoreResult: BetterAuthRestoreResult?
     var statusMessage: String?
     var isReady = false
     var isPerformingAuthAction = false
@@ -67,31 +80,88 @@ final class AuthViewModel {
 
     init(configuration: AuthConfiguration, client: BetterAuthClient? = nil) {
         self.configuration = configuration
-        let resolvedClient = client ?? BetterAuthClient(
-            baseURL: configuration.apiBaseURL,
-            storage: .init(
-                key: "better-auth.example.session",
-                service: "BetterAuthUIKitExample"
-            )
-        )
+        let resolvedClient = client ?? BetterAuthClient(baseURL: configuration.apiBaseURL,
+                                                        storage: .init(key: "better-auth.example.session",
+                                                                       service: "BetterAuthUIKitExample"))
         self.client = resolvedClient
         service = AuthService(client: resolvedClient)
         statusMessage = configuration.statusMessage
     }
 
+    var launchStateText: String {
+        switch launchState {
+        case .idle:
+            return "Idle"
+
+        case .restoring:
+            return "Restoring stored session"
+
+        case let .authenticated(session):
+            return "Authenticated as \(session.user.email ?? session.user.name ?? session.user.id)"
+
+        case .unauthenticated:
+            return "Unauthenticated"
+
+        case let .recoverableFailure(session):
+            if let session {
+                return "Recovered cached session for \(session.user.email ?? session.user.name ?? session.user.id)"
+            }
+            return "Recoverable restore issue"
+
+        case .failed:
+            return "Launch restore failed"
+        }
+    }
+
+    var restoreSummaryText: String? {
+        guard let lastRestoreResult else { return nil }
+
+        switch lastRestoreResult {
+        case .noStoredSession:
+            return "restore=noStoredSession"
+
+        case let .restored(_, source, refresh):
+            return "restore=restored source=\(String(describing: source)) refresh=\(String(describing: refresh))"
+
+        case let .cleared(reason):
+            return "restore=cleared reason=\(String(describing: reason))"
+
+        @unknown default:
+            return "restore=unknown"
+        }
+    }
+
     #if DEBUG
-    var debugClient: BetterAuthClient { client }
+        var debugClient: BetterAuthClient {
+            client
+        }
     #endif
 
     // MARK: - Session Lifecycle
 
     func restore() async {
+        await bootstrap()
+    }
+
+    func bootstrap() async {
         await refreshWorkerReachability()
-        await perform {
-            session = try await service.restoreSession()
-            statusMessage = session == nil ? "No stored session" : "Session restored"
+        isPerformingAuthAction = true
+        launchState = .restoring
+        defer {
+            isPerformingAuthAction = false
+            isReady = true
         }
-        isReady = true
+
+        do {
+            let result = try await service.restoreSessionOnLaunch()
+            lastRestoreResult = result
+            applyRestoreResult(result)
+        } catch {
+            lastRestoreResult = nil
+            session = nil
+            launchState = .failed
+            statusMessage = error.localizedDescription
+        }
     }
 
     func refresh() async {
@@ -106,6 +176,39 @@ final class AuthViewModel {
         workerReachability = await service.isWorkerReachable() ? .reachable : .unreachable
     }
 
+    func supportsIncomingURL(_ url: URL) -> Bool {
+        service.isSupportedIncomingURL(url)
+    }
+
+    func handleIncomingURL(_ url: URL) async {
+        await perform {
+            let result = try await service.handleIncomingURL(url)
+            switch result {
+            case let .genericOAuth(restoredSession):
+                session = restoredSession
+                launchState = .authenticated(restoredSession)
+                statusMessage = "OAuth completed"
+
+            case let .magicLink(verificationResult):
+                if case let .signedIn(restoredSession) = verificationResult {
+                    session = restoredSession
+                    launchState = .authenticated(restoredSession)
+                }
+                statusMessage = "Magic link handled"
+
+            case let .verifyEmail(verificationResult):
+                if case let .signedIn(restoredSession) = verificationResult {
+                    session = restoredSession
+                    launchState = .authenticated(restoredSession)
+                }
+                statusMessage = "Verification handled"
+
+            case .ignored:
+                statusMessage = "Ignored URL"
+            }
+        }
+    }
+
     func signOut() async {
         await perform {
             do {
@@ -114,6 +217,7 @@ final class AuthViewModel {
                 try await service.signOut(remotely: false)
             }
             session = nil
+            launchState = .unauthenticated
             statusMessage = "Signed out"
         }
     }
@@ -133,7 +237,11 @@ final class AuthViewModel {
                 let payload = try AppleSignInBridge.payload(from: authorization, context: currentAppleContext)
                 lastPayload = payload
                 session = try await service.signInWithApple(payload)
+                if let session {
+                    launchState = .authenticated(session)
+                }
                 statusMessage = "Signed in with Apple"
+
             case let .failure(error):
                 throw error
             }
@@ -144,17 +252,18 @@ final class AuthViewModel {
 
     func signUpWithEmail() async {
         await perform {
-            let result = try await service.signUpWithEmail(.init(
-                email: emailInput,
-                password: passwordInput,
-                name: nameInput.isEmpty ? emailInput : nameInput
-            ))
+            let result = try await service.signUpWithEmail(.init(email: emailInput,
+                                                                 password: passwordInput,
+                                                                 name: nameInput.isEmpty ? emailInput : nameInput))
             switch result {
             case let .signedIn(s):
                 session = s
+                launchState = .authenticated(s)
                 statusMessage = "Signed up and signed in"
+
             case .signedUp:
                 statusMessage = "Signed up — check your inbox to verify"
+
             case .verificationHeld:
                 statusMessage = "Sign-up held for verification"
             }
@@ -163,10 +272,11 @@ final class AuthViewModel {
 
     func signInWithEmail() async {
         await perform {
-            session = try await service.signInWithEmail(.init(
-                email: emailInput,
-                password: passwordInput
-            ))
+            session = try await service.signInWithEmail(.init(email: emailInput,
+                                                              password: passwordInput))
+            if let session {
+                launchState = .authenticated(session)
+            }
             statusMessage = "Signed in"
         }
     }
@@ -180,20 +290,16 @@ final class AuthViewModel {
 
     func resetPassword() async {
         await perform {
-            try await service.resetPassword(.init(
-                token: resetTokenInput,
-                newPassword: newPasswordInput
-            ))
+            try await service.resetPassword(.init(token: resetTokenInput,
+                                                  newPassword: newPasswordInput))
             statusMessage = "Password reset"
         }
     }
 
     func changePassword() async {
         await perform {
-            try await service.changePassword(.init(
-                currentPassword: passwordInput,
-                newPassword: newPasswordInput
-            ))
+            try await service.changePassword(.init(currentPassword: passwordInput,
+                                                   newPassword: newPasswordInput))
             statusMessage = "Password changed"
         }
     }
@@ -209,10 +315,11 @@ final class AuthViewModel {
 
     func signInWithUsername() async {
         await perform {
-            session = try await service.signInWithUsername(.init(
-                username: usernameInput,
-                password: passwordInput
-            ))
+            session = try await service.signInWithUsername(.init(username: usernameInput,
+                                                                 password: passwordInput))
+            if let session {
+                launchState = .authenticated(session)
+            }
             statusMessage = "Signed in with username"
         }
     }
@@ -229,7 +336,10 @@ final class AuthViewModel {
     func verifyMagicLink() async {
         await perform {
             let result = try await service.verifyMagicLink(.init(token: tokenInput))
-            if case let .signedIn(s) = result { session = s }
+            if case let .signedIn(s) = result {
+                session = s
+                launchState = .authenticated(s)
+            }
             statusMessage = "Magic link verified"
         }
     }
@@ -245,21 +355,23 @@ final class AuthViewModel {
 
     func signInWithEmailOTP() async {
         await perform {
-            session = try await service.signInWithEmailOTP(.init(
-                email: emailInput,
-                otp: otpInput
-            ))
+            session = try await service.signInWithEmailOTP(.init(email: emailInput,
+                                                                 otp: otpInput))
+            if let session {
+                launchState = .authenticated(session)
+            }
             statusMessage = "Signed in with email OTP"
         }
     }
 
     func verifyEmailOTP() async {
         await perform {
-            let result = try await service.verifyEmailOTP(.init(
-                email: emailInput,
-                otp: otpInput
-            ))
-            if case let .signedIn(s) = result { session = s }
+            let result = try await service.verifyEmailOTP(.init(email: emailInput,
+                                                                otp: otpInput))
+            if case let .signedIn(s) = result {
+                session = s
+                launchState = .authenticated(s)
+            }
             statusMessage = "Email OTP verified"
         }
     }
@@ -275,20 +387,19 @@ final class AuthViewModel {
 
     func verifyPhoneOTP() async {
         await perform {
-            try await service.verifyPhoneNumber(.init(
-                phoneNumber: otpInput,
-                code: tokenInput
-            ))
+            try await service.verifyPhoneNumber(.init(phoneNumber: otpInput,
+                                                      code: tokenInput))
             statusMessage = "Phone number verified"
         }
     }
 
     func signInWithPhoneOTP() async {
         await perform {
-            session = try await service.signInWithPhoneOTP(.init(
-                phoneNumber: otpInput,
-                password: tokenInput
-            ))
+            session = try await service.signInWithPhoneOTP(.init(phoneNumber: otpInput,
+                                                                 password: tokenInput))
+            if let session {
+                launchState = .authenticated(session)
+            }
             statusMessage = "Signed in with phone OTP"
         }
     }
@@ -313,6 +424,9 @@ final class AuthViewModel {
     func verifyTwoFactorTOTP() async {
         await perform {
             session = try await service.verifyTwoFactorTOTP(.init(code: twoFactorTOTPInput))
+            if let session {
+                launchState = .authenticated(session)
+            }
             statusMessage = "Two-factor TOTP verified"
         }
     }
@@ -320,6 +434,9 @@ final class AuthViewModel {
     func verifyTwoFactorOTP() async {
         await perform {
             session = try await service.verifyTwoFactorOTP(.init(code: twoFactorOTPInput))
+            if let session {
+                launchState = .authenticated(session)
+            }
             statusMessage = "Two-factor OTP verified"
         }
     }
@@ -327,6 +444,9 @@ final class AuthViewModel {
     func verifyTwoFactorRecovery() async {
         await perform {
             session = try await service.verifyTwoFactorRecoveryCode(.init(code: twoFactorRecoveryInput))
+            if let session {
+                launchState = .authenticated(session)
+            }
             statusMessage = "Recovery code accepted"
         }
     }
@@ -350,7 +470,10 @@ final class AuthViewModel {
     func verifyEmail() async {
         await perform {
             let result = try await service.verifyEmail(.init(token: tokenInput))
-            if case let .signedIn(s) = result { session = s }
+            if case let .signedIn(s) = result {
+                session = s
+                launchState = .authenticated(s)
+            }
             statusMessage = "Email verified"
         }
     }
@@ -401,6 +524,7 @@ final class AuthViewModel {
         await perform {
             try await service.revokeSessions()
             session = nil
+            launchState = .unauthenticated
             statusMessage = "All sessions revoked"
         }
     }
@@ -438,6 +562,9 @@ final class AuthViewModel {
     func signInAnonymously() async {
         await perform {
             session = try await service.signInAnonymously()
+            if let session {
+                launchState = .authenticated(session)
+            }
             statusMessage = "Signed in anonymously"
         }
     }
@@ -446,6 +573,7 @@ final class AuthViewModel {
         await perform {
             try await service.deleteAnonymousUser()
             session = nil
+            launchState = .unauthenticated
             statusMessage = "Anonymous user deleted"
         }
     }
@@ -454,11 +582,43 @@ final class AuthViewModel {
         await perform {
             try await service.deleteUser()
             session = try await service.restoreSession()
+            launchState = session.map(LaunchState.authenticated) ?? .unauthenticated
             statusMessage = session == nil ? "Account deleted" : "Delete account verification requested"
         }
     }
 
     // MARK: - Private
+
+    private func applyRestoreResult(_ result: BetterAuthRestoreResult) {
+        switch result {
+        case .noStoredSession:
+            session = nil
+            launchState = .unauthenticated
+            statusMessage = "No stored session"
+
+        case let .restored(restoredSession, _, refresh):
+            session = restoredSession
+            switch refresh {
+            case .deferred:
+                launchState = .recoverableFailure(restoredSession)
+                statusMessage = "Session restored; refresh deferred"
+
+            case .notNeeded, .refreshed:
+                launchState = .authenticated(restoredSession)
+                statusMessage = refresh == .refreshed ? "Session refreshed" : "Session restored"
+            }
+
+        case .cleared:
+            session = nil
+            launchState = .unauthenticated
+            statusMessage = "Stored session cleared"
+
+        @unknown default:
+            session = nil
+            launchState = .unauthenticated
+            statusMessage = "Session state updated"
+        }
+    }
 
     private func perform(_ operation: () async throws -> Void) async {
         isPerformingAuthAction = true

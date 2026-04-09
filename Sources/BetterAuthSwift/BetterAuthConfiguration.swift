@@ -10,16 +10,15 @@ public struct BetterAuthConfiguration: Sendable {
     public let requestOrigin: String?
     public let logger: BetterAuthLogger?
 
-    public init(
-        baseURL: URL,
-        storage: SessionStorage = .init(),
-        endpoints: Endpoints = .init(),
-        clockSkew: TimeInterval = 60,
-        autoRefreshToken: Bool = true,
-        retryPolicy: RetryPolicy = .default,
-        requestOrigin: String? = nil,
-        logger: BetterAuthLogger? = nil
-    ) {
+    public init(baseURL: URL,
+                storage: SessionStorage = .init(),
+                endpoints: Endpoints = .init(),
+                clockSkew: TimeInterval = 60,
+                autoRefreshToken: Bool = true,
+                retryPolicy: RetryPolicy = .default,
+                requestOrigin: String? = nil,
+                logger: BetterAuthLogger? = nil)
+    {
         self.baseURL = baseURL
         self.storage = storage
         self.endpoints = endpoints
@@ -39,13 +38,12 @@ public extension BetterAuthConfiguration {
         public let accessibility: KeychainSessionStore.Accessibility
         public let synchronizable: Bool
 
-        public init(
-            key: String = "better-auth.session",
-            service: String = "BetterAuth",
-            accessGroup: String? = nil,
-            accessibility: KeychainSessionStore.Accessibility = .afterFirstUnlock,
-            synchronizable: Bool = false
-        ) {
+        public init(key: String = "better-auth.session",
+                    service: String = "BetterAuth",
+                    accessGroup: String? = nil,
+                    accessibility: KeychainSessionStore.Accessibility = .afterFirstUnlock,
+                    synchronizable: Bool = false)
+        {
             self.key = key
             self.service = service
             self.accessGroup = accessGroup
@@ -53,20 +51,17 @@ public extension BetterAuthConfiguration {
             self.synchronizable = synchronizable
         }
 
-        public static func shared(
-            key: String = "better-auth.session",
-            service: String = "BetterAuth",
-            accessGroup: String,
-            accessibility: KeychainSessionStore.Accessibility = .afterFirstUnlock,
-            synchronizable: Bool = false
-        ) -> Self {
-            .init(
-                key: key,
-                service: service,
-                accessGroup: accessGroup,
-                accessibility: accessibility,
-                synchronizable: synchronizable
-            )
+        public static func shared(key: String = "better-auth.session",
+                                  service: String = "BetterAuth",
+                                  accessGroup: String,
+                                  accessibility: KeychainSessionStore.Accessibility = .afterFirstUnlock,
+                                  synchronizable: Bool = false) -> Self
+        {
+            .init(key: key,
+                  service: service,
+                  accessGroup: accessGroup,
+                  accessibility: accessibility,
+                  synchronizable: synchronizable)
         }
     }
 
@@ -124,60 +119,59 @@ public extension BetterAuthConfiguration {
         public let currentSessionPath: String
         public let signOutPath: String
 
-        public init(
-            emailSignUpPath: String = "/api/auth/email/sign-up",
-            emailSignInPath: String = "/api/auth/email/sign-in",
-            usernameAvailabilityPath: String = "/api/auth/is-username-available",
-            usernameSignInPath: String = "/api/auth/sign-in/username",
-            nativeAppleSignInPath: String = "/api/auth/apple/native",
-            socialSignInPath: String = "/api/auth/sign-in/social",
-            anonymousSignInPath: String = "/api/auth/sign-in/anonymous",
-            deleteAnonymousUserPath: String = "/api/auth/delete-anonymous-user",
-            genericOAuthSignInPath: String = "/api/auth/sign-in/oauth2",
-            genericOAuthLinkPath: String = "/api/auth/oauth2/link",
-            listLinkedAccountsPath: String = "/api/auth/list-accounts",
-            linkSocialAccountPath: String = "/api/auth/link-social",
-            passkeyRegisterOptionsPath: String = "/api/auth/passkey/generate-register-options",
-            passkeyAuthenticateOptionsPath: String = "/api/auth/passkey/generate-authenticate-options",
-            passkeyRegisterPath: String = "/api/auth/passkey/verify-registration",
-            passkeyAuthenticatePath: String = "/api/auth/passkey/verify-authentication",
-            listPasskeysPath: String = "/api/auth/passkey/list-user-passkeys",
-            updatePasskeyPath: String = "/api/auth/passkey/update-passkey",
-            deletePasskeyPath: String = "/api/auth/passkey/delete-passkey",
-            magicLinkSignInPath: String = "/api/auth/sign-in/magic-link",
-            magicLinkVerifyPath: String = "/api/auth/magic-link/verify",
-            emailOTPRequestPath: String = "/api/auth/email-otp/send-verification-otp",
-            emailOTPSignInPath: String = "/api/auth/sign-in/email-otp",
-            emailOTPVerifyPath: String = "/api/auth/email-otp/verify-email",
-            phoneOTPRequestPath: String = "/api/auth/phone-number/send-otp",
-            phoneOTPVerifyPath: String = "/api/auth/phone-number/verify",
-            phoneOTPSignInPath: String = "/api/auth/sign-in/phone-number",
-            twoFactorEnablePath: String = "/api/auth/two-factor/enable",
-            twoFactorVerifyTOTPPath: String = "/api/auth/two-factor/verify-totp",
-            twoFactorSendOTPPath: String = "/api/auth/two-factor/send-otp",
-            twoFactorVerifyOTPPath: String = "/api/auth/two-factor/verify-otp",
-            twoFactorVerifyBackupCodePath: String = "/api/auth/two-factor/verify-backup-code",
-            twoFactorGenerateBackupCodesPath: String = "/api/auth/two-factor/generate-backup-codes",
-            forgotPasswordPath: String = "/api/auth/forget-password",
-            resetPasswordPath: String = "/api/auth/reset-password",
-            sendVerificationEmailPath: String = "/api/auth/send-verification-email",
-            verifyEmailPath: String = "/api/auth/verify-email",
-            changeEmailPath: String = "/api/auth/change-email",
-            updateUserPath: String = "/api/auth/update-user",
-            changePasswordPath: String = "/api/auth/change-password",
-            listSessionsPath: String = "/api/auth/list-sessions",
-            listDeviceSessionsPath: String = "/api/auth/multi-session/list-device-sessions",
-            setActiveDeviceSessionPath: String = "/api/auth/multi-session/set-active",
-            revokeDeviceSessionPath: String = "/api/auth/multi-session/revoke",
-            sessionJWTPath: String = "/api/auth/token",
-            jwksPath: String = "/api/auth/jwks",
-            revokeSessionPath: String = "/api/auth/revoke-session",
-            revokeSessionsPath: String = "/api/auth/revoke-sessions",
-            revokeOtherSessionsPath: String = "/api/auth/revoke-other-sessions",
-            sessionRefreshPath: String = "/api/auth/get-session",
-            currentSessionPath: String = "/api/auth/get-session",
-            signOutPath: String = "/api/auth/sign-out"
-        ) {
+        public init(emailSignUpPath: String = "/api/auth/email/sign-up",
+                    emailSignInPath: String = "/api/auth/email/sign-in",
+                    usernameAvailabilityPath: String = "/api/auth/is-username-available",
+                    usernameSignInPath: String = "/api/auth/sign-in/username",
+                    nativeAppleSignInPath: String = "/api/auth/apple/native",
+                    socialSignInPath: String = "/api/auth/sign-in/social",
+                    anonymousSignInPath: String = "/api/auth/sign-in/anonymous",
+                    deleteAnonymousUserPath: String = "/api/auth/delete-anonymous-user",
+                    genericOAuthSignInPath: String = "/api/auth/sign-in/oauth2",
+                    genericOAuthLinkPath: String = "/api/auth/oauth2/link",
+                    listLinkedAccountsPath: String = "/api/auth/list-accounts",
+                    linkSocialAccountPath: String = "/api/auth/link-social",
+                    passkeyRegisterOptionsPath: String = "/api/auth/passkey/generate-register-options",
+                    passkeyAuthenticateOptionsPath: String = "/api/auth/passkey/generate-authenticate-options",
+                    passkeyRegisterPath: String = "/api/auth/passkey/verify-registration",
+                    passkeyAuthenticatePath: String = "/api/auth/passkey/verify-authentication",
+                    listPasskeysPath: String = "/api/auth/passkey/list-user-passkeys",
+                    updatePasskeyPath: String = "/api/auth/passkey/update-passkey",
+                    deletePasskeyPath: String = "/api/auth/passkey/delete-passkey",
+                    magicLinkSignInPath: String = "/api/auth/sign-in/magic-link",
+                    magicLinkVerifyPath: String = "/api/auth/magic-link/verify",
+                    emailOTPRequestPath: String = "/api/auth/email-otp/send-verification-otp",
+                    emailOTPSignInPath: String = "/api/auth/sign-in/email-otp",
+                    emailOTPVerifyPath: String = "/api/auth/email-otp/verify-email",
+                    phoneOTPRequestPath: String = "/api/auth/phone-number/send-otp",
+                    phoneOTPVerifyPath: String = "/api/auth/phone-number/verify",
+                    phoneOTPSignInPath: String = "/api/auth/sign-in/phone-number",
+                    twoFactorEnablePath: String = "/api/auth/two-factor/enable",
+                    twoFactorVerifyTOTPPath: String = "/api/auth/two-factor/verify-totp",
+                    twoFactorSendOTPPath: String = "/api/auth/two-factor/send-otp",
+                    twoFactorVerifyOTPPath: String = "/api/auth/two-factor/verify-otp",
+                    twoFactorVerifyBackupCodePath: String = "/api/auth/two-factor/verify-backup-code",
+                    twoFactorGenerateBackupCodesPath: String = "/api/auth/two-factor/generate-backup-codes",
+                    forgotPasswordPath: String = "/api/auth/forget-password",
+                    resetPasswordPath: String = "/api/auth/reset-password",
+                    sendVerificationEmailPath: String = "/api/auth/send-verification-email",
+                    verifyEmailPath: String = "/api/auth/verify-email",
+                    changeEmailPath: String = "/api/auth/change-email",
+                    updateUserPath: String = "/api/auth/update-user",
+                    changePasswordPath: String = "/api/auth/change-password",
+                    listSessionsPath: String = "/api/auth/list-sessions",
+                    listDeviceSessionsPath: String = "/api/auth/multi-session/list-device-sessions",
+                    setActiveDeviceSessionPath: String = "/api/auth/multi-session/set-active",
+                    revokeDeviceSessionPath: String = "/api/auth/multi-session/revoke",
+                    sessionJWTPath: String = "/api/auth/token",
+                    jwksPath: String = "/api/auth/jwks",
+                    revokeSessionPath: String = "/api/auth/revoke-session",
+                    revokeSessionsPath: String = "/api/auth/revoke-sessions",
+                    revokeOtherSessionsPath: String = "/api/auth/revoke-other-sessions",
+                    sessionRefreshPath: String = "/api/auth/get-session",
+                    currentSessionPath: String = "/api/auth/get-session",
+                    signOutPath: String = "/api/auth/sign-out")
+        {
             self.emailSignUpPath = emailSignUpPath
             self.emailSignInPath = emailSignInPath
             self.usernameAvailabilityPath = usernameAvailabilityPath

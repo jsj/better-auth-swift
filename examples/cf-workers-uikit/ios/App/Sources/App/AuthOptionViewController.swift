@@ -1,5 +1,5 @@
-import UIKit
 import AuthenticationServices
+import UIKit
 
 @MainActor
 final class AuthOptionViewController: UITableViewController, ASAuthorizationControllerPresentationContextProviding {
@@ -28,29 +28,27 @@ final class AuthOptionViewController: UITableViewController, ASAuthorizationCont
     }
 
     override func numberOfSections(in tableView: UITableView) -> Int {
-        return sections.count
+        sections.count
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return sections[section].rows.count
+        sections[section].rows.count
     }
 
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        return sections[section].title
+        sections[section].title
     }
 
-    override func tableView(
-        _ tableView: UITableView,
-        cellForRowAt indexPath: IndexPath
-    ) -> UITableViewCell {
+    override func tableView(_ tableView: UITableView,
+                            cellForRowAt indexPath: IndexPath) -> UITableViewCell
+    {
         switch sections[indexPath.section].rows[indexPath.row] {
         case let .field(field):
-            let cell = tableView.dequeueReusableCell(
-                withIdentifier: AuthTextFieldCell.reuseIdentifier,
-                for: indexPath
-            ) as! AuthTextFieldCell
+            let cell = tableView.dequeueReusableCell(withIdentifier: AuthTextFieldCell.reuseIdentifier,
+                                                     for: indexPath) as! AuthTextFieldCell
             cell.configure(field: field, viewModel: controller.viewModel)
             return cell
+
         case let .action(model):
             let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
             var content = cell.defaultContentConfiguration()
@@ -65,6 +63,7 @@ final class AuthOptionViewController: UITableViewController, ASAuthorizationCont
             cell.selectionStyle = .default
             cell.contentConfiguration = content
             return cell
+
         case let .info(title, detail, symbolName, tintColor):
             let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
             var content = cell.defaultContentConfiguration()
@@ -84,6 +83,7 @@ final class AuthOptionViewController: UITableViewController, ASAuthorizationCont
             cell.selectionStyle = .none
             cell.contentConfiguration = content
             return cell
+
         case let .bullet(value, symbolName):
             let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
             var content = cell.defaultContentConfiguration()
@@ -150,17 +150,15 @@ private final class AppleAuthorizationDelegate: NSObject, ASAuthorizationControl
         self.owner = owner
     }
 
-    func authorizationController(
-        controller: ASAuthorizationController,
-        didCompleteWithAuthorization authorization: ASAuthorization
-    ) {
+    func authorizationController(controller: ASAuthorizationController,
+                                 didCompleteWithAuthorization authorization: ASAuthorization)
+    {
         owner?.handleAppleAuthorization(result: .success(authorization))
     }
 
-    func authorizationController(
-        controller: ASAuthorizationController,
-        didCompleteWithError error: Error
-    ) {
+    func authorizationController(controller: ASAuthorizationController,
+                                 didCompleteWithError error: Error)
+    {
         owner?.handleAppleAuthorization(result: .failure(error))
     }
 }
@@ -190,12 +188,13 @@ final class AuthTextFieldCell: UITableViewCell, UITextFieldDelegate {
         stack.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(stack)
 
-        NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: contentView.layoutMarginsGuide.topAnchor),
-            stack.bottomAnchor.constraint(equalTo: contentView.layoutMarginsGuide.bottomAnchor)
-        ])
+        NSLayoutConstraint
+            .activate([stack.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
+                       stack.trailingAnchor
+                           .constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
+                       stack.topAnchor.constraint(equalTo: contentView.layoutMarginsGuide.topAnchor),
+                       stack.bottomAnchor
+                           .constraint(equalTo: contentView.layoutMarginsGuide.bottomAnchor)])
     }
 
     @available(*, unavailable)

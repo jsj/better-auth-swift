@@ -38,9 +38,11 @@ struct EmailPasswordAuthSection: View {
             TextField("Name (sign-up)", text: $viewModel.nameInput)
                 .autocapitalization(.words)
             Button("Sign Up") { Task { await viewModel.signUpWithEmail() } }
-                .disabled(viewModel.isPerformingAuthAction || viewModel.emailInput.isEmpty || viewModel.passwordInput.isEmpty)
+                .disabled(viewModel.isPerformingAuthAction || viewModel.emailInput.isEmpty || viewModel.passwordInput
+                    .isEmpty)
             Button("Sign In") { Task { await viewModel.signInWithEmail() } }
-                .disabled(viewModel.isPerformingAuthAction || viewModel.emailInput.isEmpty || viewModel.passwordInput.isEmpty)
+                .disabled(viewModel.isPerformingAuthAction || viewModel.emailInput.isEmpty || viewModel.passwordInput
+                    .isEmpty)
             Button("Request Password Reset") { Task { await viewModel.requestPasswordReset() } }
                 .disabled(viewModel.isPerformingAuthAction || viewModel.emailInput.isEmpty)
         }
@@ -50,9 +52,11 @@ struct EmailPasswordAuthSection: View {
                 .autocapitalization(.none)
             SecureField("New Password", text: $viewModel.newPasswordInput)
             Button("Reset Password") { Task { await viewModel.resetPassword() } }
-                .disabled(viewModel.isPerformingAuthAction || viewModel.resetTokenInput.isEmpty || viewModel.newPasswordInput.isEmpty)
+                .disabled(viewModel.isPerformingAuthAction || viewModel.resetTokenInput.isEmpty || viewModel
+                    .newPasswordInput.isEmpty)
             Button("Change Password (authenticated)") { Task { await viewModel.changePassword() } }
-                .disabled(viewModel.isPerformingAuthAction || viewModel.passwordInput.isEmpty || viewModel.newPasswordInput.isEmpty)
+                .disabled(viewModel.isPerformingAuthAction || viewModel.passwordInput.isEmpty || viewModel
+                    .newPasswordInput.isEmpty)
         }
     }
 }
@@ -68,7 +72,8 @@ struct UsernameAuthSection: View {
             Button("Check Availability") { Task { await viewModel.checkUsernameAvailability() } }
                 .disabled(viewModel.isPerformingAuthAction || viewModel.usernameInput.isEmpty)
             Button("Sign In with Username") { Task { await viewModel.signInWithUsername() } }
-                .disabled(viewModel.isPerformingAuthAction || viewModel.usernameInput.isEmpty || viewModel.passwordInput.isEmpty)
+                .disabled(viewModel.isPerformingAuthAction || viewModel.usernameInput.isEmpty || viewModel.passwordInput
+                    .isEmpty)
         }
     }
 }
@@ -104,9 +109,11 @@ struct EmailOTPAuthSection: View {
             TextField("OTP Code", text: $viewModel.otpInput)
                 .keyboardType(.numberPad)
             Button("Sign In with OTP") { Task { await viewModel.signInWithEmailOTP() } }
-                .disabled(viewModel.isPerformingAuthAction || viewModel.emailInput.isEmpty || viewModel.otpInput.isEmpty)
+                .disabled(viewModel.isPerformingAuthAction || viewModel.emailInput.isEmpty || viewModel.otpInput
+                    .isEmpty)
             Button("Verify OTP (email verification)") { Task { await viewModel.verifyEmailOTP() } }
-                .disabled(viewModel.isPerformingAuthAction || viewModel.emailInput.isEmpty || viewModel.otpInput.isEmpty)
+                .disabled(viewModel.isPerformingAuthAction || viewModel.emailInput.isEmpty || viewModel.otpInput
+                    .isEmpty)
         }
     }
 }
@@ -123,9 +130,11 @@ struct PhoneOTPAuthSection: View {
             TextField("Code", text: $viewModel.tokenInput)
                 .keyboardType(.numberPad)
             Button("Verify Phone Number") { Task { await viewModel.verifyPhoneOTP() } }
-                .disabled(viewModel.isPerformingAuthAction || viewModel.otpInput.isEmpty || viewModel.tokenInput.isEmpty)
+                .disabled(viewModel.isPerformingAuthAction || viewModel.otpInput.isEmpty || viewModel.tokenInput
+                    .isEmpty)
             Button("Sign In with Phone OTP") { Task { await viewModel.signInWithPhoneOTP() } }
-                .disabled(viewModel.isPerformingAuthAction || viewModel.otpInput.isEmpty || viewModel.tokenInput.isEmpty)
+                .disabled(viewModel.isPerformingAuthAction || viewModel.otpInput.isEmpty || viewModel.tokenInput
+                    .isEmpty)
         }
     }
 }

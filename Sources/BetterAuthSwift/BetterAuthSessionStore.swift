@@ -14,9 +14,10 @@ public enum BetterAuthSessionStoreError: LocalizedError, Sendable {
     public var errorDescription: String? {
         switch self {
         case let .unexpectedStatus(status):
-            return "Keychain operation failed with status \(status)."
+            "Keychain operation failed with status \(status)."
+
         case .invalidData:
-            return "Stored session data was invalid."
+            "Stored session data was invalid."
         }
     }
 }
@@ -57,10 +58,13 @@ public struct KeychainSessionStore: BetterAuthSessionStore, Sendable {
             switch self {
             case .afterFirstUnlock:
                 kSecAttrAccessibleAfterFirstUnlock
+
             case .afterFirstUnlockThisDeviceOnly:
                 kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+
             case .whenUnlocked:
                 kSecAttrAccessibleWhenUnlocked
+
             case .whenUnlockedThisDeviceOnly:
                 kSecAttrAccessibleWhenUnlockedThisDeviceOnly
             }
@@ -72,12 +76,11 @@ public struct KeychainSessionStore: BetterAuthSessionStore, Sendable {
     public let accessibility: Accessibility
     public let synchronizable: Bool
 
-    public init(
-        service: String,
-        accessGroup: String? = nil,
-        accessibility: Accessibility = .afterFirstUnlock,
-        synchronizable: Bool = false
-    ) {
+    public init(service: String,
+                accessGroup: String? = nil,
+                accessibility: Accessibility = .afterFirstUnlock,
+                synchronizable: Bool = false)
+    {
         self.service = service
         self.accessGroup = accessGroup
         self.accessibility = accessibility
@@ -98,8 +101,10 @@ public struct KeychainSessionStore: BetterAuthSessionStore, Sendable {
                 throw BetterAuthSessionStoreError.invalidData
             }
             return try BetterAuthCoding.makeDecoder().decode(BetterAuthSession.self, from: data)
+
         case errSecItemNotFound:
             return nil
+
         default:
             throw BetterAuthSessionStoreError.unexpectedStatus(status)
         }
@@ -114,6 +119,7 @@ public struct KeychainSessionStore: BetterAuthSessionStore, Sendable {
         switch status {
         case errSecSuccess:
             return
+
         case errSecItemNotFound:
             var insertQuery = query
             insertQuery[kSecValueData as String] = data
@@ -122,6 +128,7 @@ public struct KeychainSessionStore: BetterAuthSessionStore, Sendable {
             guard insertStatus == errSecSuccess else {
                 throw BetterAuthSessionStoreError.unexpectedStatus(insertStatus)
             }
+
         default:
             throw BetterAuthSessionStoreError.unexpectedStatus(status)
         }
@@ -135,11 +142,9 @@ public struct KeychainSessionStore: BetterAuthSessionStore, Sendable {
     }
 
     private func baseQuery(for key: String) -> [String: Any] {
-        var query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: key
-        ]
+        var query: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
+                                    kSecAttrService as String: service,
+                                    kSecAttrAccount as String: key]
 
         if let accessGroup {
             query[kSecAttrAccessGroup as String] = accessGroup
