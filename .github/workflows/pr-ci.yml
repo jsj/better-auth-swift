@@ -35,9 +35,11 @@ jobs:
       - name: Run SPM tests
         shell: bash
         run: |
+          set +e
           set -o pipefail
           swift test --enable-swift-testing 2>&1 | tee /tmp/swift-test.log
           status=${PIPESTATUS[0]}
+          set -e
 
           if [ "$status" -ne 0 ]; then
             filtered_log=$(mktemp)
