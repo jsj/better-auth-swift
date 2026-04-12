@@ -135,7 +135,7 @@ await store.bootstrap()
 switch store.launchState {
 case .authenticated(let session): // show app
 case .unauthenticated:            // show sign in
-case .restoring:                   // show loading
+case .restoring:                  // show loading
 default: break
 }
 ```

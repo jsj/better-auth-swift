@@ -33,4 +33,16 @@ jobs:
         run: ./Scripts/generate_xcodeproj.sh
 
       - name: Run SPM tests
-        run: swift test --enable-swift-testing || true
+        shell: bash
+        run: |
+          set -o pipefail
+          swift test --enable-swift-testing 2>&1 | tee /tmp/swift-test.log
+          status=${PIPESTATUS[0]}
+
+          if [ "$status" -ne 0 ]; then
+            if grep -q "✔ Test " /tmp/swift-test.log && ! grep -E "(^|[[:space:]])(✘ Test |Test .* failed|error:|Issue recorded|caught unexpected signal)" /tmp/swift-test.log | grep -v "CoreData: error: Failed to create NSXPCConnection"; then
+              echo "Ignoring known Swift Testing non-zero exit because all visible tests passed."
+              exit 0
+            fi
+            exit "$status"
+          fi
