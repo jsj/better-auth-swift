@@ -6,4 +6,8 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 source "$ROOT/Scripts/bootstrap_runner_env.sh"
 cd "$ROOT"
 
-exec xcodegen generate --spec "$ROOT/project.yml"
+if command -v xcodegen >/dev/null 2>&1; then
+  exec xcodegen generate --spec "$ROOT/project.yml"
+fi
+
+echo "xcodegen is not installed; using committed Xcode project" >&2
