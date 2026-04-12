@@ -156,7 +156,7 @@ let members = try await orgs.listMembers(organizationId: org.id)
 ## Apple Sign In
 
 > [!NOTE]
-> Native Apple Sign In nonce hashing fix ([better-auth/better-auth#8870](https://github.com/better-auth/better-auth/pull/8870)) has been approved and merged to `next`. It will ship in the next Better Auth release.
+> Native Apple Sign In support depends on the Better Auth server version and configuration you are integrating with. Verify compatibility against the backend version you deploy.
 
 ```swift
 let session = try await client.auth.signInWithApple(

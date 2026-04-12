@@ -1,0 +1,36 @@
+name: PR CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: [self-hosted, macOS, ARM64, mac-ci]
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Show environment
+        run: |
+          echo "runner=$(uname -a)"
+          xcode-select -p
+          swift --version
+          xcodegen --version
+
+      - name: Generate Xcode project
+        run: ./Scripts/generate_xcodeproj.sh
+
+      - name: Run SPM tests
+        run: swift test --enable-swift-testing

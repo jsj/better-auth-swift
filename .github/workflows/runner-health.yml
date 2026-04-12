@@ -1,0 +1,30 @@
+name: Runner Health
+
+on:
+  schedule:
+    - cron: '0 14 * * 1'  # Monday 14:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  health:
+    runs-on: [self-hosted, macOS, ARM64, mac-ci]
+    timeout-minutes: 10
+
+    steps:
+      - name: Show runner details
+        run: |
+          echo "runner=$(uname -a)"
+          sw_vers
+          xcode-select -p
+          xcodebuild -version
+          swift --version
+          xcodegen --version
+          /Users/james/.local/bin/chimera status || true
+
+      - name: Show disk and power state
+        run: |
+          df -h /
+          pmset -g
