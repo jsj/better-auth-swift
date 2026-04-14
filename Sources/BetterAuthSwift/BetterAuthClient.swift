@@ -52,9 +52,11 @@ public extension BetterAuthClient {
     init(baseURL: URL,
          storage: BetterAuthConfiguration.SessionStorage = .init(),
          endpoints: BetterAuthConfiguration.Endpoints = .init(),
-         clockSkew: TimeInterval = 60,
-         autoRefreshToken: Bool = true,
-         retryPolicy: RetryPolicy = .default,
+         auth: BetterAuthConfiguration.Auth = .init(),
+         networking: BetterAuthConfiguration.Networking = .init(),
+         clockSkew: TimeInterval? = nil,
+         autoRefreshToken: Bool? = nil,
+         retryPolicy: RetryPolicy? = nil,
          requestOrigin: String? = nil,
          logger: BetterAuthLogger? = nil,
          sessionStore: BetterAuthSessionStore? = nil,
@@ -64,6 +66,8 @@ public extension BetterAuthClient {
         self.init(configuration: BetterAuthConfiguration(baseURL: baseURL,
                                                          storage: storage,
                                                          endpoints: endpoints,
+                                                         auth: auth,
+                                                         networking: networking,
                                                          clockSkew: clockSkew,
                                                          autoRefreshToken: autoRefreshToken,
                                                          retryPolicy: retryPolicy,
@@ -82,5 +86,10 @@ public extension BetterAuthClient {
     /// Shortcut to the auth event emitter for observing sign-in/sign-out events.
     var onAuthStateChange: AuthEventEmitter {
         auth.onAuthStateChange
+    }
+
+    /// Async stream of auth state changes, yielding the latest event to new subscribers.
+    var authStateChanges: AsyncStream<AuthStateChange> {
+        auth.authStateChanges
     }
 }

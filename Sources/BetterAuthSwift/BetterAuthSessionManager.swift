@@ -41,6 +41,10 @@ public actor BetterAuthSessionManager {
         eventEmitter
     }
 
+    public nonisolated var authStateChanges: AsyncStream<AuthStateChange> {
+        eventEmitter.stateChanges
+    }
+
     // MARK: - Session Access
 
     /// Loads the persisted session from the session store without entering the actor.
@@ -71,7 +75,7 @@ public actor BetterAuthSessionManager {
         }
 
         guard let current else { return .noStoredSession }
-        guard current.needsRefresh(clockSkew: configuration.clockSkew) else {
+        guard current.needsRefresh(clockSkew: configuration.auth.clockSkew) else {
             return .restored(current, source: source, refresh: .notNeeded)
         }
 
@@ -391,6 +395,8 @@ public actor BetterAuthSessionManager {
 
         let network = self.network
         let endpoints = configuration.endpoints
+        // Keep the refresh task scoped to immutable snapshots so the unstructured
+        // task does not capture actor-isolated mutable state.
         let task = Task { () -> BetterAuthSession in
             if let refreshToken = existingSession.session.refreshToken {
                 struct RefreshPayload: Encodable, Sendable { let refreshToken: String }
@@ -422,7 +428,7 @@ public actor BetterAuthSessionManager {
     @discardableResult
     public func refreshSessionIfNeeded() async throws -> BetterAuthSession {
         guard let current else { throw BetterAuthError.missingSession }
-        guard current.needsRefresh(clockSkew: configuration.clockSkew) else { return current }
+        guard current.needsRefresh(clockSkew: configuration.auth.clockSkew) else { return current }
         return try await refreshSession()
     }
 
@@ -774,7 +780,7 @@ public actor BetterAuthSessionManager {
             }
         }
         guard let current else { return nil }
-        if current.needsRefresh(clockSkew: configuration.clockSkew) {
+        if current.needsRefresh(clockSkew: configuration.auth.clockSkew) {
             do { return try await refreshSession() } catch {
                 if shouldClearSession(for: error) { try clearSession(event: .sessionExpired) }
                 throw error
@@ -825,6 +831,11 @@ public actor BetterAuthSessionManager {
     public func stopAutoRefresh() {
         autoRefreshTask?.cancel()
         autoRefreshTask = nil
+    }
+
+    deinit {
+        autoRefreshTask?.cancel()
+        inFlightRefreshTask?.cancel()
     }
 
     private func autoRefreshTick() async {
@@ -958,7 +969,7 @@ public actor BetterAuthSessionManager {
     }
 
     private func validSession() async throws -> BetterAuthSession {
-        if let current, current.needsRefresh(clockSkew: configuration.clockSkew) {
+        if let current, current.needsRefresh(clockSkew: configuration.auth.clockSkew) {
             return try await refreshSession()
         }
         if let current { return current }

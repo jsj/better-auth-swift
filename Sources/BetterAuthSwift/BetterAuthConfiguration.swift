@@ -5,32 +5,63 @@ public struct BetterAuthConfiguration: Sendable {
     public let clockSkew: TimeInterval
     public let storage: SessionStorage
     public let endpoints: Endpoints
-    public let autoRefreshToken: Bool
-    public let retryPolicy: RetryPolicy
-    public let requestOrigin: String?
+    public let auth: Auth
+    public let networking: Networking
     public let logger: BetterAuthLogger?
 
     public init(baseURL: URL,
                 storage: SessionStorage = .init(),
                 endpoints: Endpoints = .init(),
-                clockSkew: TimeInterval = 60,
-                autoRefreshToken: Bool = true,
-                retryPolicy: RetryPolicy = .default,
+                auth: Auth = .init(),
+                networking: Networking = .init(),
+                clockSkew: TimeInterval? = nil,
+                autoRefreshToken: Bool? = nil,
+                retryPolicy: RetryPolicy? = nil,
                 requestOrigin: String? = nil,
                 logger: BetterAuthLogger? = nil)
     {
         self.baseURL = baseURL
         self.storage = storage
         self.endpoints = endpoints
-        self.clockSkew = clockSkew
-        self.autoRefreshToken = autoRefreshToken
-        self.retryPolicy = retryPolicy
-        self.requestOrigin = requestOrigin
+        let resolvedAuth = Auth(clockSkew: clockSkew ?? auth.clockSkew,
+                                autoRefreshToken: autoRefreshToken ?? auth.autoRefreshToken)
+        self.auth = resolvedAuth
+        self.clockSkew = resolvedAuth.clockSkew
+        self.networking = Networking(retryPolicy: retryPolicy ?? networking.retryPolicy,
+                                     requestOrigin: requestOrigin ?? networking.requestOrigin)
         self.logger = logger
     }
 }
 
 public extension BetterAuthConfiguration {
+    var autoRefreshToken: Bool { auth.autoRefreshToken }
+    var retryPolicy: RetryPolicy { networking.retryPolicy }
+    var requestOrigin: String? { networking.requestOrigin }
+
+    struct Auth: Sendable {
+        public let clockSkew: TimeInterval
+        public let autoRefreshToken: Bool
+
+        public init(clockSkew: TimeInterval = 60,
+                    autoRefreshToken: Bool = true)
+        {
+            self.clockSkew = clockSkew
+            self.autoRefreshToken = autoRefreshToken
+        }
+    }
+
+    struct Networking: Sendable {
+        public let retryPolicy: RetryPolicy
+        public let requestOrigin: String?
+
+        public init(retryPolicy: RetryPolicy = .default,
+                    requestOrigin: String? = nil)
+        {
+            self.retryPolicy = retryPolicy
+            self.requestOrigin = requestOrigin
+        }
+    }
+
     struct SessionStorage: Sendable {
         public let key: String
         public let service: String

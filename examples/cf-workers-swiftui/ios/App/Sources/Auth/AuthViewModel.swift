@@ -77,6 +77,7 @@ final class AuthViewModel {
     private let client: BetterAuthClient
     private let service: AuthService
     private var currentAppleContext: AppleSignInSupport.Context?
+    private var authStateTask: Task<Void, Never>?
 
     init(configuration: AuthConfiguration, client: BetterAuthClient? = nil) {
         self.configuration = configuration
@@ -86,6 +87,21 @@ final class AuthViewModel {
         self.client = resolvedClient
         service = AuthService(client: resolvedClient)
         statusMessage = configuration.statusMessage
+        authStateTask = Task { [weak self] in
+            guard let self else { return }
+            for await change in resolvedClient.authStateChanges {
+                await MainActor.run {
+                    self.session = change.session
+                    if let session = change.session {
+                        if self.launchState != .recoverableFailure(session) {
+                            self.launchState = .authenticated(session)
+                        }
+                    } else if change.event == .signedOut || change.event == .sessionExpired {
+                        self.launchState = .unauthenticated
+                    }
+                }
+            }
+        }
     }
 
     var launchStateText: String {

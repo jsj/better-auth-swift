@@ -115,6 +115,25 @@ targets:
           - "@executable_path/Frameworks"
           - "@loader_path/Frameworks"
 
+  BetterAuthTestHelpers:
+    type: framework
+    platform: macOS
+    sources:
+      - Tests/BetterAuthTestHelpers
+    dependencies:
+      - target: BetterAuth
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jsj.betterauthswift.testhelpers
+        GENERATE_INFOPLIST_FILE: YES
+        DEFINES_MODULE: YES
+        SKIP_INSTALL: YES
+        BUILD_LIBRARY_FOR_DISTRIBUTION: NO
+        LD_RUNPATH_SEARCH_PATHS:
+          - $(inherited)
+          - "@loader_path/../Frameworks"
+          - "@executable_path/../Frameworks"
+
   BetterAuthSwiftTests:
     type: bundle.unit-test
     platform: macOS
@@ -123,6 +142,7 @@ targets:
     dependencies:
       - target: BetterAuth
       - target: BetterAuthSwiftUI
+      - target: BetterAuthTestHelpers
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.jsj.betterauthswift.tests
@@ -142,6 +162,7 @@ targets:
     dependencies:
       - target: BetterAuth
       - target: BetterAuthOrganization
+      - target: BetterAuthTestHelpers
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.jsj.betterauthswift.organization-tests
@@ -184,6 +205,7 @@ schemes:
         BetterAuth: all
         BetterAuthSwiftUI: all
         BetterAuthOrganization: all
+        BetterAuthTestHelpers: all
         BetterAuthSwiftTests: [test]
         BetterAuthOrganizationTests: [test]
     test:
