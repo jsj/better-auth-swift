@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import BetterAuthTestHelpers
 @testable import BetterAuth
 @testable import BetterAuthSwiftUI
 
@@ -809,6 +810,66 @@ struct BetterAuthSwiftTests {
         #expect(storage.service == "BetterAuth")
         #expect(storage.accessGroup == "group.sh.jsj.better-auth")
         #expect(storage.key == "better-auth.session")
+    }
+
+    @Test
+    func authStateChangesStreamReplaysLatestSessionToNewSubscribers() async throws {
+        let emitter = AuthEventEmitter()
+        let client = BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
+                                      sessionStore: InMemorySessionStore(),
+                                      transport: MockTransport { request in
+                                          emptyResponse(for: request)
+                                      },
+                                      eventEmitter: emitter)
+        let signedIn = BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "token"),
+                                         user: .init(id: "user-1", email: "test@example.com"))
+
+        try await client.auth.updateSession(signedIn)
+        var iterator = client.authStateChanges.makeAsyncIterator()
+        let stateChange = await iterator.next()
+
+        #expect(stateChange?.event == .signedIn)
+        #expect(stateChange?.session == signedIn)
+        #expect(client.onAuthStateChange.latest == stateChange)
+    }
+
+    @Test @MainActor
+    func authStoreTracksExternalAuthStateChanges() async throws {
+        let signedIn = BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "token"),
+                                         user: .init(id: "user-1", email: "test@example.com"))
+        let client = BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
+                                      sessionStore: InMemorySessionStore(),
+                                      transport: MockTransport { request in
+                                          #expect(request.url?.path == "/api/auth/email/sign-in")
+                                          return try response(for: request, statusCode: 200, data: encodeJSON(signedIn))
+                                      })
+        let store = AuthStore(client: client)
+
+        _ = store
+        await Task.yield()
+        try await client.auth.signInWithEmail(.init(email: "test@example.com", password: "password123"))
+        try? await Task.sleep(for: .milliseconds(50))
+        #expect(store.session == signedIn)
+        #expect(store.launchState == .authenticated(signedIn))
+
+        try await client.auth.signOut(remotely: false)
+        try? await Task.sleep(for: .milliseconds(50))
+        #expect(store.session == nil)
+        #expect(store.launchState == .unauthenticated)
+    }
+
+    @Test
+    func configurationSupportsNestedAuthAndNetworkingOptions() throws {
+        let configuration = BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                    auth: .init(clockSkew: 90, autoRefreshToken: false),
+                                                    networking: .init(retryPolicy: .default,
+                                                                      requestOrigin: "app://origin"))
+
+        #expect(configuration.auth.clockSkew == 90)
+        #expect(configuration.auth.autoRefreshToken == false)
+        #expect(configuration.clockSkew == 90)
+        #expect(configuration.networking.requestOrigin == "app://origin")
+        #expect(configuration.requestOrigin == "app://origin")
     }
 
     @Test
@@ -3736,131 +3797,5 @@ struct BetterAuthSwiftTests {
         #expect(persisted?.user.email == signedInSession.user.email)
         #expect(persisted?.user.name == signedInSession.user.name)
         #expect(secondsBetween(persisted?.session.expiresAt, signedInSession.session.expiresAt) <= 1)
-    }
-}
-
-private struct MockTransport: BetterAuthTransport {
-    let handler: @Sendable (URLRequest) async throws -> (Data, URLResponse)
-
-    func execute(_ request: URLRequest) async throws -> (Data, URLResponse) {
-        try await handler(request)
-    }
-}
-
-private actor SequencedMockTransport: BetterAuthTransport {
-    enum Entry {
-        case raw(Data, Int)
-        case handler((URLRequest) throws -> (Data, URLResponse))
-
-        static func response(statusCode: Int, jsonObject: Any) -> Entry {
-            .raw(try! JSONSerialization.data(withJSONObject: jsonObject), statusCode)
-        }
-
-        static func response(statusCode: Int, encodable: some Encodable) -> Entry {
-            .raw(try! encodeJSON(encodable), statusCode)
-        }
-    }
-
-    private var entries: [Entry]
-
-    init(_ entries: [Entry]) {
-        self.entries = entries
-    }
-
-    func execute(_ request: URLRequest) async throws -> (Data, URLResponse) {
-        guard !entries.isEmpty else {
-            fatalError("No mock responses left")
-        }
-
-        let entry = entries.removeFirst()
-        switch entry {
-        case let .raw(data, statusCode):
-            return response(for: request, statusCode: statusCode, data: data)
-
-        case let .handler(handler):
-            return try handler(request)
-        }
-    }
-}
-
-private struct SignOutResult: Encodable {
-    let success: Bool
-}
-
-private struct ProtectedResponse: Codable, Equatable {
-    let email: String
-    let username: String?
-
-    init(email: String, username: String? = nil) {
-        self.email = email
-        self.username = username
-    }
-}
-
-private func emptyResponse(for request: URLRequest) -> (Data, URLResponse) {
-    response(for: request, statusCode: 200, data: Data())
-}
-
-private func encodeJSON(_ value: some Encodable) throws -> Data {
-    let encoder = JSONEncoder()
-    encoder.dateEncodingStrategy = .iso8601
-    return try encoder.encode(value)
-}
-
-private func response(for request: URLRequest, statusCode: Int, data: Data) -> (Data, URLResponse) {
-    let response = HTTPURLResponse(url: request.url ?? URL(string: "https://example.com")!,
-                                   statusCode: statusCode,
-                                   httpVersion: nil,
-                                   headerFields: nil)!
-    return (data, response)
-}
-
-private func secondsBetween(_ lhs: Date?, _ rhs: Date?) -> TimeInterval {
-    guard let lhs, let rhs else { return .infinity }
-    return abs(lhs.timeIntervalSince1970 - rhs.timeIntervalSince1970)
-}
-
-private func assertRequestFailed(statusCode expectedStatusCode: Int,
-                                 message expectedMessage: String?,
-                                 fileID: String = #fileID,
-                                 filePath: String = #filePath,
-                                 line: Int = #line,
-                                 column: Int = #column,
-                                 operation: () async throws -> some Any) async
-{
-    let sourceLocation = SourceLocation(fileID: fileID, filePath: filePath, line: line, column: column)
-    do {
-        _ = try await operation()
-        Issue.record("Expected BetterAuthError.requestFailed", sourceLocation: sourceLocation)
-    } catch let BetterAuthError.requestFailed(statusCode, message, _, _) {
-        #expect(statusCode == expectedStatusCode, sourceLocation: sourceLocation)
-        #expect(message == expectedMessage, sourceLocation: sourceLocation)
-    } catch {
-        Issue.record("Expected BetterAuthError.requestFailed but got \(error)", sourceLocation: sourceLocation)
-    }
-}
-
-private func assertRequestFailedJSON(statusCode expectedStatusCode: Int,
-                                     expectedJSON: [String: String],
-                                     fileID: String = #fileID,
-                                     filePath: String = #filePath,
-                                     line: Int = #line,
-                                     column: Int = #column,
-                                     operation: () async throws -> some Any) async
-{
-    let sourceLocation = SourceLocation(fileID: fileID, filePath: filePath, line: line, column: column)
-    do {
-        _ = try await operation()
-        Issue.record("Expected BetterAuthError.requestFailed", sourceLocation: sourceLocation)
-    } catch let BetterAuthError.requestFailed(statusCode, message, _, response) {
-        #expect(statusCode == expectedStatusCode, sourceLocation: sourceLocation)
-        if let expectedMessage = expectedJSON["message"] {
-            #expect(message == expectedMessage || response?.message == expectedMessage, sourceLocation: sourceLocation)
-        }
-        if let expectedCode = expectedJSON["code"] {
-            #expect(response?.code == expectedCode, sourceLocation: sourceLocation)
-        }
-    } catch {
-        Issue.record("Expected BetterAuthError.requestFailed but got \(error)", sourceLocation: sourceLocation)
     }
 }

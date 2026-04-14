@@ -25,14 +25,19 @@ let package = Package(
             name: "BetterAuthOrganization",
             dependencies: ["BetterAuth"]
         ),
+        .target(
+            name: "BetterAuthTestHelpers",
+            dependencies: ["BetterAuth"],
+            path: "Tests/BetterAuthTestHelpers"
+        ),
         .testTarget(
             name: "BetterAuthSwiftTests",
-            dependencies: ["BetterAuth", "BetterAuthSwiftUI"],
+            dependencies: ["BetterAuth", "BetterAuthSwiftUI", "BetterAuthTestHelpers"],
             path: "Tests/BetterAuthSwiftTests"
         ),
         .testTarget(
             name: "BetterAuthOrganizationTests",
-            dependencies: ["BetterAuth", "BetterAuthOrganization"]
+            dependencies: ["BetterAuth", "BetterAuthOrganization", "BetterAuthTestHelpers"]
         )
     ],
     swiftLanguageModes: [.v6]

@@ -21,9 +21,11 @@ public final class AuthStore {
     public private(set) var statusMessage: String?
 
     private let client: BetterAuthClient
+    private var authStateTask: Task<Void, Never>?
 
     public init(client: BetterAuthClient) {
         self.client = client
+        startAuthStateObservation()
     }
 
     // MARK: - Session
@@ -600,6 +602,29 @@ public final class AuthStore {
 
     // MARK: - Helpers
 
+    private func startAuthStateObservation() {
+        authStateTask?.cancel()
+        authStateTask = Task { [weak self] in
+            guard let self else { return }
+            for await change in client.authStateChanges {
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    self.session = change.session
+                    if let session = change.session {
+                        self.launchState = .authenticated(session)
+                    } else if change.event == .signedOut || change.event == .sessionExpired {
+                        self.launchState = .unauthenticated
+                    }
+                }
+            }
+        }
+    }
+
+    private func stopAuthStateObservation() {
+        authStateTask?.cancel()
+        authStateTask = nil
+    }
+
     private func applyRestoreResult(_ result: BetterAuthRestoreResult) {
         switch result {
         case .noStoredSession:
@@ -655,5 +680,9 @@ public final class AuthStore {
             statusMessage = error.localizedDescription
             throw error
         }
+    }
+
+    public func shutdown() {
+        stopAuthStateObservation()
     }
 }

@@ -56,9 +56,17 @@ Native Swift SDK for [Better Auth](https://github.com/better-auth/better-auth) w
 
 ### Add the package
 
+Add the package in Xcode using the repository URL:
+
+```text
+https://github.com/jsj/better-auth-swift.git
+```
+
+Or in `Package.swift`:
+
 ```swift
 dependencies: [
-    .package(url: "https://github.com/jsj/better-auth-swift.git", from: "0.0.1")
+    .package(url: "https://github.com/jsj/better-auth-swift.git")
 ]
 ```
 

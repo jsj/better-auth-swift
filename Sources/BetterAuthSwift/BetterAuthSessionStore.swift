@@ -22,6 +22,10 @@ public enum BetterAuthSessionStoreError: LocalizedError, Sendable {
     }
 }
 
+/// Thread-safe in-memory session store backed by a lock.
+///
+/// Safety invariant for `@unchecked Sendable`: all access to `storage` is guarded
+/// by `lock`.
 public final class InMemorySessionStore: BetterAuthSessionStore, @unchecked Sendable {
     private let lock = NSLock()
     private var storage: [String: BetterAuthSession] = [:]
