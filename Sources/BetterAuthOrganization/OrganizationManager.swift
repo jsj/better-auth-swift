@@ -2,28 +2,28 @@ import BetterAuth
 import Foundation
 
 public actor OrganizationManager {
-    private let client: BetterAuthClient
+    private let requests: any BetterAuthRequestPerforming
 
-    public init(client: BetterAuthClient) {
-        self.client = client
+    public init(client: some BetterAuthClientProtocol) {
+        requests = client.requestsPerformer
     }
 
     // MARK: - Organization CRUD
 
     @discardableResult
     public func createOrganization(_ payload: CreateOrganizationRequest) async throws -> Organization {
-        try await client.requests.sendJSON(path: "/api/auth/organization/create",
-                                           method: "POST",
-                                           body: payload)
+        try await requests.sendJSON(path: "/api/auth/organization/create",
+                                    method: "POST",
+                                    body: payload)
     }
 
     public func listOrganizations() async throws -> [Organization] {
-        try await client.requests.sendJSON(path: "/api/auth/organization/list",
-                                           method: "GET")
+        try await requests.sendJSON(path: "/api/auth/organization/list",
+                                    method: "GET")
     }
 
     public func getFullOrganization(organizationId: String) async throws -> Organization {
-        let response: FullOrganizationResponse = try await client.requests.sendJSON(
+        let response: FullOrganizationResponse = try await requests.sendJSON(
             path: "/api/auth/organization/get-full-organization",
             method: "GET",
             body: OrganizationIdRequest(organizationId: organizationId)
@@ -33,14 +33,14 @@ public actor OrganizationManager {
 
     @discardableResult
     public func updateOrganization(_ payload: UpdateOrganizationRequest) async throws -> Organization {
-        try await client.requests.sendJSON(path: "/api/auth/organization/update",
-                                           method: "POST",
-                                           body: payload)
+        try await requests.sendJSON(path: "/api/auth/organization/update",
+                                    method: "POST",
+                                    body: payload)
     }
 
     @discardableResult
     public func deleteOrganization(organizationId: String) async throws -> Bool {
-        let response: StatusResponse = try await client.requests.sendJSON(
+        let response: StatusResponse = try await requests.sendJSON(
             path: "/api/auth/organization/delete",
             method: "POST",
             body: OrganizationIdRequest(organizationId: organizationId)
@@ -49,7 +49,7 @@ public actor OrganizationManager {
     }
 
     public func checkSlug(_ slug: String) async throws -> Bool {
-        let response: SlugAvailabilityResponse = try await client.requests.sendJSON(
+        let response: SlugAvailabilityResponse = try await requests.sendJSON(
             path: "/api/auth/organization/check-slug",
             method: "POST",
             body: SlugCheckRequest(slug: slug)
@@ -60,7 +60,7 @@ public actor OrganizationManager {
     // MARK: - Members
 
     public func listMembers(organizationId: String) async throws -> [OrganizationMember] {
-        try await client.requests.sendJSON(
+        try await requests.sendJSON(
             path: "/api/auth/organization/list-members",
             method: "GET",
             body: OrganizationIdRequest(organizationId: organizationId)
@@ -69,7 +69,7 @@ public actor OrganizationManager {
 
     @discardableResult
     public func removeMember(_ payload: RemoveMemberRequest) async throws -> Bool {
-        let response: StatusResponse = try await client.requests.sendJSON(
+        let response: StatusResponse = try await requests.sendJSON(
             path: "/api/auth/organization/remove-member",
             method: "POST",
             body: payload
@@ -79,30 +79,30 @@ public actor OrganizationManager {
 
     @discardableResult
     public func updateMemberRole(_ payload: UpdateMemberRoleRequest) async throws -> OrganizationMember {
-        try await client.requests.sendJSON(path: "/api/auth/organization/update-member-role",
-                                           method: "POST",
-                                           body: payload)
+        try await requests.sendJSON(path: "/api/auth/organization/update-member-role",
+                                    method: "POST",
+                                    body: payload)
     }
 
     // MARK: - Invitations
 
     @discardableResult
     public func inviteMember(_ payload: InviteMemberRequest) async throws -> OrganizationInvitation {
-        try await client.requests.sendJSON(path: "/api/auth/organization/invite-member",
-                                           method: "POST",
-                                           body: payload)
+        try await requests.sendJSON(path: "/api/auth/organization/invite-member",
+                                    method: "POST",
+                                    body: payload)
     }
 
     @discardableResult
     public func acceptInvitation(invitationId: String) async throws -> OrganizationMember {
-        try await client.requests.sendJSON(path: "/api/auth/organization/accept-invitation",
-                                           method: "POST",
-                                           body: InvitationIdRequest(invitationId: invitationId))
+        try await requests.sendJSON(path: "/api/auth/organization/accept-invitation",
+                                    method: "POST",
+                                    body: InvitationIdRequest(invitationId: invitationId))
     }
 
     @discardableResult
     public func cancelInvitation(invitationId: String) async throws -> Bool {
-        let response: StatusResponse = try await client.requests.sendJSON(
+        let response: StatusResponse = try await requests.sendJSON(
             path: "/api/auth/organization/cancel-invitation",
             method: "POST",
             body: InvitationIdRequest(invitationId: invitationId)
@@ -112,7 +112,7 @@ public actor OrganizationManager {
 
     @discardableResult
     public func rejectInvitation(invitationId: String) async throws -> Bool {
-        let response: StatusResponse = try await client.requests.sendJSON(
+        let response: StatusResponse = try await requests.sendJSON(
             path: "/api/auth/organization/reject-invitation",
             method: "POST",
             body: InvitationIdRequest(invitationId: invitationId)
@@ -121,7 +121,7 @@ public actor OrganizationManager {
     }
 
     public func listInvitations(organizationId: String) async throws -> [OrganizationInvitation] {
-        try await client.requests.sendJSON(
+        try await requests.sendJSON(
             path: "/api/auth/organization/list-invitations",
             method: "GET",
             body: OrganizationIdRequest(organizationId: organizationId)
@@ -132,14 +132,14 @@ public actor OrganizationManager {
 
     @discardableResult
     public func setActiveOrganization(organizationId: String) async throws -> Organization {
-        try await client.requests.sendJSON(path: "/api/auth/organization/set-active",
-                                           method: "POST",
-                                           body: OrganizationIdRequest(organizationId: organizationId))
+        try await requests.sendJSON(path: "/api/auth/organization/set-active",
+                                    method: "POST",
+                                    body: OrganizationIdRequest(organizationId: organizationId))
     }
 
     public func getActiveMember() async throws -> OrganizationMember {
-        try await client.requests.sendJSON(path: "/api/auth/organization/get-active-member",
-                                           method: "GET")
+        try await requests.sendJSON(path: "/api/auth/organization/get-active-member",
+                                    method: "GET")
     }
 }
 

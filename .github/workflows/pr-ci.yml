@@ -27,27 +27,17 @@ jobs:
           echo "runner=$(uname -a)"
           xcode-select -p
           swift --version
-          xcodegen --version
+          tuist version
 
       - name: Generate Xcode project
         run: ./Scripts/generate_xcodeproj.sh
 
       - name: Run SPM tests
-        shell: bash
+        run: ./Scripts/swift_test_wrapper.sh
+
+      - name: Run Xcode tests
         run: |
-          set +e
-          set -o pipefail
-          swift test --enable-swift-testing 2>&1 | tee /tmp/swift-test.log
-          status=${PIPESTATUS[0]}
-          set -e
-
-          if [ "$status" -ne 0 ]; then
-            filtered_log=$(mktemp)
-            grep -v "CoreData: error: Failed to create NSXPCConnection" /tmp/swift-test.log > "$filtered_log" || true
-
-            if grep -q "✔ Test " "$filtered_log" && ! grep -Eq "(^|[[:space:]])(✘ Test |Test .* failed|error:|Issue recorded|caught unexpected signal)" "$filtered_log"; then
-              echo "Ignoring known Swift Testing non-zero exit because all visible tests passed."
-              exit 0
-            fi
-            exit "$status"
-          fi
+          xcodebuild test \
+            -project better-auth-swift.xcodeproj \
+            -scheme BetterAuth-Package \
+            -destination 'platform=macOS,arch=arm64'

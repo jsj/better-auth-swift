@@ -20,11 +20,11 @@ public final class AuthStore {
     /// Human-readable status or error message from the last operation.
     public private(set) var statusMessage: String?
 
-    private let client: BetterAuthClient
+    private let auth: any BetterAuthAuthPerforming
     private var authStateTask: Task<Void, Never>?
 
-    public init(client: BetterAuthClient) {
-        self.client = client
+    public init(client: some BetterAuthClientProtocol) {
+        auth = client.authLifecycle as! any BetterAuthAuthPerforming
         startAuthStateObservation()
     }
 
@@ -39,7 +39,7 @@ public final class AuthStore {
         launchState = .restoring
         defer { isLoading = false }
         do {
-            let result = try await client.auth.restoreSessionOnLaunch()
+            let result = try await auth.restoreSessionOnLaunch()
             lastRestoreResult = result
             applyRestoreResult(result)
         } catch {
@@ -51,21 +51,21 @@ public final class AuthStore {
 
     public func refresh() async {
         await perform {
-            session = try await client.auth.refreshSession()
+            session = try await auth.refreshSession()
             statusMessage = "Session refreshed"
         }
     }
 
     public func fetchCurrentSession() async {
         await perform {
-            session = try await client.auth.fetchCurrentSession()
+            session = try await auth.fetchCurrentSession()
             statusMessage = "Session fetched"
         }
     }
 
     public func signOut(remotely: Bool = true) async {
         await perform {
-            try await client.auth.signOut(remotely: remotely)
+            try await auth.signOut(remotely: remotely)
             session = nil
             launchState = .unauthenticated
             statusMessage = "Signed out"
@@ -77,7 +77,7 @@ public final class AuthStore {
     @discardableResult
     public func signUpWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult {
         try await performThrowing {
-            let result = try await client.auth.signUpWithEmail(payload)
+            let result = try await auth.signUpWithEmail(payload)
             if case let .signedIn(s) = result { session = s }
             statusMessage = "Signed up"
             return result
@@ -86,28 +86,28 @@ public final class AuthStore {
 
     public func signInWithEmail(_ payload: EmailSignInRequest) async {
         await perform {
-            session = try await client.auth.signInWithEmail(payload)
+            session = try await auth.signInWithEmail(payload)
             statusMessage = "Signed in"
         }
     }
 
     public func requestPasswordReset(_ payload: ForgotPasswordRequest) async {
         await perform {
-            _ = try await client.auth.requestPasswordReset(payload)
+            _ = try await auth.requestPasswordReset(payload)
             statusMessage = "Password reset email sent"
         }
     }
 
     public func resetPassword(_ payload: ResetPasswordRequest) async {
         await perform {
-            _ = try await client.auth.resetPassword(payload)
+            _ = try await auth.resetPassword(payload)
             statusMessage = "Password reset"
         }
     }
 
     public func changePassword(_ payload: ChangePasswordRequest) async {
         await perform {
-            _ = try await client.auth.changePassword(payload)
+            _ = try await auth.changePassword(payload)
             statusMessage = "Password changed"
         }
     }
@@ -117,7 +117,7 @@ public final class AuthStore {
     @discardableResult
     public func isUsernameAvailable(_ payload: UsernameAvailabilityRequest) async throws -> Bool {
         try await performThrowing {
-            let available = try await client.auth.isUsernameAvailable(payload)
+            let available = try await auth.isUsernameAvailable(payload)
             statusMessage = available ? "Username available" : "Username taken"
             return available
         }
@@ -125,7 +125,7 @@ public final class AuthStore {
 
     public func signInWithUsername(_ payload: UsernameSignInRequest) async {
         await perform {
-            session = try await client.auth.signInWithUsername(payload)
+            session = try await auth.signInWithUsername(payload)
             statusMessage = "Signed in"
         }
     }
@@ -134,7 +134,7 @@ public final class AuthStore {
 
     public func signInWithApple(_ payload: AppleNativeSignInPayload) async {
         await perform {
-            session = try await client.auth.signInWithApple(payload)
+            session = try await auth.signInWithApple(payload)
             statusMessage = "Signed in with Apple"
         }
     }
@@ -144,9 +144,9 @@ public final class AuthStore {
     @discardableResult
     public func signInWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult {
         try await performThrowing {
-            let result = try await client.auth.signInWithSocial(payload)
+            let result = try await auth.signInWithSocial(payload)
             if case .signedIn = result {
-                session = await client.auth.currentSession()
+                session = await auth.currentSession()
             }
             statusMessage = "Social sign-in initiated"
             return result
@@ -158,7 +158,7 @@ public final class AuthStore {
         -> GenericOAuthAuthorizationResponse
     {
         try await performThrowing {
-            let response = try await client.auth.beginGenericOAuth(payload)
+            let response = try await auth.beginGenericOAuth(payload)
             statusMessage = "OAuth flow started"
             return response
         }
@@ -169,7 +169,7 @@ public final class AuthStore {
         -> GenericOAuthAuthorizationResponse
     {
         try await performThrowing {
-            let response = try await client.auth.linkGenericOAuth(payload)
+            let response = try await auth.linkGenericOAuth(payload)
             statusMessage = "OAuth link flow started"
             return response
         }
@@ -177,7 +177,7 @@ public final class AuthStore {
 
     public func completeGenericOAuth(_ payload: GenericOAuthCallbackRequest) async {
         await perform {
-            session = try await client.auth.completeGenericOAuth(payload)
+            session = try await auth.completeGenericOAuth(payload)
             launchState = session.map(AuthLaunchState.authenticated) ?? .unauthenticated
             statusMessage = "OAuth completed"
         }
@@ -185,7 +185,7 @@ public final class AuthStore {
 
     public func handleIncomingURL(_ url: URL) async {
         await perform {
-            let result = try await client.auth.handleIncomingURL(url)
+            let result = try await auth.handleIncomingURL(url)
             switch result {
             case let .genericOAuth(restoredSession):
                 session = restoredSession
@@ -219,14 +219,14 @@ public final class AuthStore {
 
     public func signInAnonymously() async {
         await perform {
-            session = try await client.auth.signInAnonymously()
+            session = try await auth.signInAnonymously()
             statusMessage = "Signed in anonymously"
         }
     }
 
     public func deleteAnonymousUser() async {
         await perform {
-            _ = try await client.auth.deleteAnonymousUser()
+            _ = try await auth.deleteAnonymousUser()
             session = nil
             statusMessage = "Anonymous user deleted"
         }
@@ -236,7 +236,7 @@ public final class AuthStore {
 
     public func deleteUser(_ payload: DeleteUserRequest = .init()) async {
         await perform {
-            _ = try await client.auth.deleteUser(payload)
+            _ = try await auth.deleteUser(payload)
             session = nil
             launchState = .unauthenticated
             statusMessage = "Account deleted"
@@ -248,7 +248,7 @@ public final class AuthStore {
     @discardableResult
     public func upgradeAnonymousWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult {
         try await performThrowing {
-            let result = try await client.auth.upgradeAnonymousWithEmail(payload)
+            let result = try await auth.upgradeAnonymousWithEmail(payload)
             if case let .signedIn(s) = result { session = s }
             statusMessage = "Account upgraded"
             return result
@@ -257,7 +257,7 @@ public final class AuthStore {
 
     public func upgradeAnonymousWithApple(_ payload: AppleNativeSignInPayload) async {
         await perform {
-            session = try await client.auth.upgradeAnonymousWithApple(payload)
+            session = try await auth.upgradeAnonymousWithApple(payload)
             statusMessage = "Account upgraded with Apple"
         }
     }
@@ -265,8 +265,8 @@ public final class AuthStore {
     @discardableResult
     public func upgradeAnonymousWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult {
         try await performThrowing {
-            let result = try await client.auth.upgradeAnonymousWithSocial(payload)
-            if case .signedIn = result { session = await client.auth.currentSession() }
+            let result = try await auth.upgradeAnonymousWithSocial(payload)
+            if case .signedIn = result { session = await auth.currentSession() }
             statusMessage = "Account upgraded"
             return result
         }
@@ -277,7 +277,7 @@ public final class AuthStore {
     @discardableResult
     public func reauthenticate(password: String) async throws -> Bool {
         try await performThrowing {
-            let result = try await client.auth.reauthenticate(password: password)
+            let result = try await auth.reauthenticate(password: password)
             statusMessage = "Re-authenticated"
             return result
         }
@@ -287,14 +287,14 @@ public final class AuthStore {
 
     public func requestMagicLink(_ payload: MagicLinkRequest) async {
         await perform {
-            _ = try await client.auth.requestMagicLink(payload)
+            _ = try await auth.requestMagicLink(payload)
             statusMessage = "Magic link sent"
         }
     }
 
     public func verifyMagicLink(_ payload: MagicLinkVerifyRequest) async {
         await perform {
-            let result = try await client.auth.verifyMagicLink(payload)
+            let result = try await auth.verifyMagicLink(payload)
             if case let .signedIn(s) = result {
                 session = s
                 launchState = .authenticated(s)
@@ -307,21 +307,21 @@ public final class AuthStore {
 
     public func requestEmailOTP(_ payload: EmailOTPRequest) async {
         await perform {
-            _ = try await client.auth.requestEmailOTP(payload)
+            _ = try await auth.requestEmailOTP(payload)
             statusMessage = "Email OTP sent"
         }
     }
 
     public func signInWithEmailOTP(_ payload: EmailOTPSignInRequest) async {
         await perform {
-            session = try await client.auth.signInWithEmailOTP(payload)
+            session = try await auth.signInWithEmailOTP(payload)
             statusMessage = "Signed in with email OTP"
         }
     }
 
     public func verifyEmailOTP(_ payload: EmailOTPVerifyRequest) async {
         await perform {
-            let result = try await client.auth.verifyEmailOTP(payload)
+            let result = try await auth.verifyEmailOTP(payload)
             if case let .signedIn(s) = result {
                 session = s
                 launchState = .authenticated(s)
@@ -334,21 +334,21 @@ public final class AuthStore {
 
     public func requestPhoneOTP(_ payload: PhoneOTPRequest) async {
         await perform {
-            _ = try await client.auth.requestPhoneOTP(payload)
+            _ = try await auth.requestPhoneOTP(payload)
             statusMessage = "Phone OTP sent"
         }
     }
 
     public func verifyPhoneNumber(_ payload: PhoneOTPVerifyRequest) async {
         await perform {
-            _ = try await client.auth.verifyPhoneNumber(payload)
+            _ = try await auth.verifyPhoneNumber(payload)
             statusMessage = "Phone number verified"
         }
     }
 
     public func signInWithPhoneOTP(_ payload: PhoneOTPSignInRequest) async {
         await perform {
-            session = try await client.auth.signInWithPhoneOTP(payload)
+            session = try await auth.signInWithPhoneOTP(payload)
             statusMessage = "Signed in with phone OTP"
         }
     }
@@ -358,7 +358,7 @@ public final class AuthStore {
     @discardableResult
     public func enableTwoFactor(_ payload: TwoFactorEnableRequest) async throws -> TwoFactorEnableResponse {
         try await performThrowing {
-            let response = try await client.auth.enableTwoFactor(payload)
+            let response = try await auth.enableTwoFactor(payload)
             statusMessage = "Two-factor enabled"
             return response
         }
@@ -366,35 +366,35 @@ public final class AuthStore {
 
     public func sendTwoFactorOTP(_ payload: TwoFactorSendOTPRequest = .init()) async {
         await perform {
-            _ = try await client.auth.sendTwoFactorOTP(payload)
+            _ = try await auth.sendTwoFactorOTP(payload)
             statusMessage = "Two-factor OTP sent"
         }
     }
 
     public func verifyTwoFactorTOTP(_ payload: TwoFactorVerifyTOTPRequest) async {
         await perform {
-            session = try await client.auth.verifyTwoFactorTOTP(payload)
+            session = try await auth.verifyTwoFactorTOTP(payload)
             statusMessage = "Two-factor TOTP verified"
         }
     }
 
     public func verifyTwoFactorOTP(_ payload: TwoFactorVerifyOTPRequest) async {
         await perform {
-            session = try await client.auth.verifyTwoFactorOTP(payload)
+            session = try await auth.verifyTwoFactorOTP(payload)
             statusMessage = "Two-factor OTP verified"
         }
     }
 
     public func verifyTwoFactorRecoveryCode(_ payload: TwoFactorVerifyBackupCodeRequest) async {
         await perform {
-            session = try await client.auth.verifyTwoFactorRecoveryCode(payload)
+            session = try await auth.verifyTwoFactorRecoveryCode(payload)
             statusMessage = "Recovery code accepted"
         }
     }
 
     public func disableTwoFactor(_ payload: TwoFactorDisableRequest) async {
         await perform {
-            _ = try await client.auth.disableTwoFactor(payload)
+            _ = try await auth.disableTwoFactor(payload)
             statusMessage = "Two-factor disabled"
         }
     }
@@ -402,7 +402,7 @@ public final class AuthStore {
     @discardableResult
     public func generateTwoFactorRecoveryCodes(password: String) async throws -> [String] {
         try await performThrowing {
-            let codes = try await client.auth.generateTwoFactorRecoveryCodes(password: password)
+            let codes = try await auth.generateTwoFactorRecoveryCodes(password: password)
             statusMessage = "Backup codes generated"
             return codes
         }
@@ -415,7 +415,7 @@ public final class AuthStore {
         -> PasskeyRegistrationOptions
     {
         try await performThrowing {
-            let options = try await client.auth.passkeyRegistrationOptions(payload)
+            let options = try await auth.passkeyRegistrationOptions(payload)
             statusMessage = "Passkey registration options fetched"
             return options
         }
@@ -424,7 +424,7 @@ public final class AuthStore {
     @discardableResult
     public func passkeyAuthenticateOptions() async throws -> PasskeyAuthenticationOptions {
         try await performThrowing {
-            let options = try await client.auth.passkeyAuthenticateOptions()
+            let options = try await auth.passkeyAuthenticateOptions()
             statusMessage = "Passkey authentication options fetched"
             return options
         }
@@ -432,14 +432,14 @@ public final class AuthStore {
 
     public func registerPasskey(_ payload: PasskeyRegistrationRequest) async {
         await perform {
-            _ = try await client.auth.registerPasskey(payload)
+            _ = try await auth.registerPasskey(payload)
             statusMessage = "Passkey registered"
         }
     }
 
     public func authenticateWithPasskey(_ payload: PasskeyAuthenticationRequest) async {
         await perform {
-            session = try await client.auth.authenticateWithPasskey(payload)
+            session = try await auth.authenticateWithPasskey(payload)
             statusMessage = "Signed in with passkey"
         }
     }
@@ -447,7 +447,7 @@ public final class AuthStore {
     @discardableResult
     public func listPasskeys() async throws -> [Passkey] {
         try await performThrowing {
-            let passkeys = try await client.auth.listPasskeys()
+            let passkeys = try await auth.listPasskeys()
             statusMessage = "Passkeys loaded"
             return passkeys
         }
@@ -455,14 +455,14 @@ public final class AuthStore {
 
     public func updatePasskey(_ payload: UpdatePasskeyRequest) async {
         await perform {
-            _ = try await client.auth.updatePasskey(payload)
+            _ = try await auth.updatePasskey(payload)
             statusMessage = "Passkey updated"
         }
     }
 
     public func deletePasskey(_ payload: DeletePasskeyRequest) async {
         await perform {
-            _ = try await client.auth.deletePasskey(payload)
+            _ = try await auth.deletePasskey(payload)
             statusMessage = "Passkey deleted"
         }
     }
@@ -471,14 +471,14 @@ public final class AuthStore {
 
     public func sendVerificationEmail(_ payload: SendVerificationEmailRequest = .init()) async {
         await perform {
-            _ = try await client.auth.sendVerificationEmail(payload)
+            _ = try await auth.sendVerificationEmail(payload)
             statusMessage = "Verification email sent"
         }
     }
 
     public func verifyEmail(_ payload: VerifyEmailRequest) async {
         await perform {
-            let result = try await client.auth.verifyEmail(payload)
+            let result = try await auth.verifyEmail(payload)
             if case let .signedIn(s) = result { session = s }
             statusMessage = "Email verified"
         }
@@ -486,7 +486,7 @@ public final class AuthStore {
 
     public func changeEmail(_ payload: ChangeEmailRequest) async {
         await perform {
-            _ = try await client.auth.changeEmail(payload)
+            _ = try await auth.changeEmail(payload)
             statusMessage = "Change email requested"
         }
     }
@@ -495,7 +495,7 @@ public final class AuthStore {
 
     public func updateUser(_ payload: UpdateUserRequest) async {
         await perform {
-            let response = try await client.auth.updateUser(payload)
+            let response = try await auth.updateUser(payload)
             if let current = session, let updatedUser = response.user {
                 session = BetterAuthSession(session: current.session,
                                             user: updatedUser)
@@ -509,7 +509,7 @@ public final class AuthStore {
     @discardableResult
     public func listLinkedAccounts() async throws -> [LinkedAccount] {
         try await performThrowing {
-            let accounts = try await client.auth.listLinkedAccounts()
+            let accounts = try await auth.listLinkedAccounts()
             statusMessage = "Linked accounts loaded"
             return accounts
         }
@@ -518,7 +518,7 @@ public final class AuthStore {
     @discardableResult
     public func linkSocialAccount(_ payload: LinkSocialAccountRequest) async throws -> LinkSocialAccountResponse {
         try await performThrowing {
-            let response = try await client.auth.linkSocialAccount(payload)
+            let response = try await auth.linkSocialAccount(payload)
             statusMessage = "Social account linked"
             return response
         }
@@ -529,7 +529,7 @@ public final class AuthStore {
     @discardableResult
     public func listSessions() async throws -> [BetterAuthSessionListEntry] {
         try await performThrowing {
-            let sessions = try await client.auth.listSessions()
+            let sessions = try await auth.listSessions()
             statusMessage = "Sessions loaded"
             return sessions
         }
@@ -538,7 +538,7 @@ public final class AuthStore {
     @discardableResult
     public func listDeviceSessions() async throws -> [BetterAuthDeviceSession] {
         try await performThrowing {
-            let sessions = try await client.auth.listDeviceSessions()
+            let sessions = try await auth.listDeviceSessions()
             statusMessage = "Device sessions loaded"
             return sessions
         }
@@ -546,28 +546,28 @@ public final class AuthStore {
 
     public func setActiveDeviceSession(_ payload: BetterAuthSetActiveDeviceSessionRequest) async {
         await perform {
-            session = try await client.auth.setActiveDeviceSession(payload)
+            session = try await auth.setActiveDeviceSession(payload)
             statusMessage = "Active session switched"
         }
     }
 
     public func revokeDeviceSession(_ payload: BetterAuthRevokeDeviceSessionRequest) async {
         await perform {
-            _ = try await client.auth.revokeDeviceSession(payload)
+            _ = try await auth.revokeDeviceSession(payload)
             statusMessage = "Device session revoked"
         }
     }
 
     public func revokeSession(token: String) async {
         await perform {
-            _ = try await client.auth.revokeSession(token: token)
+            _ = try await auth.revokeSession(token: token)
             statusMessage = "Session revoked"
         }
     }
 
     public func revokeSessions() async {
         await perform {
-            _ = try await client.auth.revokeSessions()
+            _ = try await auth.revokeSessions()
             session = nil
             statusMessage = "All sessions revoked"
         }
@@ -575,7 +575,7 @@ public final class AuthStore {
 
     public func revokeOtherSessions() async {
         await perform {
-            _ = try await client.auth.revokeOtherSessions()
+            _ = try await auth.revokeOtherSessions()
             statusMessage = "Other sessions revoked"
         }
     }
@@ -585,7 +585,7 @@ public final class AuthStore {
     @discardableResult
     public func getSessionJWT() async throws -> BetterAuthJWT {
         try await performThrowing {
-            let jwt = try await client.auth.getSessionJWT()
+            let jwt = try await auth.getSessionJWT()
             statusMessage = "JWT fetched"
             return jwt
         }
@@ -594,7 +594,7 @@ public final class AuthStore {
     @discardableResult
     public func getJWKS() async throws -> BetterAuthJWKS {
         try await performThrowing {
-            let jwks = try await client.auth.getJWKS()
+            let jwks = try await auth.getJWKS()
             statusMessage = "JWKS fetched"
             return jwks
         }
@@ -606,14 +606,37 @@ public final class AuthStore {
         authStateTask?.cancel()
         authStateTask = Task { [weak self] in
             guard let self else { return }
-            for await change in client.authStateChanges {
+            for await change in auth.authStateChanges {
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
                     self.session = change.session
-                    if let session = change.session {
-                        self.launchState = .authenticated(session)
-                    } else if change.event == .signedOut || change.event == .sessionExpired {
+                    switch change.transition?.phase {
+                    case .authenticated:
+                        if let session = change.session {
+                            self.launchState = .authenticated(session)
+                        }
+                    case .unauthenticated:
                         self.launchState = .unauthenticated
+                    case .refreshing:
+                        if let session = change.session {
+                            self.launchState = .authenticated(session)
+                        }
+                    case .restoring:
+                        self.launchState = .restoring
+                    case .failed:
+                        self.launchState = .failed
+                    case .idle, nil:
+                        if let session = change.session {
+                            self.launchState = .authenticated(session)
+                        } else if change.event == .signedOut || change.event == .sessionExpired {
+                            self.launchState = .unauthenticated
+                        }
+                    @unknown default:
+                        if let session = change.session {
+                            self.launchState = .authenticated(session)
+                        } else if change.event == .signedOut || change.event == .sessionExpired {
+                            self.launchState = .unauthenticated
+                        }
                     }
                 }
             }

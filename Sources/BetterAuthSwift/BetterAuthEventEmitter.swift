@@ -12,14 +12,19 @@ public enum AuthChangeEvent: String, Sendable {
 public struct AuthStateChange: Sendable, Equatable {
     public let event: AuthChangeEvent
     public let session: BetterAuthSession?
+    public let transition: BetterAuthSessionTransition?
 
-    public init(event: AuthChangeEvent, session: BetterAuthSession?) {
+    public init(event: AuthChangeEvent,
+                session: BetterAuthSession?,
+                transition: BetterAuthSessionTransition? = nil)
+    {
         self.event = event
         self.session = session
+        self.transition = transition
     }
 }
 
-public typealias AuthStateChangeListener = @Sendable (AuthChangeEvent, BetterAuthSession?) -> Void
+public typealias AuthStateChangeListener = @Sendable (AuthStateChange) -> Void
 
 public protocol AuthStateChangeRegistration: Sendable {
     func remove()
@@ -74,8 +79,15 @@ public final class AuthEventEmitter: @unchecked Sendable {
         return latestStateChange
     }
 
-    func emit(_ event: AuthChangeEvent, session: BetterAuthSession?) {
-        let stateChange = AuthStateChange(event: event, session: session)
+    func emit(_ event: AuthChangeEvent,
+              session: BetterAuthSession?,
+              transition: BetterAuthSessionTransition? = nil)
+    {
+        let stateChange = AuthStateChange(event: event, session: session, transition: transition)
+        yield(stateChange)
+    }
+
+    func yield(_ stateChange: AuthStateChange) {
         lock.lock()
         latestStateChange = stateChange
         let currentListeners = listeners.values
@@ -83,7 +95,7 @@ public final class AuthEventEmitter: @unchecked Sendable {
         lock.unlock()
 
         for listener in currentListeners {
-            listener(event, session)
+            listener(stateChange)
         }
         for continuation in currentContinuations {
             continuation.yield(stateChange)
@@ -91,8 +103,8 @@ public final class AuthEventEmitter: @unchecked Sendable {
 
         NotificationCenter.default.post(name: .betterAuthStateDidChange,
                                         object: nil,
-                                        userInfo: ["event": event.rawValue,
-                                                   "session": session as Any])
+                                        userInfo: ["event": stateChange.event.rawValue,
+                                                   "session": stateChange.session as Any])
     }
 
     private func removeListener(_ id: UUID) {

@@ -1,6 +1,6 @@
 import Foundation
 
-struct AuthNetworkClient {
+struct AuthNetworkClient: Sendable {
     let baseURL: URL
     let transport: BetterAuthTransport
     let retryPolicy: RetryPolicy

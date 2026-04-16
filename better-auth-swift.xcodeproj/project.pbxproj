@@ -3,49 +3,57 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 55;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0087C0479DC0E78D9E75FA4D /* BetterAuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3238FF1F1BF09A2C5B6265F8 /* BetterAuthModels.swift */; };
-		01F714C6CE85F71F1CE48A02 /* BetterAuthTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52069591FFE876A5488465CD /* BetterAuthTransport.swift */; };
-		04C845A5E52AE67B7DA8F1F4 /* BetterAuthTestHelpers.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 142D76E4199DAECAD763D41B /* BetterAuthTestHelpers.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		0730D91C865809D79DC83757 /* OrganizationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65A0CB5F16FEE3FD76199BF0 /* OrganizationManager.swift */; };
-		24C48664555310E94C11F200 /* BetterAuthTestHelpers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 142D76E4199DAECAD763D41B /* BetterAuthTestHelpers.framework */; };
-		2643AB9813376A1D460C2203 /* BetterAuth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F506F0AD9B95C9ADAD092930 /* BetterAuth.framework */; };
-		2AD8A8CEAAFA66297E9E54EA /* BetterAuthSwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0142B80119C66B05686B7FCF /* BetterAuthSwiftUI.framework */; };
-		3305BDBB6BECF76C6FC13FB5 /* BetterAuthErrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8E8889F3F9261B7465725F0 /* BetterAuthErrors.swift */; };
-		41392B62B45084D9FA17AD50 /* AuthMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = 334D4DBFD77FE25E591F87E8 /* AuthMethod.swift */; };
-		44ACFA8252D684FE8E416DC8 /* AuthNetworkClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18C5C294CCA05B2EFBCEC323 /* AuthNetworkClient.swift */; };
-		486F2ADF730C557132737111 /* BetterAuthSwiftUI.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 0142B80119C66B05686B7FCF /* BetterAuthSwiftUI.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		492297B78E0E705E96835589 /* BetterAuthClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFDA33049071AB0F13C194C0 /* BetterAuthClient.swift */; };
-		5B88E821880866111CE6D4FB /* BetterAuthOrganization.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BCB088754474AADAB062868F /* BetterAuthOrganization.framework */; };
-		5B9BA1B8A127215A55E8D4CF /* BetterAuthLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74745602A51C1292CE9844CC /* BetterAuthLogger.swift */; };
-		67839F60DA7D6329442D49E8 /* BetterAuthLifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C5CF196005AEC04A5A5BA30 /* BetterAuthLifecycle.swift */; };
-		7803E769B2897271F07F1191 /* BetterAuth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F506F0AD9B95C9ADAD092930 /* BetterAuth.framework */; };
-		889319E99D269681CC576E2A /* AuthStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 363A1513953A442EBFD47BB7 /* AuthStore.swift */; };
-		923772C971B2FC5A05BD0C42 /* BetterAuthTestHelpers.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 142D76E4199DAECAD763D41B /* BetterAuthTestHelpers.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		97BC507577BD0EF19FB5E70A /* AuthLaunchState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24A66D05B6B109599855CACA /* AuthLaunchState.swift */; };
-		998D9389D323FE2846E6CC4A /* BetterAuth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F506F0AD9B95C9ADAD092930 /* BetterAuth.framework */; };
-		9B049F0698FB613E28C099AB /* RetryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1405CA96F933F668AFF7A94 /* RetryPolicy.swift */; };
-		9E1A21E8ADEB525729BEB019 /* OrganizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE954A111547F3BD18F5ABBF /* OrganizationTests.swift */; };
-		ACE9029E130E25469DF97AAE /* PKCE.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B09AB13F39B0CEA93530487 /* PKCE.swift */; };
-		ACECBBF4AD05F3F4A9B60DDF /* AppleSignInSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41404053F2CE21306241C2F5 /* AppleSignInSupport.swift */; };
-		AF11977CE388FA16EC71C956 /* BetterAuthRequestClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44ECB4909A651ACB77524471 /* BetterAuthRequestClient.swift */; };
-		B0CB14BB599CF824B88203EF /* BetterAuthSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E325E9304E3B49A8E580EB71 /* BetterAuthSessionStore.swift */; };
-		B11383281AEEF80D80619169 /* BetterAuth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F506F0AD9B95C9ADAD092930 /* BetterAuth.framework */; };
-		B60945706E0497A6E4064186 /* BetterAuthEventEmitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38010EA6E7DEAC80400385DD /* BetterAuthEventEmitter.swift */; };
-		B83E0126F69F049285AA1F4E /* BetterAuth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F506F0AD9B95C9ADAD092930 /* BetterAuth.framework */; };
-		B8D2E0CF15084A5A9860DF60 /* BetterAuth.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F506F0AD9B95C9ADAD092930 /* BetterAuth.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		CC1A1D2B93E5A31597DE3F8A /* BetterAuthTestHelpers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 142D76E4199DAECAD763D41B /* BetterAuthTestHelpers.framework */; };
-		D4DD81197E72554199D65ABE /* TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32C6C3D8627AEEB0D01483C4 /* TestSupport.swift */; };
-		DD098C81D52687CECA03D662 /* BetterAuthOrganization.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = BCB088754474AADAB062868F /* BetterAuthOrganization.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		DFC8A6466937C27654BFB849 /* OrganizationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91F012988EDFB37299816A45 /* OrganizationModels.swift */; };
-		E249AB577E6DC76F31D60D65 /* BetterAuthConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4FA6E24B6E35EBAF48011B3 /* BetterAuthConfiguration.swift */; };
-		E2A37F4ED905CDA946FAF059 /* BetterAuthCoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 879BB86E88728ED76E690F3F /* BetterAuthCoding.swift */; };
-		E67BFF187B704899FFD41189 /* BetterAuth.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F506F0AD9B95C9ADAD092930 /* BetterAuth.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		EFB64CC7877E42307934E002 /* BetterAuthSwiftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ED172AF309D20E9855F7EBF /* BetterAuthSwiftTests.swift */; };
-		F0CA1FF114209DB7FC6974C9 /* BetterAuthSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AD7DE5EDF642F5468013B9A /* BetterAuthSessionManager.swift */; };
+		02455AB54DD18A8A14B0AC59 /* BetterAuthSessionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11A51520F024C1C1D9657F6E /* BetterAuthSessionState.swift */; };
+		03778AA0FED8BE77756932BE /* BetterAuthSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0E1D635B6FD15D606BB99D /* BetterAuthSessionManager.swift */; };
+		0500ABD2FB33BC20B00E229B /* AuthNetworkClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7976A0428DAB03AD5FA3285E /* AuthNetworkClient.swift */; };
+		08F36CF735E4BF272310463E /* OrganizationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62965F148D946A7DAB65C1B7 /* OrganizationModels.swift */; };
+		0B08721888BDE152F65C8861 /* BetterAuth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 57EB16147F04703645966CFD /* BetterAuth.framework */; };
+		0EADB182FB3F868B70C63EDF /* BetterAuthConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CA87939C83219581B31E1F7 /* BetterAuthConfiguration.swift */; };
+		200F12A82ED1688E137144EE /* TestAssertions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 010C2C530A41622AA0556927 /* TestAssertions.swift */; };
+		21EB788B4643A8A04E976181 /* PKCE.swift in Sources */ = {isa = PBXBuildFile; fileRef = 395D8B13481D1B69A469043F /* PKCE.swift */; };
+		2AD391DB148979A4626D8B01 /* OrganizationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 053EBD03B1AE449E27280F77 /* OrganizationManager.swift */; };
+		422AF1A63BDE51E040D080A1 /* RetryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82C1C763A397D8A7292C1444 /* RetryPolicy.swift */; };
+		430392EB3DC9E744A6022200 /* AppleSignInSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2C6911B7B539F0C0FB7C2F6 /* AppleSignInSupport.swift */; };
+		4EA137E12173B2445BCEA8F9 /* OrganizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761EB3A99984CCA7FA195F6B /* OrganizationTests.swift */; };
+		562DE2549495886CDEE5D278 /* BetterAuthLifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04AB6887CBC593185002451E /* BetterAuthLifecycle.swift */; };
+		58CD9EF834142DE6C415C16F /* BetterAuthCoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E7EC765E41947A5CF574A9C /* BetterAuthCoding.swift */; };
+		5AE4BFAA76E186A04C842461 /* BetterAuthErrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = E92C0A6B34F1ADD0338CD729 /* BetterAuthErrors.swift */; };
+		6682650BFE5C8AD6204E355B /* BetterAuthSwiftTestsPart1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 105D67400B7A2E3E54FAF416 /* BetterAuthSwiftTestsPart1.swift */; };
+		6705A938703E5F0A395132B2 /* BetterAuthOrganizationModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91181EFDB7909A892E63ED51 /* BetterAuthOrganizationModule.swift */; };
+		680E5602B8A1B0C2E72F649E /* BetterAuthTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 185BEC72718C8C0D041DECF1 /* BetterAuthTransport.swift */; };
+		74D145487EC3AC5B9296DF3C /* BetterAuthSwiftTestsPart3.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6FE89AA156FCB6E3B8773C1 /* BetterAuthSwiftTestsPart3.swift */; };
+		7AB9F794B6C86E7E3E9748E1 /* BetterAuthSocialModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A5144ACC78A6C42E2F62055 /* BetterAuthSocialModels.swift */; };
+		7C52B85D6C0972845CF3BD58 /* AuthMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = F306738978FFF98FC3EC82FD /* AuthMethod.swift */; };
+		7D7A8AF98967B77A9A53B6DA /* BetterAuthCoreServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42CDFA1D5CA6AA07C1B9DD3C /* BetterAuthCoreServices.swift */; };
+		7FC1C581116A20312C456E9A /* BetterAuthCallbackHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCB60C17621015691F128613 /* BetterAuthCallbackHandler.swift */; };
+		83C001E6F760C6BFCEA243A3 /* AuthLaunchState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45110BC7E5FCE348040BF749 /* AuthLaunchState.swift */; };
+		846481C73C7F779A07E921AD /* BetterAuthClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA86DCDE259E29B7CBB81610 /* BetterAuthClient.swift */; };
+		870D3DA2A4E7F01485F324C8 /* BetterAuthSwiftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67324ADE830ABAC5CEA77365 /* BetterAuthSwiftTests.swift */; };
+		929A9275CA5E12E7B2CC7B90 /* TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 022F5AE8EC0943DFF262FB5F /* TestSupport.swift */; };
+		98B5E7ECCBD4BE6EBEDB2963 /* BetterAuth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 57EB16147F04703645966CFD /* BetterAuth.framework */; };
+		A0E957F92875AC1FD4712703 /* BetterAuthModules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF506A7466E44C132787F22 /* BetterAuthModules.swift */; };
+		A86734DB3BAF54D24879899B /* AuthStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F28F907CA534295C2CBDC93 /* AuthStore.swift */; };
+		B35168C2C0EE98A1A6AF9AC6 /* BetterAuthOrganization.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F51E8467AD24345B8495B5FF /* BetterAuthOrganization.framework */; };
+		B4E917A6723BFEC3A19F540C /* BetterAuthSwiftTestsPart4.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A12983B9438B15DFCD7CCE /* BetterAuthSwiftTestsPart4.swift */; };
+		BE7595B89C6656783B1A6FAE /* BetterAuth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 57EB16147F04703645966CFD /* BetterAuth.framework */; };
+		C1C55BD444F7298BE0C911DA /* BetterAuthSessionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B35306E0371C4649852A1BB /* BetterAuthSessionModels.swift */; };
+		C6E67C108F81E79A82075CEC /* BetterAuthEventEmitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 492C9D23F023C9ABEC11A4B0 /* BetterAuthEventEmitter.swift */; };
+		C6F365799AE643BCD249DC43 /* BetterAuthSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4A34744C742DB2ECFC3B96A /* BetterAuthSessionStore.swift */; };
+		CBB9AC5D7707AC446A1AF215 /* BetterAuthRequestClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E813D4177672D5A1B6BA73B /* BetterAuthRequestClient.swift */; };
+		D49A09D83B6FE05AA79FD0EB /* BetterAuth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 57EB16147F04703645966CFD /* BetterAuth.framework */; };
+		DB696DDD4C00D67F30C3551F /* BetterAuthTestHelpers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BA0565DB628BDA77EF409459 /* BetterAuthTestHelpers.framework */; };
+		DD56E5BE0076934DA2266E8A /* BetterAuthPasskeyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E183D252DA7EDBC14F2D039 /* BetterAuthPasskeyModels.swift */; };
+		DEAA5CA2E581486D7BEF9CA5 /* BetterAuthOTPModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C23A34EC537479FEF58B9D2F /* BetterAuthOTPModels.swift */; };
+		E4F5D8230F2FE34AE35908E7 /* BetterAuthTestHelpers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BA0565DB628BDA77EF409459 /* BetterAuthTestHelpers.framework */; };
+		E54CCD62B403E1B9995929D5 /* BetterAuth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 57EB16147F04703645966CFD /* BetterAuth.framework */; };
+		E60BDA687A0EEAE444BE15B9 /* BetterAuthLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5D8B915C414708733EF5B01 /* BetterAuthLogger.swift */; };
+		E955301C533D26C07D760267 /* BetterAuthSwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DC29EA90160EDC19A5438A07 /* BetterAuthSwiftUI.framework */; };
+		F784869E3D0562358F4DB388 /* BetterAuthSwiftTestsPart2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DF8B07DEC1A29E329B9FEDA /* BetterAuthSwiftTestsPart2.swift */; };
+		FC356661719ED970ABAA0CBA /* BetterAuthClientProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8B976DF812F2C4919995A8C /* BetterAuthClientProtocols.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -121,9 +129,26 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				E67BFF187B704899FFD41189 /* BetterAuth.framework in Embed Frameworks */,
-				DD098C81D52687CECA03D662 /* BetterAuthOrganization.framework in Embed Frameworks */,
-				04C845A5E52AE67B7DA8F1F4 /* BetterAuthTestHelpers.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		43CA93A645F68BD35FAD1281 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4790B064D7D7D9CD5D408081 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -134,9 +159,26 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				B8D2E0CF15084A5A9860DF60 /* BetterAuth.framework in Embed Frameworks */,
-				486F2ADF730C557132737111 /* BetterAuthSwiftUI.framework in Embed Frameworks */,
-				923772C971B2FC5A05BD0C42 /* BetterAuthTestHelpers.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F9AAAEDE8DF057DF7C60C194 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FE577B10BCF4871CCE6FB28B /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -144,36 +186,66 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		0142B80119C66B05686B7FCF /* BetterAuthSwiftUI.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = BetterAuthSwiftUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		142D76E4199DAECAD763D41B /* BetterAuthTestHelpers.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = BetterAuthTestHelpers.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		18C5C294CCA05B2EFBCEC323 /* AuthNetworkClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthNetworkClient.swift; sourceTree = "<group>"; };
-		1B09AB13F39B0CEA93530487 /* PKCE.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PKCE.swift; sourceTree = "<group>"; };
-		1ED172AF309D20E9855F7EBF /* BetterAuthSwiftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthSwiftTests.swift; sourceTree = "<group>"; };
-		24A66D05B6B109599855CACA /* AuthLaunchState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthLaunchState.swift; sourceTree = "<group>"; };
-		3238FF1F1BF09A2C5B6265F8 /* BetterAuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthModels.swift; sourceTree = "<group>"; };
-		32C6C3D8627AEEB0D01483C4 /* TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestSupport.swift; sourceTree = "<group>"; };
-		334D4DBFD77FE25E591F87E8 /* AuthMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthMethod.swift; sourceTree = "<group>"; };
-		363A1513953A442EBFD47BB7 /* AuthStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthStore.swift; sourceTree = "<group>"; };
-		38010EA6E7DEAC80400385DD /* BetterAuthEventEmitter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthEventEmitter.swift; sourceTree = "<group>"; };
-		3C5CF196005AEC04A5A5BA30 /* BetterAuthLifecycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthLifecycle.swift; sourceTree = "<group>"; };
-		41404053F2CE21306241C2F5 /* AppleSignInSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInSupport.swift; sourceTree = "<group>"; };
-		44ECB4909A651ACB77524471 /* BetterAuthRequestClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthRequestClient.swift; sourceTree = "<group>"; };
-		4AD7DE5EDF642F5468013B9A /* BetterAuthSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthSessionManager.swift; sourceTree = "<group>"; };
-		52069591FFE876A5488465CD /* BetterAuthTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthTransport.swift; sourceTree = "<group>"; };
-		65A0CB5F16FEE3FD76199BF0 /* OrganizationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizationManager.swift; sourceTree = "<group>"; };
-		74745602A51C1292CE9844CC /* BetterAuthLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthLogger.swift; sourceTree = "<group>"; };
-		879BB86E88728ED76E690F3F /* BetterAuthCoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthCoding.swift; sourceTree = "<group>"; };
-		91F012988EDFB37299816A45 /* OrganizationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizationModels.swift; sourceTree = "<group>"; };
-		9C761BAD7E44578CA8DBF7A9 /* BetterAuthOrganizationTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BetterAuthOrganizationTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		AFDA33049071AB0F13C194C0 /* BetterAuthClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthClient.swift; sourceTree = "<group>"; };
-		B4FA6E24B6E35EBAF48011B3 /* BetterAuthConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthConfiguration.swift; sourceTree = "<group>"; };
-		BCB088754474AADAB062868F /* BetterAuthOrganization.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = BetterAuthOrganization.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		D1405CA96F933F668AFF7A94 /* RetryPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetryPolicy.swift; sourceTree = "<group>"; };
-		E325E9304E3B49A8E580EB71 /* BetterAuthSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthSessionStore.swift; sourceTree = "<group>"; };
-		EE954A111547F3BD18F5ABBF /* OrganizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizationTests.swift; sourceTree = "<group>"; };
-		F506F0AD9B95C9ADAD092930 /* BetterAuth.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = BetterAuth.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		F8E8889F3F9261B7465725F0 /* BetterAuthErrors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthErrors.swift; sourceTree = "<group>"; };
-		FC4DD9DD39445D46C8205568 /* BetterAuthSwiftTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BetterAuthSwiftTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		010C2C530A41622AA0556927 /* TestAssertions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestAssertions.swift; sourceTree = "<group>"; };
+		022F5AE8EC0943DFF262FB5F /* TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestSupport.swift; sourceTree = "<group>"; };
+		031BF800FE533C1EF1B1EE36 /* extract_sdk_endpoints.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = extract_sdk_endpoints.sh; sourceTree = "<group>"; };
+		04AB6887CBC593185002451E /* BetterAuthLifecycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthLifecycle.swift; sourceTree = "<group>"; };
+		053EBD03B1AE449E27280F77 /* OrganizationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizationManager.swift; sourceTree = "<group>"; };
+		082D4917EE4B4A4F246C8EC3 /* build_xcframeworks.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = build_xcframeworks.sh; sourceTree = "<group>"; };
+		105D67400B7A2E3E54FAF416 /* BetterAuthSwiftTestsPart1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthSwiftTestsPart1.swift; sourceTree = "<group>"; };
+		11A51520F024C1C1D9657F6E /* BetterAuthSessionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthSessionState.swift; sourceTree = "<group>"; };
+		185BEC72718C8C0D041DECF1 /* BetterAuthTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthTransport.swift; sourceTree = "<group>"; };
+		1A5144ACC78A6C42E2F62055 /* BetterAuthSocialModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthSocialModels.swift; sourceTree = "<group>"; };
+		1DF8B07DEC1A29E329B9FEDA /* BetterAuthSwiftTestsPart2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthSwiftTestsPart2.swift; sourceTree = "<group>"; };
+		25BB78A6C54A2A33EA61958E /* BetterAuthOrganizationTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "BetterAuthOrganizationTests-Info.plist"; sourceTree = "<group>"; };
+		27E5D5615F31E0B321AB7949 /* .swiftformat */ = {isa = PBXFileReference; path = .swiftformat; sourceTree = "<group>"; };
+		2DE3601C850A3AD88651492A /* generate_xcodeproj.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = generate_xcodeproj.sh; sourceTree = "<group>"; };
+		30E25C8AA37C38457CF12750 /* BetterAuthOrganization-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "BetterAuthOrganization-Info.plist"; sourceTree = "<group>"; };
+		395D8B13481D1B69A469043F /* PKCE.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PKCE.swift; sourceTree = "<group>"; };
+		3E183D252DA7EDBC14F2D039 /* BetterAuthPasskeyModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthPasskeyModels.swift; sourceTree = "<group>"; };
+		3E813D4177672D5A1B6BA73B /* BetterAuthRequestClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthRequestClient.swift; sourceTree = "<group>"; };
+		42CDFA1D5CA6AA07C1B9DD3C /* BetterAuthCoreServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthCoreServices.swift; sourceTree = "<group>"; };
+		45110BC7E5FCE348040BF749 /* AuthLaunchState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthLaunchState.swift; sourceTree = "<group>"; };
+		47A12983B9438B15DFCD7CCE /* BetterAuthSwiftTestsPart4.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthSwiftTestsPart4.swift; sourceTree = "<group>"; };
+		492C9D23F023C9ABEC11A4B0 /* BetterAuthEventEmitter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthEventEmitter.swift; sourceTree = "<group>"; };
+		57EB16147F04703645966CFD /* BetterAuth.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = BetterAuth.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		5B1EF8E235D159A75B33DB2E /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
+		62965F148D946A7DAB65C1B7 /* OrganizationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizationModels.swift; sourceTree = "<group>"; };
+		65F78D987C1ABAE96B18515E /* extract_upstream_endpoints.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = extract_upstream_endpoints.sh; sourceTree = "<group>"; };
+		67324ADE830ABAC5CEA77365 /* BetterAuthSwiftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthSwiftTests.swift; sourceTree = "<group>"; };
+		7071732D7777F820CEC4651A /* BetterAuthOrganizationTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BetterAuthOrganizationTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		761EB3A99984CCA7FA195F6B /* OrganizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizationTests.swift; sourceTree = "<group>"; };
+		7976A0428DAB03AD5FA3285E /* AuthNetworkClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthNetworkClient.swift; sourceTree = "<group>"; };
+		7DF506A7466E44C132787F22 /* BetterAuthModules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthModules.swift; sourceTree = "<group>"; };
+		7E7EC765E41947A5CF574A9C /* BetterAuthCoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthCoding.swift; sourceTree = "<group>"; };
+		7F28F907CA534295C2CBDC93 /* AuthStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthStore.swift; sourceTree = "<group>"; };
+		82C1C763A397D8A7292C1444 /* RetryPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetryPolicy.swift; sourceTree = "<group>"; };
+		873A8C257547D56ECFB49150 /* BetterAuthTestHelpers-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "BetterAuthTestHelpers-Info.plist"; sourceTree = "<group>"; };
+		8EB1A2F07B9B5D2D853C805B /* .swiftlint.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
+		91181EFDB7909A892E63ED51 /* BetterAuthOrganizationModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthOrganizationModule.swift; sourceTree = "<group>"; };
+		9B35306E0371C4649852A1BB /* BetterAuthSessionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthSessionModels.swift; sourceTree = "<group>"; };
+		9CA87939C83219581B31E1F7 /* BetterAuthConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthConfiguration.swift; sourceTree = "<group>"; };
+		9EAB03AAFA96BAECB4BA6244 /* BetterAuthSwiftUI-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "BetterAuthSwiftUI-Info.plist"; sourceTree = "<group>"; };
+		AA0E1D635B6FD15D606BB99D /* BetterAuthSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthSessionManager.swift; sourceTree = "<group>"; };
+		AEED91AA410D65BFF9CF538F /* drift-prompt.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "drift-prompt.md"; sourceTree = "<group>"; };
+		B485B1057B52337938DBB4F2 /* bootstrap_runner_env.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = bootstrap_runner_env.sh; sourceTree = "<group>"; };
+		BA023D1480CBC830EB2861D7 /* BetterAuth-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "BetterAuth-Info.plist"; sourceTree = "<group>"; };
+		BA0565DB628BDA77EF409459 /* BetterAuthTestHelpers.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = BetterAuthTestHelpers.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		C23A34EC537479FEF58B9D2F /* BetterAuthOTPModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthOTPModels.swift; sourceTree = "<group>"; };
+		C6FE89AA156FCB6E3B8773C1 /* BetterAuthSwiftTestsPart3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthSwiftTestsPart3.swift; sourceTree = "<group>"; };
+		D4D43FDA3601E650A749E9D2 /* swift_test_wrapper.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = swift_test_wrapper.sh; sourceTree = "<group>"; };
+		D8B976DF812F2C4919995A8C /* BetterAuthClientProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthClientProtocols.swift; sourceTree = "<group>"; };
+		DC29EA90160EDC19A5438A07 /* BetterAuthSwiftUI.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = BetterAuthSwiftUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		DCB60C17621015691F128613 /* BetterAuthCallbackHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthCallbackHandler.swift; sourceTree = "<group>"; };
+		E4A34744C742DB2ECFC3B96A /* BetterAuthSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthSessionStore.swift; sourceTree = "<group>"; };
+		E59946C0CD0188E4E5B1AD5A /* BetterAuthSwiftTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BetterAuthSwiftTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E92C0A6B34F1ADD0338CD729 /* BetterAuthErrors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthErrors.swift; sourceTree = "<group>"; };
+		F2C6911B7B539F0C0FB7C2F6 /* AppleSignInSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInSupport.swift; sourceTree = "<group>"; };
+		F306738978FFF98FC3EC82FD /* AuthMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthMethod.swift; sourceTree = "<group>"; };
+		F51E8467AD24345B8495B5FF /* BetterAuthOrganization.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = BetterAuthOrganization.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		F5D8B915C414708733EF5B01 /* BetterAuthLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthLogger.swift; sourceTree = "<group>"; };
+		FA86DCDE259E29B7CBB81610 /* BetterAuthClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthClient.swift; sourceTree = "<group>"; };
+		FBF52A4D879F380E18F58041 /* BetterAuthSwiftTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "BetterAuthSwiftTests-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -181,7 +253,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				998D9389D323FE2846E6CC4A /* BetterAuth.framework in Frameworks */,
+				98B5E7ECCBD4BE6EBEDB2963 /* BetterAuth.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -189,7 +261,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7803E769B2897271F07F1191 /* BetterAuth.framework in Frameworks */,
+				E54CCD62B403E1B9995929D5 /* BetterAuth.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E289183EDD8949BC888C9B57 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -197,7 +276,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B11383281AEEF80D80619169 /* BetterAuth.framework in Frameworks */,
+				0B08721888BDE152F65C8861 /* BetterAuth.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -205,9 +284,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2643AB9813376A1D460C2203 /* BetterAuth.framework in Frameworks */,
-				2AD8A8CEAAFA66297E9E54EA /* BetterAuthSwiftUI.framework in Frameworks */,
-				CC1A1D2B93E5A31597DE3F8A /* BetterAuthTestHelpers.framework in Frameworks */,
+				D49A09D83B6FE05AA79FD0EB /* BetterAuth.framework in Frameworks */,
+				E955301C533D26C07D760267 /* BetterAuthSwiftUI.framework in Frameworks */,
+				DB696DDD4C00D67F30C3551F /* BetterAuthTestHelpers.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -215,110 +294,182 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B83E0126F69F049285AA1F4E /* BetterAuth.framework in Frameworks */,
-				5B88E821880866111CE6D4FB /* BetterAuthOrganization.framework in Frameworks */,
-				24C48664555310E94C11F200 /* BetterAuthTestHelpers.framework in Frameworks */,
+				BE7595B89C6656783B1A6FAE /* BetterAuth.framework in Frameworks */,
+				B35168C2C0EE98A1A6AF9AC6 /* BetterAuthOrganization.framework in Frameworks */,
+				E4F5D8230F2FE34AE35908E7 /* BetterAuthTestHelpers.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		18E01E899981D1811AC4B982 /* BetterAuthOrganizationTests */ = {
+		039536825D07C9FE6282DE39 /* BetterAuthTestHelpers */ = {
 			isa = PBXGroup;
 			children = (
-				EE954A111547F3BD18F5ABBF /* OrganizationTests.swift */,
+				022F5AE8EC0943DFF262FB5F /* TestSupport.swift */,
 			);
-			name = BetterAuthOrganizationTests;
-			path = Tests/BetterAuthOrganizationTests;
+			path = BetterAuthTestHelpers;
 			sourceTree = "<group>";
 		};
-		23ED3F8C407EE07A67A4BA3A /* BetterAuthOrganization */ = {
+		106C8E4F892053B0FFE527E0 /* BetterAuthSwiftUI */ = {
 			isa = PBXGroup;
 			children = (
-				65A0CB5F16FEE3FD76199BF0 /* OrganizationManager.swift */,
-				91F012988EDFB37299816A45 /* OrganizationModels.swift */,
+				45110BC7E5FCE348040BF749 /* AuthLaunchState.swift */,
+				7F28F907CA534295C2CBDC93 /* AuthStore.swift */,
 			);
-			name = BetterAuthOrganization;
-			path = Sources/BetterAuthOrganization;
+			path = BetterAuthSwiftUI;
 			sourceTree = "<group>";
 		};
-		4457BA79C9A9E402A7792258 /* BetterAuthSwift */ = {
+		20FF9511C25D1756664636BC /* BetterAuthSwift */ = {
 			isa = PBXGroup;
 			children = (
-				41404053F2CE21306241C2F5 /* AppleSignInSupport.swift */,
-				334D4DBFD77FE25E591F87E8 /* AuthMethod.swift */,
-				18C5C294CCA05B2EFBCEC323 /* AuthNetworkClient.swift */,
-				AFDA33049071AB0F13C194C0 /* BetterAuthClient.swift */,
-				879BB86E88728ED76E690F3F /* BetterAuthCoding.swift */,
-				B4FA6E24B6E35EBAF48011B3 /* BetterAuthConfiguration.swift */,
-				F8E8889F3F9261B7465725F0 /* BetterAuthErrors.swift */,
-				38010EA6E7DEAC80400385DD /* BetterAuthEventEmitter.swift */,
-				3C5CF196005AEC04A5A5BA30 /* BetterAuthLifecycle.swift */,
-				74745602A51C1292CE9844CC /* BetterAuthLogger.swift */,
-				3238FF1F1BF09A2C5B6265F8 /* BetterAuthModels.swift */,
-				44ECB4909A651ACB77524471 /* BetterAuthRequestClient.swift */,
-				4AD7DE5EDF642F5468013B9A /* BetterAuthSessionManager.swift */,
-				E325E9304E3B49A8E580EB71 /* BetterAuthSessionStore.swift */,
-				52069591FFE876A5488465CD /* BetterAuthTransport.swift */,
-				1B09AB13F39B0CEA93530487 /* PKCE.swift */,
-				D1405CA96F933F668AFF7A94 /* RetryPolicy.swift */,
+				F2C6911B7B539F0C0FB7C2F6 /* AppleSignInSupport.swift */,
+				F306738978FFF98FC3EC82FD /* AuthMethod.swift */,
+				7976A0428DAB03AD5FA3285E /* AuthNetworkClient.swift */,
+				DCB60C17621015691F128613 /* BetterAuthCallbackHandler.swift */,
+				FA86DCDE259E29B7CBB81610 /* BetterAuthClient.swift */,
+				D8B976DF812F2C4919995A8C /* BetterAuthClientProtocols.swift */,
+				7E7EC765E41947A5CF574A9C /* BetterAuthCoding.swift */,
+				9CA87939C83219581B31E1F7 /* BetterAuthConfiguration.swift */,
+				42CDFA1D5CA6AA07C1B9DD3C /* BetterAuthCoreServices.swift */,
+				E92C0A6B34F1ADD0338CD729 /* BetterAuthErrors.swift */,
+				492C9D23F023C9ABEC11A4B0 /* BetterAuthEventEmitter.swift */,
+				04AB6887CBC593185002451E /* BetterAuthLifecycle.swift */,
+				F5D8B915C414708733EF5B01 /* BetterAuthLogger.swift */,
+				7DF506A7466E44C132787F22 /* BetterAuthModules.swift */,
+				C23A34EC537479FEF58B9D2F /* BetterAuthOTPModels.swift */,
+				3E183D252DA7EDBC14F2D039 /* BetterAuthPasskeyModels.swift */,
+				3E813D4177672D5A1B6BA73B /* BetterAuthRequestClient.swift */,
+				AA0E1D635B6FD15D606BB99D /* BetterAuthSessionManager.swift */,
+				9B35306E0371C4649852A1BB /* BetterAuthSessionModels.swift */,
+				11A51520F024C1C1D9657F6E /* BetterAuthSessionState.swift */,
+				E4A34744C742DB2ECFC3B96A /* BetterAuthSessionStore.swift */,
+				1A5144ACC78A6C42E2F62055 /* BetterAuthSocialModels.swift */,
+				185BEC72718C8C0D041DECF1 /* BetterAuthTransport.swift */,
+				395D8B13481D1B69A469043F /* PKCE.swift */,
+				82C1C763A397D8A7292C1444 /* RetryPolicy.swift */,
 			);
-			name = BetterAuthSwift;
-			path = Sources/BetterAuthSwift;
+			path = BetterAuthSwift;
 			sourceTree = "<group>";
 		};
-		87705ED68CD45364C9E27BC3 /* BetterAuthSwiftUI */ = {
+		268705AFFF09B84568EE8F57 /* BetterAuthSwiftTests */ = {
 			isa = PBXGroup;
 			children = (
-				24A66D05B6B109599855CACA /* AuthLaunchState.swift */,
-				363A1513953A442EBFD47BB7 /* AuthStore.swift */,
+				67324ADE830ABAC5CEA77365 /* BetterAuthSwiftTests.swift */,
+				105D67400B7A2E3E54FAF416 /* BetterAuthSwiftTestsPart1.swift */,
+				1DF8B07DEC1A29E329B9FEDA /* BetterAuthSwiftTestsPart2.swift */,
+				C6FE89AA156FCB6E3B8773C1 /* BetterAuthSwiftTestsPart3.swift */,
+				47A12983B9438B15DFCD7CCE /* BetterAuthSwiftTestsPart4.swift */,
+				010C2C530A41622AA0556927 /* TestAssertions.swift */,
 			);
-			name = BetterAuthSwiftUI;
-			path = Sources/BetterAuthSwiftUI;
+			path = BetterAuthSwiftTests;
 			sourceTree = "<group>";
 		};
-		8A1BC4D9F1628B698DEEFF0A /* BetterAuthSwiftTests */ = {
+		291724E46E9891CD9C337094 /* BetterAuthOrganization */ = {
 			isa = PBXGroup;
 			children = (
-				1ED172AF309D20E9855F7EBF /* BetterAuthSwiftTests.swift */,
+				91181EFDB7909A892E63ED51 /* BetterAuthOrganizationModule.swift */,
+				053EBD03B1AE449E27280F77 /* OrganizationManager.swift */,
+				62965F148D946A7DAB65C1B7 /* OrganizationModels.swift */,
 			);
-			name = BetterAuthSwiftTests;
-			path = Tests/BetterAuthSwiftTests;
+			path = BetterAuthOrganization;
+			sourceTree = "<group>";
+		};
+		2A17FB1FA83127A18A4AC7AC /* InfoPlists */ = {
+			isa = PBXGroup;
+			children = (
+				BA023D1480CBC830EB2861D7 /* BetterAuth-Info.plist */,
+				30E25C8AA37C38457CF12750 /* BetterAuthOrganization-Info.plist */,
+				25BB78A6C54A2A33EA61958E /* BetterAuthOrganizationTests-Info.plist */,
+				FBF52A4D879F380E18F58041 /* BetterAuthSwiftTests-Info.plist */,
+				9EAB03AAFA96BAECB4BA6244 /* BetterAuthSwiftUI-Info.plist */,
+				873A8C257547D56ECFB49150 /* BetterAuthTestHelpers-Info.plist */,
+			);
+			path = InfoPlists;
+			sourceTree = "<group>";
+		};
+		2EAA9D1EACC52DC299C6A8A2 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				903C60D1A068818BA5612A03 /* BetterAuthOrganizationTests */,
+				268705AFFF09B84568EE8F57 /* BetterAuthSwiftTests */,
+				039536825D07C9FE6282DE39 /* BetterAuthTestHelpers */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		566511FD5B4364FFE0E4DD7F /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				291724E46E9891CD9C337094 /* BetterAuthOrganization */,
+				20FF9511C25D1756664636BC /* BetterAuthSwift */,
+				106C8E4F892053B0FFE527E0 /* BetterAuthSwiftUI */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		64878105CD1D594B8C433546 /* Derived */ = {
+			isa = PBXGroup;
+			children = (
+				2A17FB1FA83127A18A4AC7AC /* InfoPlists */,
+			);
+			path = Derived;
+			sourceTree = "<group>";
+		};
+		903C60D1A068818BA5612A03 /* BetterAuthOrganizationTests */ = {
+			isa = PBXGroup;
+			children = (
+				761EB3A99984CCA7FA195F6B /* OrganizationTests.swift */,
+			);
+			path = BetterAuthOrganizationTests;
+			sourceTree = "<group>";
+		};
+		9EE15C757237F7DE7CD30F48 /* Project */ = {
+			isa = PBXGroup;
+			children = (
+				64878105CD1D594B8C433546 /* Derived */,
+				CF303C413B8EAF819EA1595B /* Scripts */,
+				566511FD5B4364FFE0E4DD7F /* Sources */,
+				2EAA9D1EACC52DC299C6A8A2 /* Tests */,
+				27E5D5615F31E0B321AB7949 /* .swiftformat */,
+				8EB1A2F07B9B5D2D853C805B /* .swiftlint.yml */,
+				5B1EF8E235D159A75B33DB2E /* Package.swift */,
+			);
+			name = Project;
 			sourceTree = "<group>";
 		};
 		AB1FDFD7769B9D843185AC80 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				F506F0AD9B95C9ADAD092930 /* BetterAuth.framework */,
-				BCB088754474AADAB062868F /* BetterAuthOrganization.framework */,
-				9C761BAD7E44578CA8DBF7A9 /* BetterAuthOrganizationTests.xctest */,
-				FC4DD9DD39445D46C8205568 /* BetterAuthSwiftTests.xctest */,
-				0142B80119C66B05686B7FCF /* BetterAuthSwiftUI.framework */,
-				142D76E4199DAECAD763D41B /* BetterAuthTestHelpers.framework */,
+				57EB16147F04703645966CFD /* BetterAuth.framework */,
+				F51E8467AD24345B8495B5FF /* BetterAuthOrganization.framework */,
+				7071732D7777F820CEC4651A /* BetterAuthOrganizationTests.xctest */,
+				E59946C0CD0188E4E5B1AD5A /* BetterAuthSwiftTests.xctest */,
+				DC29EA90160EDC19A5438A07 /* BetterAuthSwiftUI.framework */,
+				BA0565DB628BDA77EF409459 /* BetterAuthTestHelpers.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		D6F10A7A1EAD0F244B6A1F07 /* BetterAuthTestHelpers */ = {
+		CF303C413B8EAF819EA1595B /* Scripts */ = {
 			isa = PBXGroup;
 			children = (
-				32C6C3D8627AEEB0D01483C4 /* TestSupport.swift */,
+				B485B1057B52337938DBB4F2 /* bootstrap_runner_env.sh */,
+				082D4917EE4B4A4F246C8EC3 /* build_xcframeworks.sh */,
+				AEED91AA410D65BFF9CF538F /* drift-prompt.md */,
+				031BF800FE533C1EF1B1EE36 /* extract_sdk_endpoints.sh */,
+				65F78D987C1ABAE96B18515E /* extract_upstream_endpoints.sh */,
+				2DE3601C850A3AD88651492A /* generate_xcodeproj.sh */,
+				D4D43FDA3601E650A749E9D2 /* swift_test_wrapper.sh */,
 			);
-			name = BetterAuthTestHelpers;
-			path = Tests/BetterAuthTestHelpers;
+			path = Scripts;
 			sourceTree = "<group>";
 		};
 		F3293617033BF10AC6658568 = {
 			isa = PBXGroup;
 			children = (
-				23ED3F8C407EE07A67A4BA3A /* BetterAuthOrganization */,
-				18E01E899981D1811AC4B982 /* BetterAuthOrganizationTests */,
-				4457BA79C9A9E402A7792258 /* BetterAuthSwift */,
-				8A1BC4D9F1628B698DEEFF0A /* BetterAuthSwiftTests */,
-				87705ED68CD45364C9E27BC3 /* BetterAuthSwiftUI */,
-				D6F10A7A1EAD0F244B6A1F07 /* BetterAuthTestHelpers */,
 				AB1FDFD7769B9D843185AC80 /* Products */,
+				9EE15C757237F7DE7CD30F48 /* Project */,
 			);
 			sourceTree = "<group>";
 		};
@@ -332,6 +483,9 @@
 				A6B02C9DBF516D677AA8145B /* SwiftLint */,
 				A15A0886193BA7F3C7E15C67 /* SwiftFormat */,
 				ED7B38A60CD20097412E5E88 /* Sources */,
+				995622F61D30C87CE79FE2F1 /* Resources */,
+				E289183EDD8949BC888C9B57 /* Frameworks */,
+				4790B064D7D7D9CD5D408081 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -341,7 +495,7 @@
 			packageProductDependencies = (
 			);
 			productName = BetterAuth;
-			productReference = F506F0AD9B95C9ADAD092930 /* BetterAuth.framework */;
+			productReference = 57EB16147F04703645966CFD /* BetterAuth.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 		4970F0DBC266BB5B3E182913 /* BetterAuthTestHelpers */ = {
@@ -349,7 +503,9 @@
 			buildConfigurationList = 228412C0219DEC2152FFE07E /* Build configuration list for PBXNativeTarget "BetterAuthTestHelpers" */;
 			buildPhases = (
 				AF70BB96D4EC2DF282352A41 /* Sources */,
+				DF0DF1B5474AA7B2B44B7D0A /* Resources */,
 				34C4AD92CF91C19DF6DF42A7 /* Frameworks */,
+				FE577B10BCF4871CCE6FB28B /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -360,7 +516,7 @@
 			packageProductDependencies = (
 			);
 			productName = BetterAuthTestHelpers;
-			productReference = 142D76E4199DAECAD763D41B /* BetterAuthTestHelpers.framework */;
+			productReference = BA0565DB628BDA77EF409459 /* BetterAuthTestHelpers.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 		4ED48E66FA19671E2FFCA8AA /* BetterAuthSwiftTests */ = {
@@ -368,6 +524,7 @@
 			buildConfigurationList = FF7264AD8505AB947C6C9D8C /* Build configuration list for PBXNativeTarget "BetterAuthSwiftTests" */;
 			buildPhases = (
 				814247D5614B92E2559E9920 /* Sources */,
+				FC331B864D9275C946CA7CDE /* Resources */,
 				F564F76523141E41AFDF6E30 /* Frameworks */,
 				6313DE01D3BC9EF40C5BE379 /* Embed Frameworks */,
 			);
@@ -382,7 +539,7 @@
 			packageProductDependencies = (
 			);
 			productName = BetterAuthSwiftTests;
-			productReference = FC4DD9DD39445D46C8205568 /* BetterAuthSwiftTests.xctest */;
+			productReference = E59946C0CD0188E4E5B1AD5A /* BetterAuthSwiftTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		5CFE70D2CEA303CF52957983 /* BetterAuthSwiftUI */ = {
@@ -390,7 +547,9 @@
 			buildConfigurationList = 2B5D77A063233C20CF406DF9 /* Build configuration list for PBXNativeTarget "BetterAuthSwiftUI" */;
 			buildPhases = (
 				3D982352708449910A5A4438 /* Sources */,
+				3A56C85EC9EE4A3C1A72309A /* Resources */,
 				F2C27775481CEC3500BA407C /* Frameworks */,
+				F9AAAEDE8DF057DF7C60C194 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -401,7 +560,7 @@
 			packageProductDependencies = (
 			);
 			productName = BetterAuthSwiftUI;
-			productReference = 0142B80119C66B05686B7FCF /* BetterAuthSwiftUI.framework */;
+			productReference = DC29EA90160EDC19A5438A07 /* BetterAuthSwiftUI.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 		9B72220C57C4AB02C35CEC48 /* BetterAuthOrganization */ = {
@@ -409,7 +568,9 @@
 			buildConfigurationList = FA9901F3FDDDB05C70B71DCC /* Build configuration list for PBXNativeTarget "BetterAuthOrganization" */;
 			buildPhases = (
 				DDDF0EBAF98A4B97CC3BC85E /* Sources */,
+				57BA2304154B34632BFEA27D /* Resources */,
 				2718241F0A7F46799B7A7C9B /* Frameworks */,
+				43CA93A645F68BD35FAD1281 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -420,7 +581,7 @@
 			packageProductDependencies = (
 			);
 			productName = BetterAuthOrganization;
-			productReference = BCB088754474AADAB062868F /* BetterAuthOrganization.framework */;
+			productReference = F51E8467AD24345B8495B5FF /* BetterAuthOrganization.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 		AB5C880E6ADF633518EA18C5 /* BetterAuthOrganizationTests */ = {
@@ -428,6 +589,7 @@
 			buildConfigurationList = 49EFADF0BAD6779B399FDB77 /* Build configuration list for PBXNativeTarget "BetterAuthOrganizationTests" */;
 			buildPhases = (
 				3AA1A0A728B7C03E40609450 /* Sources */,
+				D0C14BDA96C5B4AA67F06A8E /* Resources */,
 				FCE7A5C8914720828D6BD241 /* Frameworks */,
 				1653C1FA714A5DC15DE11334 /* Embed Frameworks */,
 			);
@@ -442,7 +604,7 @@
 			packageProductDependencies = (
 			);
 			productName = BetterAuthOrganizationTests;
-			productReference = 9C761BAD7E44578CA8DBF7A9 /* BetterAuthOrganizationTests.xctest */;
+			productReference = 7071732D7777F820CEC4651A /* BetterAuthOrganizationTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
@@ -452,20 +614,18 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1430;
+				ORGANIZATIONNAME = com.jsj.betterauthswift;
 				TargetAttributes = {
 				};
 			};
 			buildConfigurationList = 09EBF91D0C82613752488218 /* Build configuration list for PBXProject "better-auth-swift" */;
+			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				Base,
 				en,
 			);
 			mainGroup = F3293617033BF10AC6658568;
-			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
 			productRefGroup = AB1FDFD7769B9D843185AC80 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -479,6 +639,51 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		3A56C85EC9EE4A3C1A72309A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		57BA2304154B34632BFEA27D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		995622F61D30C87CE79FE2F1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D0C14BDA96C5B4AA67F06A8E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DF0DF1B5474AA7B2B44B7D0A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FC331B864D9275C946CA7CDE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		A15A0886193BA7F3C7E15C67 /* SwiftFormat */ = {
@@ -498,7 +703,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "export PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"\nSWIFTFORMAT_PATH=\"$(command -v swiftformat 2>/dev/null || xcrun --find swiftformat 2>/dev/null)\"\nif [ -n \"$SWIFTFORMAT_PATH\" ]; then\n  cd \"$SRCROOT\"\n  \"$SWIFTFORMAT_PATH\" . --config .swiftformat || exit 1\n  \"$SWIFTFORMAT_PATH\" . --lint --config .swiftformat\nelse\n  echo \"SwiftFormat not found, skipping formatting check\"\nfi\n";
+			shellScript = "export PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"\nSWIFTFORMAT_PATH=\"$(command -v swiftformat 2>/dev/null || xcrun --find swiftformat 2>/dev/null)\"\nif [ -n \"$SWIFTFORMAT_PATH\" ]; then\n  cd \"$SRCROOT\"\n  \"$SWIFTFORMAT_PATH\" . --config .swiftformat || exit 1\n  \"$SWIFTFORMAT_PATH\" . --lint --config .swiftformat\nelse\n  echo \"SwiftFormat not found, skipping formatting check\"\nfi";
 		};
 		A6B02C9DBF516D677AA8145B /* SwiftLint */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -517,7 +722,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "export PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"\nSWIFTLINT_PATH=\"$(command -v swiftlint 2>/dev/null || xcrun --find swiftlint 2>/dev/null)\"\nFILE_LIST_PATH=\"$DERIVED_FILE_DIR/BetterAuth-swiftlint.xcfilelist\"\nmkdir -p \"$DERIVED_FILE_DIR\"\nif [ -d \"$SRCROOT/Sources\" ]; then\n  find \"$SRCROOT/Sources\" -type f -name \"*.swift\" | sort > \"$FILE_LIST_PATH\"\nelse\n  : > \"$FILE_LIST_PATH\"\nfi\nif [ -n \"$SWIFTLINT_PATH\" ]; then\n  if [ -s \"$FILE_LIST_PATH\" ]; then\n    index=0\n    while IFS= read -r file; do\n      if [ -n \"$file\" ]; then\n        var=\"SCRIPT_INPUT_FILE_${index}\"\n        export \"$var=$file\"\n        index=$((index + 1))\n      fi\n    done < \"$FILE_LIST_PATH\"\n    export SCRIPT_INPUT_FILE_COUNT=$index\n    \"$SWIFTLINT_PATH\" --config \"$SRCROOT/.swiftlint.yml\" --strict --use-script-input-files\n  else\n    \"$SWIFTLINT_PATH\" --config \"$SRCROOT/.swiftlint.yml\" --strict\n  fi\nelse\n  echo \"SwiftLint not found, skipping linting\"\nfi\n";
+			shellScript = "export PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"\nSWIFTLINT_PATH=\"$(command -v swiftlint 2>/dev/null || xcrun --find swiftlint 2>/dev/null)\"\nFILE_LIST_PATH=\"$DERIVED_FILE_DIR/BetterAuth-swiftlint.xcfilelist\"\nmkdir -p \"$DERIVED_FILE_DIR\"\nif [ -d \"$SRCROOT/Sources\" ]; then\n  find \"$SRCROOT/Sources\" -type f -name \"*.swift\" | sort > \"$FILE_LIST_PATH\"\nelse\n  : > \"$FILE_LIST_PATH\"\nfi\nif [ -n \"$SWIFTLINT_PATH\" ]; then\n  if [ -s \"$FILE_LIST_PATH\" ]; then\n    index=0\n    while IFS= read -r file; do\n      if [ -n \"$file\" ]; then\n        var=\"SCRIPT_INPUT_FILE_${index}\"\n        export \"$var=$file\"\n        index=$((index + 1))\n      fi\n    done < \"$FILE_LIST_PATH\"\n    export SCRIPT_INPUT_FILE_COUNT=$index\n    \"$SWIFTLINT_PATH\" --config \"$SRCROOT/.swiftlint.yml\" --strict --use-script-input-files\n  else\n    \"$SWIFTLINT_PATH\" --config \"$SRCROOT/.swiftlint.yml\" --strict\n  fi\nelse\n  echo \"SwiftLint not found, skipping linting\"\nfi";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -526,7 +731,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9E1A21E8ADEB525729BEB019 /* OrganizationTests.swift in Sources */,
+				4EA137E12173B2445BCEA8F9 /* OrganizationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -534,8 +739,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				97BC507577BD0EF19FB5E70A /* AuthLaunchState.swift in Sources */,
-				889319E99D269681CC576E2A /* AuthStore.swift in Sources */,
+				83C001E6F760C6BFCEA243A3 /* AuthLaunchState.swift in Sources */,
+				A86734DB3BAF54D24879899B /* AuthStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -543,7 +748,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EFB64CC7877E42307934E002 /* BetterAuthSwiftTests.swift in Sources */,
+				870D3DA2A4E7F01485F324C8 /* BetterAuthSwiftTests.swift in Sources */,
+				6682650BFE5C8AD6204E355B /* BetterAuthSwiftTestsPart1.swift in Sources */,
+				F784869E3D0562358F4DB388 /* BetterAuthSwiftTestsPart2.swift in Sources */,
+				74D145487EC3AC5B9296DF3C /* BetterAuthSwiftTestsPart3.swift in Sources */,
+				B4E917A6723BFEC3A19F540C /* BetterAuthSwiftTestsPart4.swift in Sources */,
+				200F12A82ED1688E137144EE /* TestAssertions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -551,7 +761,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D4DD81197E72554199D65ABE /* TestSupport.swift in Sources */,
+				929A9275CA5E12E7B2CC7B90 /* TestSupport.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -559,8 +769,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0730D91C865809D79DC83757 /* OrganizationManager.swift in Sources */,
-				DFC8A6466937C27654BFB849 /* OrganizationModels.swift in Sources */,
+				6705A938703E5F0A395132B2 /* BetterAuthOrganizationModule.swift in Sources */,
+				2AD391DB148979A4626D8B01 /* OrganizationManager.swift in Sources */,
+				08F36CF735E4BF272310463E /* OrganizationModels.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -568,23 +779,31 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				ACECBBF4AD05F3F4A9B60DDF /* AppleSignInSupport.swift in Sources */,
-				41392B62B45084D9FA17AD50 /* AuthMethod.swift in Sources */,
-				44ACFA8252D684FE8E416DC8 /* AuthNetworkClient.swift in Sources */,
-				492297B78E0E705E96835589 /* BetterAuthClient.swift in Sources */,
-				E2A37F4ED905CDA946FAF059 /* BetterAuthCoding.swift in Sources */,
-				E249AB577E6DC76F31D60D65 /* BetterAuthConfiguration.swift in Sources */,
-				3305BDBB6BECF76C6FC13FB5 /* BetterAuthErrors.swift in Sources */,
-				B60945706E0497A6E4064186 /* BetterAuthEventEmitter.swift in Sources */,
-				67839F60DA7D6329442D49E8 /* BetterAuthLifecycle.swift in Sources */,
-				5B9BA1B8A127215A55E8D4CF /* BetterAuthLogger.swift in Sources */,
-				0087C0479DC0E78D9E75FA4D /* BetterAuthModels.swift in Sources */,
-				AF11977CE388FA16EC71C956 /* BetterAuthRequestClient.swift in Sources */,
-				F0CA1FF114209DB7FC6974C9 /* BetterAuthSessionManager.swift in Sources */,
-				B0CB14BB599CF824B88203EF /* BetterAuthSessionStore.swift in Sources */,
-				01F714C6CE85F71F1CE48A02 /* BetterAuthTransport.swift in Sources */,
-				ACE9029E130E25469DF97AAE /* PKCE.swift in Sources */,
-				9B049F0698FB613E28C099AB /* RetryPolicy.swift in Sources */,
+				430392EB3DC9E744A6022200 /* AppleSignInSupport.swift in Sources */,
+				7C52B85D6C0972845CF3BD58 /* AuthMethod.swift in Sources */,
+				0500ABD2FB33BC20B00E229B /* AuthNetworkClient.swift in Sources */,
+				7FC1C581116A20312C456E9A /* BetterAuthCallbackHandler.swift in Sources */,
+				846481C73C7F779A07E921AD /* BetterAuthClient.swift in Sources */,
+				FC356661719ED970ABAA0CBA /* BetterAuthClientProtocols.swift in Sources */,
+				58CD9EF834142DE6C415C16F /* BetterAuthCoding.swift in Sources */,
+				0EADB182FB3F868B70C63EDF /* BetterAuthConfiguration.swift in Sources */,
+				7D7A8AF98967B77A9A53B6DA /* BetterAuthCoreServices.swift in Sources */,
+				5AE4BFAA76E186A04C842461 /* BetterAuthErrors.swift in Sources */,
+				C6E67C108F81E79A82075CEC /* BetterAuthEventEmitter.swift in Sources */,
+				562DE2549495886CDEE5D278 /* BetterAuthLifecycle.swift in Sources */,
+				E60BDA687A0EEAE444BE15B9 /* BetterAuthLogger.swift in Sources */,
+				A0E957F92875AC1FD4712703 /* BetterAuthModules.swift in Sources */,
+				DEAA5CA2E581486D7BEF9CA5 /* BetterAuthOTPModels.swift in Sources */,
+				DD56E5BE0076934DA2266E8A /* BetterAuthPasskeyModels.swift in Sources */,
+				CBB9AC5D7707AC446A1AF215 /* BetterAuthRequestClient.swift in Sources */,
+				03778AA0FED8BE77756932BE /* BetterAuthSessionManager.swift in Sources */,
+				C1C55BD444F7298BE0C911DA /* BetterAuthSessionModels.swift in Sources */,
+				02455AB54DD18A8A14B0AC59 /* BetterAuthSessionState.swift in Sources */,
+				C6F365799AE643BCD249DC43 /* BetterAuthSessionStore.swift in Sources */,
+				7AB9F794B6C86E7E3E9748E1 /* BetterAuthSocialModels.swift in Sources */,
+				680E5602B8A1B0C2E72F649E /* BetterAuthTransport.swift in Sources */,
+				21EB788B4643A8A04E976181 /* PKCE.swift in Sources */,
+				422AF1A63BDE51E040D080A1 /* RetryPolicy.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -593,46 +812,55 @@
 /* Begin PBXTargetDependency section */
 		2A8C8950F50040B5CA877A6A /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			name = BetterAuth;
 			target = 48698A365481CB96DF9A8085 /* BetterAuth */;
 			targetProxy = 48453FCBF3C52D6E56EFFE2E /* PBXContainerItemProxy */;
 		};
 		4727117E3C31C962D4F27402 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			name = BetterAuth;
 			target = 48698A365481CB96DF9A8085 /* BetterAuth */;
 			targetProxy = 65EA84DC49091404FE63E84E /* PBXContainerItemProxy */;
 		};
 		5E36B45D7CAE747D00201113 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			name = BetterAuthTestHelpers;
 			target = 4970F0DBC266BB5B3E182913 /* BetterAuthTestHelpers */;
 			targetProxy = C92388656BB5B3079B8AE993 /* PBXContainerItemProxy */;
 		};
 		7E2A5709927742BBCBFC6403 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			name = BetterAuth;
 			target = 48698A365481CB96DF9A8085 /* BetterAuth */;
 			targetProxy = 2CDFB62FEFCCF4C0242BFE7C /* PBXContainerItemProxy */;
 		};
 		A50DBBF7A2C5F710D86A0212 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			name = BetterAuthTestHelpers;
 			target = 4970F0DBC266BB5B3E182913 /* BetterAuthTestHelpers */;
 			targetProxy = 025643F6E559A8D332844584 /* PBXContainerItemProxy */;
 		};
 		B71910AE15F6D8963D734BE8 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			name = BetterAuthSwiftUI;
 			target = 5CFE70D2CEA303CF52957983 /* BetterAuthSwiftUI */;
 			targetProxy = D66FEE40AB65C890A1E3D5E9 /* PBXContainerItemProxy */;
 		};
 		BC2D682C9843445F5433E614 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			name = BetterAuthOrganization;
 			target = 9B72220C57C4AB02C35CEC48 /* BetterAuthOrganization */;
 			targetProxy = 76589305250C140B32008188 /* PBXContainerItemProxy */;
 		};
 		BD0BFC5D45B21FD365947164 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			name = BetterAuth;
 			target = 48698A365481CB96DF9A8085 /* BetterAuth */;
 			targetProxy = 45846876E159ED7DE1083C38 /* PBXContainerItemProxy */;
 		};
 		F1E6A2FAF6C1CB3168F740DD /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			name = BetterAuth;
 			target = 48698A365481CB96DF9A8085 /* BetterAuth */;
 			targetProxy = 1F22714FFD9AC3AF1AA48B28 /* PBXContainerItemProxy */;
 		};
@@ -642,28 +870,46 @@
 		02703E520E5FCE038F741C07 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Derived/InfoPlists/BetterAuth-Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.jsj.betterauthswift.BetterAuth;
+				PRODUCT_NAME = BetterAuth;
 				SDKROOT = auto;
 				SKIP_INSTALL = NO;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
+					"$(inherited)",
+					DEBUG,
+				);
+				SWIFT_COMPILATION_MODE = singlefile;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
 			};
 			name = Debug;
 		};
@@ -678,73 +924,117 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				GENERATE_INFOPLIST_FILE = YES;
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = "Derived/InfoPlists/BetterAuthTestHelpers-Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
 					"@loader_path/../Frameworks",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.jsj.betterauthswift.testhelpers;
+				PRODUCT_NAME = BetterAuthTestHelpers;
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
 			};
 			name = Release;
 		};
 		203CD2B6E67599C4C3780F75 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Derived/InfoPlists/BetterAuthSwiftUI-Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.jsj.betterauthswift.BetterAuthSwiftUI;
+				PRODUCT_NAME = BetterAuthSwiftUI;
 				SDKROOT = auto;
 				SKIP_INSTALL = NO;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
+					"$(inherited)",
+					DEBUG,
+				);
+				SWIFT_COMPILATION_MODE = singlefile;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
 			};
 			name = Debug;
 		};
 		36DCA964B3055642D4E61B4D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Derived/InfoPlists/BetterAuth-Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.jsj.betterauthswift.BetterAuth;
+				PRODUCT_NAME = BetterAuth;
 				SDKROOT = auto;
 				SKIP_INSTALL = NO;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
 			};
 			name = Release;
 		};
@@ -753,6 +1043,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -785,6 +1076,7 @@
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_MODULE_VERIFIER = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -794,8 +1086,8 @@
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"$(inherited)",
 					"DEBUG=1",
+					"$(inherited)",
 				);
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
@@ -803,15 +1095,10 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
+				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTS_MACCATALYST = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
@@ -821,6 +1108,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -853,6 +1141,7 @@
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_MODULE_VERIFIER = NO;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -865,15 +1154,11 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
-				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTS_MACCATALYST = NO;
-				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 6.0;
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
@@ -888,17 +1173,33 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				GENERATE_INFOPLIST_FILE = YES;
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = "Derived/InfoPlists/BetterAuthTestHelpers-Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
 					"@loader_path/../Frameworks",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.jsj.betterauthswift.testhelpers;
+				PRODUCT_NAME = BetterAuthTestHelpers;
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
+					"$(inherited)",
+					DEBUG,
+				);
+				SWIFT_COMPILATION_MODE = singlefile;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
 			};
 			name = Debug;
 		};
@@ -906,15 +1207,25 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "";
-				COMBINE_HIDPI_IMAGES = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				CODE_SIGN_IDENTITY = "-";
+				INFOPLIST_FILE = "Derived/InfoPlists/BetterAuthOrganizationTests-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
 					"@loader_path/../Frameworks",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jsj.betterauthswift.organization-tests";
+				PRODUCT_NAME = BetterAuthOrganizationTests;
 				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				TEST_HOST = "";
 			};
 			name = Release;
@@ -923,15 +1234,29 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "";
-				COMBINE_HIDPI_IMAGES = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				CODE_SIGN_IDENTITY = "-";
+				INFOPLIST_FILE = "Derived/InfoPlists/BetterAuthOrganizationTests-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
 					"@loader_path/../Frameworks",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jsj.betterauthswift.organization-tests";
+				PRODUCT_NAME = BetterAuthOrganizationTests;
 				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
+					"$(inherited)",
+					DEBUG,
+				);
+				SWIFT_COMPILATION_MODE = singlefile;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				TEST_HOST = "";
 			};
 			name = Debug;
@@ -939,28 +1264,46 @@
 		A8AED40225D10A3880E73BB5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Derived/InfoPlists/BetterAuthOrganization-Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.jsj.betterauthswift.BetterAuthOrganization;
+				PRODUCT_NAME = BetterAuthOrganization;
 				SDKROOT = auto;
 				SKIP_INSTALL = NO;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
+					"$(inherited)",
+					DEBUG,
+				);
+				SWIFT_COMPILATION_MODE = singlefile;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
 			};
 			name = Debug;
 		};
@@ -968,15 +1311,29 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "";
-				COMBINE_HIDPI_IMAGES = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				CODE_SIGN_IDENTITY = "-";
+				INFOPLIST_FILE = "Derived/InfoPlists/BetterAuthSwiftTests-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
 					"@loader_path/../Frameworks",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.jsj.betterauthswift.tests;
+				PRODUCT_NAME = BetterAuthSwiftTests;
 				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
+					"$(inherited)",
+					DEBUG,
+				);
+				SWIFT_COMPILATION_MODE = singlefile;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				TEST_HOST = "";
 			};
 			name = Debug;
@@ -984,56 +1341,84 @@
 		D77E0C269472B098BC065548 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Derived/InfoPlists/BetterAuthOrganization-Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.jsj.betterauthswift.BetterAuthOrganization;
+				PRODUCT_NAME = BetterAuthOrganization;
 				SDKROOT = auto;
 				SKIP_INSTALL = NO;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
 			};
 			name = Release;
 		};
 		EB1B8EAF6D068E203427A265 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Derived/InfoPlists/BetterAuthSwiftUI-Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.jsj.betterauthswift.BetterAuthSwiftUI;
+				PRODUCT_NAME = BetterAuthSwiftUI;
 				SDKROOT = auto;
 				SKIP_INSTALL = NO;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
 			};
 			name = Release;
 		};
@@ -1041,15 +1426,25 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "";
-				COMBINE_HIDPI_IMAGES = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				CODE_SIGN_IDENTITY = "-";
+				INFOPLIST_FILE = "Derived/InfoPlists/BetterAuthSwiftTests-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
 					"@loader_path/../Frameworks",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.jsj.betterauthswift.tests;
+				PRODUCT_NAME = BetterAuthSwiftTests;
 				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				TEST_HOST = "";
 			};
 			name = Release;
@@ -1064,7 +1459,7 @@
 				6C0ACEE00F6245B9DDCD7646 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		228412C0219DEC2152FFE07E /* Build configuration list for PBXNativeTarget "BetterAuthTestHelpers" */ = {
 			isa = XCConfigurationList;
@@ -1073,7 +1468,7 @@
 				189F173AAE70AD8348B75145 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		2B5D77A063233C20CF406DF9 /* Build configuration list for PBXNativeTarget "BetterAuthSwiftUI" */ = {
 			isa = XCConfigurationList;
@@ -1082,7 +1477,7 @@
 				EB1B8EAF6D068E203427A265 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		49EFADF0BAD6779B399FDB77 /* Build configuration list for PBXNativeTarget "BetterAuthOrganizationTests" */ = {
 			isa = XCConfigurationList;
@@ -1091,7 +1486,7 @@
 				945D378D5A050E16E8F843DD /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		52B2F54C06C919A09DA09929 /* Build configuration list for PBXNativeTarget "BetterAuth" */ = {
 			isa = XCConfigurationList;
@@ -1100,7 +1495,7 @@
 				36DCA964B3055642D4E61B4D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		FA9901F3FDDDB05C70B71DCC /* Build configuration list for PBXNativeTarget "BetterAuthOrganization" */ = {
 			isa = XCConfigurationList;
@@ -1109,7 +1504,7 @@
 				D77E0C269472B098BC065548 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		FF7264AD8505AB947C6C9D8C /* Build configuration list for PBXNativeTarget "BetterAuthSwiftTests" */ = {
 			isa = XCConfigurationList;
@@ -1118,7 +1513,7 @@
 				F23A5C3823672424F8316396 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

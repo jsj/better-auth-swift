@@ -25,4 +25,11 @@ jobs:
         run: ./Scripts/generate_xcodeproj.sh
 
       - name: Run SPM tests (all targets)
-        run: swift test --enable-swift-testing || true
+        run: ./Scripts/swift_test_wrapper.sh
+
+      - name: Run Xcode tests
+        run: |
+          xcodebuild test \
+            -project better-auth-swift.xcodeproj \
+            -scheme BetterAuth-Package \
+            -destination 'platform=macOS,arch=arm64'
