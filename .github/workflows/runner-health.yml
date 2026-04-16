@@ -21,7 +21,7 @@ jobs:
           xcode-select -p
           xcodebuild -version
           swift --version
-          xcodegen --version
+          tuist version
           /Users/james/.local/bin/chimera status || true
 
       - name: Show disk and power state

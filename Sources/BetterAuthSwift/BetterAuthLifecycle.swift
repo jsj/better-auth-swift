@@ -1,5 +1,14 @@
 import Foundation
 
+public enum BetterAuthSessionPhase: Sendable, Equatable {
+    case idle
+    case restoring
+    case authenticated
+    case unauthenticated
+    case refreshing
+    case failed
+}
+
 public enum BetterAuthRestoreSource: Sendable, Equatable {
     case memory
     case keychain
@@ -40,4 +49,22 @@ public enum BetterAuthHandledURLResult: Sendable, Equatable {
     case magicLink(MagicLinkVerificationResult)
     case verifyEmail(VerifyEmailResult)
     case ignored
+}
+
+public struct BetterAuthSessionTransition: Sendable, Equatable {
+    public let phase: BetterAuthSessionPhase
+    public let source: BetterAuthRestoreSource?
+    public let refreshDisposition: BetterAuthRefreshDisposition?
+    public let clearReason: BetterAuthRestoreClearReason?
+
+    public init(phase: BetterAuthSessionPhase,
+                source: BetterAuthRestoreSource? = nil,
+                refreshDisposition: BetterAuthRefreshDisposition? = nil,
+                clearReason: BetterAuthRestoreClearReason? = nil)
+    {
+        self.phase = phase
+        self.source = source
+        self.refreshDisposition = refreshDisposition
+        self.clearReason = clearReason
+    }
 }

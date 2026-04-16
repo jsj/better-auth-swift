@@ -7,8 +7,12 @@ source "$ROOT/Scripts/bootstrap_runner_env.sh"
 cd "$ROOT"
 
 if command -v xcodegen >/dev/null 2>&1; then
-  xcodegen generate --spec "$ROOT/project.yml"
+  echo "xcodegen is deprecated for this repo; install Tuist and run generation with it" >&2
+fi
+
+if command -v tuist >/dev/null 2>&1; then
+  tuist generate --path "$ROOT"
   exit 0
 fi
 
-echo "xcodegen is not installed; using committed Xcode project" >&2
+echo "tuist is not installed; using committed Xcode project. Install with: curl -Ls https://install.tuist.io | bash" >&2

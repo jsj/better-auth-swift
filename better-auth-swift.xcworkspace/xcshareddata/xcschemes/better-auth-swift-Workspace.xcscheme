@@ -28,9 +28,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "5CFE70D2CEA303CF52957983"
-               BuildableName = "BetterAuthSwiftUI.framework"
-               BlueprintName = "BetterAuthSwiftUI"
+               BlueprintIdentifier = "9B72220C57C4AB02C35CEC48"
+               BuildableName = "BetterAuthOrganization.framework"
+               BlueprintName = "BetterAuthOrganization"
                ReferencedContainer = "container:better-auth-swift.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -42,9 +42,37 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "9B72220C57C4AB02C35CEC48"
-               BuildableName = "BetterAuthOrganization.framework"
-               BlueprintName = "BetterAuthOrganization"
+               BlueprintIdentifier = "AB5C880E6ADF633518EA18C5"
+               BuildableName = "BetterAuthOrganizationTests.xctest"
+               BlueprintName = "BetterAuthOrganizationTests"
+               ReferencedContainer = "container:better-auth-swift.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "4ED48E66FA19671E2FFCA8AA"
+               BuildableName = "BetterAuthSwiftTests.xctest"
+               BlueprintName = "BetterAuthSwiftTests"
+               ReferencedContainer = "container:better-auth-swift.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "5CFE70D2CEA303CF52957983"
+               BuildableName = "BetterAuthSwiftUI.framework"
+               BlueprintName = "BetterAuthSwiftUI"
                ReferencedContainer = "container:better-auth-swift.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -62,34 +90,6 @@
                ReferencedContainer = "container:better-auth-swift.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "4ED48E66FA19671E2FFCA8AA"
-               BuildableName = "BetterAuthSwiftTests.xctest"
-               BlueprintName = "BetterAuthSwiftTests"
-               ReferencedContainer = "container:better-auth-swift.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "AB5C880E6ADF633518EA18C5"
-               BuildableName = "BetterAuthOrganizationTests.xctest"
-               BlueprintName = "BetterAuthOrganizationTests"
-               ReferencedContainer = "container:better-auth-swift.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -103,9 +103,9 @@
             parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "4ED48E66FA19671E2FFCA8AA"
-               BuildableName = "BetterAuthSwiftTests.xctest"
-               BlueprintName = "BetterAuthSwiftTests"
+               BlueprintIdentifier = "AB5C880E6ADF633518EA18C5"
+               BuildableName = "BetterAuthOrganizationTests.xctest"
+               BlueprintName = "BetterAuthOrganizationTests"
                ReferencedContainer = "container:better-auth-swift.xcodeproj">
             </BuildableReference>
          </TestableReference>
@@ -114,9 +114,9 @@
             parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "AB5C880E6ADF633518EA18C5"
-               BuildableName = "BetterAuthOrganizationTests.xctest"
-               BlueprintName = "BetterAuthOrganizationTests"
+               BlueprintIdentifier = "4ED48E66FA19671E2FFCA8AA"
+               BuildableName = "BetterAuthSwiftTests.xctest"
+               BlueprintName = "BetterAuthSwiftTests"
                ReferencedContainer = "container:better-auth-swift.xcodeproj">
             </BuildableReference>
          </TestableReference>

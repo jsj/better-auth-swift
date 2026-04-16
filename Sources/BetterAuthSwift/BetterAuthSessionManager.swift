@@ -14,8 +14,13 @@ public actor BetterAuthSessionManager {
     private let sessionStore: BetterAuthSessionStore
     private let network: AuthNetworkClient
     private let logger: BetterAuthLogger?
-    private let eventEmitter: AuthEventEmitter
-    private var current: BetterAuthSession?
+    private let state: BetterAuthSessionState
+    private let sessionService: BetterAuthSessionService
+    private let refreshService: BetterAuthSessionRefreshService
+    private let authFlowService: BetterAuthAuthFlowService
+    private let userAccountService: BetterAuthUserAccountService
+    private let callbackHandler: BetterAuthCallbackHandler
+    private nonisolated(unsafe) var authStateListeners: [any BetterAuthAuthStateListener] = []
     private var inFlightRefreshTask: Task<BetterAuthSession, Error>?
     private var autoRefreshTask: Task<Void, Never>?
 
@@ -32,24 +37,33 @@ public actor BetterAuthSessionManager {
                                          retryPolicy: configuration.retryPolicy,
                                          requestOrigin: configuration.requestOrigin)
         self.logger = logger
-        self.eventEmitter = eventEmitter
+        self.state = BetterAuthSessionState(eventEmitter: eventEmitter)
+        self.sessionService = BetterAuthSessionService(configuration: configuration, sessionStore: sessionStore)
+        self.refreshService = BetterAuthSessionRefreshService(configuration: configuration, network: self.network)
+        self.authFlowService = BetterAuthAuthFlowService(configuration: configuration, network: self.network)
+        self.userAccountService = BetterAuthUserAccountService(configuration: configuration, network: self.network)
+        self.callbackHandler = BetterAuthCallbackHandler(endpoints: configuration.endpoints)
     }
 
     // MARK: - Event Stream
 
     public nonisolated var onAuthStateChange: AuthEventEmitter {
-        eventEmitter
+        state.eventEmitter
     }
 
     public nonisolated var authStateChanges: AsyncStream<AuthStateChange> {
-        eventEmitter.stateChanges
+        state.stateChanges
+    }
+
+    public nonisolated var currentAuthState: AuthStateChange? {
+        state.latest
     }
 
     // MARK: - Session Access
 
     /// Loads the persisted session from the session store without entering the actor.
     public nonisolated func loadStoredSession() throws -> BetterAuthSession? {
-        try sessionStore.loadSession(for: configuration.storage.key)
+        try sessionService.loadStoredSession()
     }
 
     /// Restores the session from storage into memory and starts auto-refresh if configured.
@@ -62,7 +76,7 @@ public actor BetterAuthSessionManager {
     /// Restores the best available session for app launch and reports how it was recovered.
     public func restoreSessionOnLaunch() async throws -> BetterAuthRestoreResult {
         let source: BetterAuthRestoreSource
-        if current != nil {
+        if state.currentSession != nil {
             source = .memory
         } else {
             do {
@@ -74,7 +88,7 @@ public actor BetterAuthSessionManager {
             source = .keychain
         }
 
-        guard let current else { return .noStoredSession }
+        guard let current = state.currentSession else { return .noStoredSession }
         guard current.needsRefresh(clockSkew: configuration.auth.clockSkew) else {
             return .restored(current, source: source, refresh: .notNeeded)
         }
@@ -92,13 +106,15 @@ public actor BetterAuthSessionManager {
 
     /// Returns the current in-memory session, if any.
     public func currentSession() -> BetterAuthSession? {
-        current
+        state.currentSession
     }
 
     public func applyRestoredSession(_ session: BetterAuthSession?) throws {
-        current = session
+        state.replaceCurrentSession(session)
         logger?.debug("Session restored: \(session != nil ? "found" : "none")")
-        eventEmitter.emit(.initialSession, session: session)
+        state.emit(.initialSession,
+                   session: session,
+                   transition: BetterAuthSessionTransition(phase: session == nil ? .unauthenticated : .authenticated))
         if configuration.autoRefreshToken {
             if session != nil {
                 startAutoRefresh()
@@ -109,12 +125,8 @@ public actor BetterAuthSessionManager {
     }
 
     public func updateSession(_ session: BetterAuthSession?) throws {
-        current = session
-        if let session {
-            try sessionStore.saveSession(session, for: configuration.storage.key)
-        } else {
-            try sessionStore.clearSession(for: configuration.storage.key)
-        }
+        state.replaceCurrentSession(session)
+        try sessionService.persist(session)
     }
 
     // MARK: - Email + Password
@@ -212,7 +224,7 @@ public actor BetterAuthSessionManager {
     public func deleteAnonymousUser() async throws -> Bool {
         let response: BetterAuthStatusResponse = try await network
             .post(path: configuration.endpoints.deleteAnonymousUserPath,
-                  accessToken: current?.session.accessToken)
+                  accessToken: state.currentSession?.session.accessToken)
         try setSession(nil, event: .signedOut)
         return response.status
     }
@@ -224,7 +236,7 @@ public actor BetterAuthSessionManager {
         let response: BetterAuthStatusResponse = try await network
             .post(path: configuration.endpoints.deleteUserPath,
                   body: payload,
-                  accessToken: current?.session.accessToken)
+                  accessToken: state.currentSession?.session.accessToken)
         try setSession(nil, event: .signedOut)
         return response.status
     }
@@ -233,19 +245,19 @@ public actor BetterAuthSessionManager {
 
     @discardableResult
     public func upgradeAnonymousWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult {
-        guard current != nil else { throw BetterAuthError.missingSession }
+        guard state.currentSession != nil else { throw BetterAuthError.missingSession }
         return try await signUpWithEmail(payload)
     }
 
     @discardableResult
     public func upgradeAnonymousWithApple(_ payload: AppleNativeSignInPayload) async throws -> BetterAuthSession {
-        guard current != nil else { throw BetterAuthError.missingSession }
+        guard state.currentSession != nil else { throw BetterAuthError.missingSession }
         return try await signInWithApple(payload)
     }
 
     @discardableResult
     public func upgradeAnonymousWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult {
-        guard current != nil else { throw BetterAuthError.missingSession }
+        guard state.currentSession != nil else { throw BetterAuthError.missingSession }
         return try await signInWithSocial(payload)
     }
 
@@ -253,7 +265,7 @@ public actor BetterAuthSessionManager {
 
     @discardableResult
     public func reauthenticate(password: String) async throws -> Bool {
-        guard let currentUser = current else { throw BetterAuthError.missingSession }
+        guard let currentUser = state.currentSession else { throw BetterAuthError.missingSession }
         guard let email = currentUser.user.email else { throw BetterAuthError.missingSession }
         let verificationSession: BetterAuthSession = try await network
             .post(path: configuration.endpoints.emailSignInPath,
@@ -280,20 +292,20 @@ public actor BetterAuthSessionManager {
     public func beginGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws
         -> GenericOAuthAuthorizationResponse
     {
-        try await network.post(path: configuration.endpoints.genericOAuthSignInPath, body: payload, accessToken: nil)
+        try await authFlowService.beginGenericOAuth(payload)
     }
 
     public func linkGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws
         -> GenericOAuthAuthorizationResponse
     {
-        try await network.post(path: configuration.endpoints.genericOAuthLinkPath, body: payload,
-                               accessToken: current?.session.accessToken)
+        try await authFlowService.linkGenericOAuth(payload,
+                                                   accessToken: state.currentSession?.session.accessToken)
     }
 
     @discardableResult
     public func completeGenericOAuth(_ payload: GenericOAuthCallbackRequest) async throws -> BetterAuthSession {
-        let session: BetterAuthSession = try await network.get(path: oauthCallbackPath(for: payload),
-                                                               accessToken: current?.session.accessToken)
+        let session: BetterAuthSession = try await network.get(path: callbackHandler.oauthCallbackPath(for: payload),
+                                                               accessToken: state.currentSession?.session.accessToken)
         try setSession(session, event: .signedIn)
         return session
     }
@@ -322,7 +334,7 @@ public actor BetterAuthSessionManager {
         let response: BetterAuthStatusResponse = try await network
             .post(path: configuration.endpoints.sendVerificationEmailPath,
                   body: payload,
-                  accessToken: current?.session.accessToken)
+                  accessToken: state.currentSession?.session.accessToken)
         return response.status
     }
 
@@ -342,7 +354,7 @@ public actor BetterAuthSessionManager {
     public func changeEmail(_ payload: ChangeEmailRequest) async throws -> Bool {
         let response: BetterAuthStatusResponse = try await network.post(path: configuration.endpoints.changeEmailPath,
                                                                         body: payload,
-                                                                        accessToken: current?.session.accessToken)
+                                                                        accessToken: state.currentSession?.session.accessToken)
         return response.status
     }
 
@@ -350,10 +362,9 @@ public actor BetterAuthSessionManager {
 
     @discardableResult
     public func updateUser(_ payload: UpdateUserRequest) async throws -> UpdateUserResponse {
-        let response: UpdateUserResponse = try await network.post(path: configuration.endpoints.updateUserPath,
-                                                                  body: payload,
-                                                                  accessToken: current?.session.accessToken)
-        if let user = response.user, let current {
+        let response = try await userAccountService.updateUser(payload,
+                                                               accessToken: state.currentSession?.session.accessToken)
+        if let user = response.user, let current = state.currentSession {
             try setSession(BetterAuthSession(session: current.session, user: current.user.merged(with: user)),
                            event: .userUpdated)
         }
@@ -362,9 +373,8 @@ public actor BetterAuthSessionManager {
 
     @discardableResult
     public func changePassword(_ payload: ChangePasswordRequest) async throws -> ChangePasswordResponse {
-        let response: ChangePasswordResponse = try await network.post(path: configuration.endpoints.changePasswordPath,
-                                                                      body: payload,
-                                                                      accessToken: current?.session.accessToken)
+        let response = try await userAccountService.changePassword(payload,
+                                                                   accessToken: state.currentSession?.session.accessToken)
         if payload.revokeOtherSessions == true, let session = response.session {
             try setSession(session, event: .tokenRefreshed)
         } else if payload.revokeOtherSessions == true, let rotatedToken = response.token {
@@ -372,7 +382,7 @@ public actor BetterAuthSessionManager {
                 .get(path: configuration.endpoints.currentSessionPath,
                      accessToken: rotatedToken)
             try setSession(materializedSession, event: .tokenRefreshed)
-        } else if let current {
+        } else if let current = state.currentSession {
             try setSession(BetterAuthSession(session: current.session, user: current.user.merged(with: response.user)),
                            event: .userUpdated)
         }
@@ -389,24 +399,14 @@ public actor BetterAuthSessionManager {
             return try await existing.value
         }
 
-        guard let existingSession = current else {
+        guard let existingSession = state.currentSession else {
             throw BetterAuthError.missingSession
         }
 
-        let network = self.network
-        let endpoints = configuration.endpoints
         // Keep the refresh task scoped to immutable snapshots so the unstructured
         // task does not capture actor-isolated mutable state.
         let task = Task { () -> BetterAuthSession in
-            if let refreshToken = existingSession.session.refreshToken {
-                struct RefreshPayload: Encodable, Sendable { let refreshToken: String }
-                return try await network.post(path: endpoints.sessionRefreshPath,
-                                              body: RefreshPayload(refreshToken: refreshToken),
-                                              accessToken: existingSession.session.accessToken)
-            } else {
-                return try await network.post(path: endpoints.sessionRefreshPath,
-                                              accessToken: existingSession.session.accessToken)
-            }
+            try await refreshService.refresh(using: existingSession)
         }
 
         inFlightRefreshTask = task
@@ -427,17 +427,16 @@ public actor BetterAuthSessionManager {
 
     @discardableResult
     public func refreshSessionIfNeeded() async throws -> BetterAuthSession {
-        guard let current else { throw BetterAuthError.missingSession }
+        guard let current = state.currentSession else { throw BetterAuthError.missingSession }
         guard current.needsRefresh(clockSkew: configuration.auth.clockSkew) else { return current }
         return try await refreshSession()
     }
 
     @discardableResult
     public func fetchCurrentSession() async throws -> BetterAuthSession {
-        let existingToken = current?.session.accessToken
+        let existingToken = state.currentSession?.session.accessToken
         do {
-            let session: BetterAuthSession = try await network.get(path: configuration.endpoints.currentSessionPath,
-                                                                   accessToken: existingToken)
+            let session = try await refreshService.fetchCurrentSession(accessToken: existingToken)
             try setSession(session, event: .tokenRefreshed)
             return session
         } catch {
@@ -449,12 +448,12 @@ public actor BetterAuthSessionManager {
     // MARK: - Session Management
 
     public func listSessions() async throws -> [BetterAuthSessionListEntry] {
-        try await network.get(path: configuration.endpoints.listSessionsPath, accessToken: current?.session.accessToken)
+        try await network.get(path: configuration.endpoints.listSessionsPath, accessToken: state.currentSession?.session.accessToken)
     }
 
     public func listDeviceSessions() async throws -> [BetterAuthDeviceSession] {
         try await network.get(path: configuration.endpoints.listDeviceSessionsPath,
-                              accessToken: current?.session.accessToken)
+                              accessToken: state.currentSession?.session.accessToken)
     }
 
     @discardableResult
@@ -464,7 +463,7 @@ public actor BetterAuthSessionManager {
         let session: BetterAuthSession = try await network
             .post(path: configuration.endpoints.setActiveDeviceSessionPath,
                   body: payload,
-                  accessToken: current?.session.accessToken)
+                  accessToken: state.currentSession?.session.accessToken)
         try setSession(session, event: .signedIn)
         return session
     }
@@ -474,8 +473,8 @@ public actor BetterAuthSessionManager {
         let response: BetterAuthStatusResponse = try await network
             .post(path: configuration.endpoints.revokeDeviceSessionPath,
                   body: payload,
-                  accessToken: current?.session.accessToken)
-        if payload.sessionToken == current?.session.accessToken {
+                  accessToken: state.currentSession?.session.accessToken)
+        if payload.sessionToken == state.currentSession?.session.accessToken {
             try setSession(nil, event: .signedOut)
         }
         return response.status
@@ -484,7 +483,7 @@ public actor BetterAuthSessionManager {
     // MARK: - JWT
 
     public func getSessionJWT() async throws -> BetterAuthJWT {
-        try await network.get(path: configuration.endpoints.sessionJWTPath, accessToken: current?.session.accessToken)
+        try await network.get(path: configuration.endpoints.sessionJWTPath, accessToken: state.currentSession?.session.accessToken)
     }
 
     public func getJWKS() async throws -> BetterAuthJWKS {
@@ -495,13 +494,13 @@ public actor BetterAuthSessionManager {
 
     public func listLinkedAccounts() async throws -> [LinkedAccount] {
         try await network.get(path: configuration.endpoints.listLinkedAccountsPath,
-                              accessToken: current?.session.accessToken)
+                              accessToken: state.currentSession?.session.accessToken)
     }
 
     @discardableResult
     public func linkSocialAccount(_ payload: LinkSocialAccountRequest) async throws -> LinkSocialAccountResponse {
         try await network.post(path: configuration.endpoints.linkSocialAccountPath, body: payload,
-                               accessToken: current?.session.accessToken)
+                               accessToken: state.currentSession?.session.accessToken)
     }
 
     // MARK: - Passkeys
@@ -513,18 +512,18 @@ public actor BetterAuthSessionManager {
                               queryItems: [URLQueryItem(name: "name", value: request.name),
                                            URLQueryItem(name: "authenticatorAttachment",
                                                         value: request.authenticatorAttachment)],
-                              accessToken: current?.session.accessToken)
+                              accessToken: state.currentSession?.session.accessToken)
     }
 
     public func passkeyAuthenticateOptions() async throws -> PasskeyAuthenticationOptions {
         try await network.get(path: configuration.endpoints.passkeyAuthenticateOptionsPath,
-                              accessToken: current?.session.accessToken)
+                              accessToken: state.currentSession?.session.accessToken)
     }
 
     @discardableResult
     public func registerPasskey(_ payload: PasskeyRegistrationRequest) async throws -> Passkey {
         try await network.post(path: configuration.endpoints.passkeyRegisterPath, body: payload,
-                               accessToken: current?.session.accessToken)
+                               accessToken: state.currentSession?.session.accessToken)
     }
 
     @discardableResult
@@ -545,13 +544,14 @@ public actor BetterAuthSessionManager {
     }
 
     public func listPasskeys() async throws -> [Passkey] {
-        try await network.get(path: configuration.endpoints.listPasskeysPath, accessToken: current?.session.accessToken)
+        try await network.get(path: configuration.endpoints.listPasskeysPath,
+                              accessToken: state.currentSession?.session.accessToken)
     }
 
     public func updatePasskey(_ payload: UpdatePasskeyRequest) async throws -> Passkey {
         let response: UpdatePasskeyResponse = try await network.post(path: configuration.endpoints.updatePasskeyPath,
                                                                      body: payload,
-                                                                     accessToken: current?.session.accessToken)
+                                                                     accessToken: state.currentSession?.session.accessToken)
         return response.passkey
     }
 
@@ -559,7 +559,7 @@ public actor BetterAuthSessionManager {
     public func deletePasskey(_ payload: DeletePasskeyRequest) async throws -> Bool {
         let response: BetterAuthStatusResponse = try await network.post(path: configuration.endpoints.deletePasskeyPath,
                                                                         body: payload,
-                                                                        accessToken: current?.session.accessToken)
+                                                                        accessToken: state.currentSession?.session.accessToken)
         return response.status
     }
 
@@ -628,7 +628,7 @@ public actor BetterAuthSessionManager {
                                                                   body: payload, accessToken: nil)
         if case let .signedIn(session) = result {
             try setSession(session, event: .signedIn)
-        } else if case let .verified(user) = result, let current, current.user.id == user.id {
+        } else if case let .verified(user) = result, let current = state.currentSession, current.user.id == user.id {
             try setSession(BetterAuthSession(session: current.session, user: current.user.merged(with: user)),
                            event: .userUpdated)
         }
@@ -647,7 +647,7 @@ public actor BetterAuthSessionManager {
 
     @discardableResult
     public func verifyPhoneNumber(_ payload: PhoneOTPVerifyRequest) async throws -> PhoneOTPVerifyResponse {
-        let accessToken = payload.updatePhoneNumber == true ? current?.session.accessToken : nil
+        let accessToken = payload.updatePhoneNumber == true ? state.currentSession?.session.accessToken : nil
         let response: PhoneOTPVerifyResponse = try await network.post(path: configuration.endpoints.phoneOTPVerifyPath,
                                                                       body: payload, accessToken: accessToken)
         if let token = response.token, let user = response.user {
@@ -656,7 +656,7 @@ public actor BetterAuthSessionManager {
                                               twoFactorEnabled: false)
             let session = try await materializeSession(token: token, fallbackUser: twoFactorUser)
             try setSession(session, event: .signedIn)
-        } else if let user = response.user, let current, current.user.id == user.id {
+        } else if let user = response.user, let current = state.currentSession, current.user.id == user.id {
             try setSession(BetterAuthSession(session: current.session, user: current.user.merged(with: user)),
                            event: .userUpdated)
         }
@@ -677,7 +677,7 @@ public actor BetterAuthSessionManager {
 
     public func enableTwoFactor(_ payload: TwoFactorEnableRequest) async throws -> TwoFactorEnableResponse {
         try await network.post(path: configuration.endpoints.twoFactorEnablePath, body: payload,
-                               accessToken: current?.session.accessToken)
+                               accessToken: state.currentSession?.session.accessToken)
     }
 
     @discardableResult
@@ -725,7 +725,7 @@ public actor BetterAuthSessionManager {
         let response: BetterAuthStatusResponse = try await network
             .post(path: configuration.endpoints.twoFactorDisablePath,
                   body: payload,
-                  accessToken: current?.session.accessToken)
+                  accessToken: state.currentSession?.session.accessToken)
         return response.status
     }
 
@@ -734,8 +734,7 @@ public actor BetterAuthSessionManager {
         let response: TwoFactorGenerateBackupCodesResponse = try await network
             .post(path: configuration.endpoints.twoFactorGenerateBackupCodesPath,
                   body: Request(password: password),
-                  accessToken: current?.session
-                      .accessToken)
+                  accessToken: state.currentSession?.session.accessToken)
         return response.backupCodes
     }
 
@@ -745,8 +744,8 @@ public actor BetterAuthSessionManager {
     public func revokeSession(token: String) async throws -> Bool {
         let response: BetterAuthStatusResponse = try await network.post(path: configuration.endpoints.revokeSessionPath,
                                                                         body: RevokeSessionRequest(token: token),
-                                                                        accessToken: current?.session.accessToken)
-        if token == current?.session.accessToken {
+                                                                        accessToken: state.currentSession?.session.accessToken)
+        if token == state.currentSession?.session.accessToken {
             try setSession(nil, event: .signedOut)
         }
         return response.status
@@ -756,7 +755,7 @@ public actor BetterAuthSessionManager {
     public func revokeSessions() async throws -> Bool {
         let response: BetterAuthStatusResponse = try await network
             .post(path: configuration.endpoints.revokeSessionsPath,
-                  accessToken: current?.session.accessToken)
+                  accessToken: state.currentSession?.session.accessToken)
         try setSession(nil, event: .signedOut)
         return response.status
     }
@@ -765,7 +764,7 @@ public actor BetterAuthSessionManager {
     public func revokeOtherSessions() async throws -> Bool {
         let response: BetterAuthStatusResponse = try await network
             .post(path: configuration.endpoints.revokeOtherSessionsPath,
-                  accessToken: current?.session.accessToken)
+                  accessToken: state.currentSession?.session.accessToken)
         return response.status
     }
 
@@ -773,13 +772,13 @@ public actor BetterAuthSessionManager {
 
     /// Restores from storage and refreshes if expired. The recommended way to bootstrap a session at app launch.
     public func restoreOrRefreshSession() async throws -> BetterAuthSession? {
-        if current == nil {
+        if state.currentSession == nil {
             do { _ = try restoreSession() } catch {
                 try clearSession(event: .signedOut)
                 throw error
             }
         }
-        guard let current else { return nil }
+        guard let current = state.currentSession else { return nil }
         if current.needsRefresh(clockSkew: configuration.auth.clockSkew) {
             do { return try await refreshSession() } catch {
                 if shouldClearSession(for: error) { try clearSession(event: .sessionExpired) }
@@ -807,9 +806,9 @@ public actor BetterAuthSessionManager {
     /// Signs out and clears the local session. Optionally revokes the session on the backend.
     public func signOut(remotely: Bool = true) async throws {
         stopAutoRefresh()
-        if remotely, current != nil {
+        if remotely, state.currentSession != nil {
             _ = try await network.post(path: configuration.endpoints.signOutPath,
-                                       accessToken: current?.session.accessToken) as SignOutResponse
+                                       accessToken: state.currentSession?.session.accessToken) as SignOutResponse
         }
         try setSession(nil, event: .signedOut)
     }
@@ -839,7 +838,7 @@ public actor BetterAuthSessionManager {
     }
 
     private func autoRefreshTick() async {
-        guard let expiresAt = current?.session.expiresAt else { return }
+        guard let expiresAt = state.currentSession?.session.expiresAt else { return }
         let ticksUntilExpiry = Int(expiresAt.timeIntervalSinceNow / AutoRefreshConstants.tickInterval)
         if ticksUntilExpiry <= AutoRefreshConstants.tickThreshold {
             logger?.debug("Auto-refreshing session (\(ticksUntilExpiry) ticks until expiry)")
@@ -850,42 +849,7 @@ public actor BetterAuthSessionManager {
     // MARK: - Deep Link Handling
 
     public func parseIncomingURL(_ url: URL) -> BetterAuthIncomingURL {
-        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: true) else {
-            return .unsupported
-        }
-
-        let path = components.path
-        let queryItems = components.queryItems ?? []
-
-        if let code = queryItems.first(where: { $0.name == "code" })?.value,
-           let state = queryItems.first(where: { $0.name == "state" })?.value
-        {
-            let pathComponents = path.split(separator: "/")
-            if let callbackIndex = pathComponents.firstIndex(of: "callback"), callbackIndex + 1 < pathComponents.count {
-                let providerId = String(pathComponents[callbackIndex + 1])
-                let issuer = queryItems.first(where: { $0.name == "iss" })?.value
-                return .genericOAuth(.init(providerId: providerId, code: code, state: state, issuer: issuer))
-            }
-        }
-
-        if path.hasSuffix(configuration.endpoints.magicLinkVerifyPath),
-           let token = queryItems.first(where: { $0.name == "token" })?.value
-        {
-            return .magicLink(.init(token: token,
-                                    callbackURL: queryItems.first(where: { $0.name == "callbackURL" })?.value,
-                                    newUserCallbackURL: queryItems.first(where: { $0.name == "newUserCallbackURL" })?
-                                        .value,
-                                    errorCallbackURL: queryItems.first(where: { $0.name == "errorCallbackURL" })?
-                                        .value))
-        }
-
-        if path.hasSuffix(configuration.endpoints.verifyEmailPath),
-           let token = queryItems.first(where: { $0.name == "token" })?.value
-        {
-            return .verifyEmail(.init(token: token))
-        }
-
-        return .unsupported
+        callbackHandler.parseIncomingURL(url)
     }
 
     public func handleIncomingURL(_ url: URL) async throws -> BetterAuthHandledURLResult {
@@ -925,11 +889,19 @@ public actor BetterAuthSessionManager {
         }
     }
 
+    public nonisolated func installAuthStateListeners(_ listeners: [any BetterAuthAuthStateListener]) {
+        authStateListeners = listeners
+    }
+
     // MARK: - Session Lifecycle Helpers
 
     private func setSession(_ session: BetterAuthSession?, event: AuthChangeEvent) throws {
         try updateSession(session)
-        eventEmitter.emit(event, session: session)
+        let change = AuthStateChange(event: event,
+                                     session: session,
+                                     transition: transition(for: event, session: session))
+        state.eventEmitter.yield(change)
+        notifyAuthStateListeners(of: change)
         if session != nil, configuration.autoRefreshToken {
             startAutoRefresh()
         } else if session == nil {
@@ -939,6 +911,31 @@ public actor BetterAuthSessionManager {
 
     private func clearSession(event: AuthChangeEvent = .signedOut) throws {
         try setSession(nil, event: event)
+    }
+
+    private func notifyAuthStateListeners(of change: AuthStateChange) {
+        let listeners = authStateListeners
+        guard !listeners.isEmpty else { return }
+        Task {
+            for listener in listeners {
+                await listener.authStateDidChange(change)
+            }
+        }
+    }
+
+    private func transition(for event: AuthChangeEvent,
+                            session: BetterAuthSession?) -> BetterAuthSessionTransition
+    {
+        switch event {
+        case .initialSession:
+            return BetterAuthSessionTransition(phase: session == nil ? .unauthenticated : .authenticated)
+        case .signedIn, .userUpdated:
+            return BetterAuthSessionTransition(phase: .authenticated)
+        case .signedOut, .sessionExpired:
+            return BetterAuthSessionTransition(phase: .unauthenticated)
+        case .tokenRefreshed:
+            return BetterAuthSessionTransition(phase: .refreshing)
+        }
     }
 
     private func shouldClearSession(for error: Error) -> Bool {
@@ -969,17 +966,17 @@ public actor BetterAuthSessionManager {
     }
 
     private func validSession() async throws -> BetterAuthSession {
-        if let current, current.needsRefresh(clockSkew: configuration.auth.clockSkew) {
+        if let current = state.currentSession, current.needsRefresh(clockSkew: configuration.auth.clockSkew) {
             return try await refreshSession()
         }
-        if let current { return current }
+        if let current = state.currentSession { return current }
         throw BetterAuthError.missingSession
     }
 
     // MARK: - Session Materialization (DRY: single path for token-based flows)
 
     private func materializeSession(token: String, fallbackUser: TwoFactorUser) async throws -> BetterAuthSession {
-        let previous = current
+        let previous = state.currentSession
         let session: BetterAuthSession = try await network.get(path: configuration.endpoints.currentSessionPath,
                                                                accessToken: token)
         guard session.user.id == fallbackUser.id else {
@@ -997,7 +994,7 @@ public actor BetterAuthSessionManager {
     private func materializeSession(token: String,
                                     fallbackUser: BetterAuthSession.User) async throws -> BetterAuthSession
     {
-        let previous = current
+        let previous = state.currentSession
         let session: BetterAuthSession = try await network.get(path: configuration.endpoints.currentSessionPath,
                                                                accessToken: token)
         guard session.user.id == fallbackUser.id else {
@@ -1008,19 +1005,6 @@ public actor BetterAuthSessionManager {
     }
 
     // MARK: - Phone Verification Result Handling
-
-    // MARK: - OAuth URL Construction
-
-    private func oauthCallbackPath(for payload: GenericOAuthCallbackRequest) -> String {
-        var components = URLComponents()
-        components.path = "/api/auth/oauth2/callback/\(payload.providerId)"
-        components.queryItems = [URLQueryItem(name: "code", value: payload.code),
-                                 URLQueryItem(name: "state", value: payload.state)]
-        if let issuer = payload.issuer {
-            components.queryItems?.append(URLQueryItem(name: "iss", value: issuer))
-        }
-        return components.string ?? "/api/auth/oauth2/callback/\(payload.providerId)"
-    }
 }
 
 private struct SignOutResponse: Decodable {

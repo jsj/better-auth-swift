@@ -4,18 +4,21 @@ import Foundation
 ///
 /// Access via ``BetterAuthClient/requests``. Automatically attaches bearer tokens
 /// and retries once on `401` after refreshing the session.
-public struct BetterAuthRequestClient: Sendable {
+public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
     private let configuration: BetterAuthConfiguration
     private let sessionManager: BetterAuthSessionManager
     private let transport: BetterAuthTransport
+    private let requestHooks: [any BetterAuthRequestHook]
 
     init(configuration: BetterAuthConfiguration,
          sessionManager: BetterAuthSessionManager,
-         transport: BetterAuthTransport)
+         transport: BetterAuthTransport,
+         requestHooks: [any BetterAuthRequestHook] = [])
     {
         self.configuration = configuration
         self.sessionManager = sessionManager
         self.transport = transport
+        self.requestHooks = requestHooks
     }
 
     /// Sends a raw HTTP request, returning `(Data, HTTPURLResponse)`.
@@ -32,7 +35,7 @@ public struct BetterAuthRequestClient: Sendable {
                                             body: body,
                                             requiresAuthentication: requiresAuthentication)
 
-        let (data, response) = try await execute(request)
+        let (data, response) = try await execute(preparedRequest(from: request))
         if response.statusCode == 401, retryOnUnauthorized, requiresAuthentication {
             _ = try await sessionManager.refreshSession()
             request = try await makeRequest(path: path,
@@ -40,7 +43,7 @@ public struct BetterAuthRequestClient: Sendable {
                                             headers: headers,
                                             body: body,
                                             requiresAuthentication: requiresAuthentication)
-            return try await execute(request)
+            return try await execute(preparedRequest(from: request))
         }
 
         return (data, response)
@@ -148,5 +151,13 @@ public struct BetterAuthRequestClient: Sendable {
             throw BetterAuthError.invalidResponse
         }
         return (data, httpResponse)
+    }
+
+    private func preparedRequest(from request: URLRequest) async throws -> URLRequest {
+        var prepared = request
+        for hook in requestHooks {
+            prepared = try await hook.prepare(prepared)
+        }
+        return prepared
     }
 }

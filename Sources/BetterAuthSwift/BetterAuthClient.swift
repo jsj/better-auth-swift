@@ -10,13 +10,15 @@ import Foundation
 ///     baseURL: URL(string: "https://your-api.example.com")!
 /// )
 /// ```
-public struct BetterAuthClient: Sendable {
+public struct BetterAuthClient: BetterAuthModuleSupporting, Sendable {
     /// The resolved configuration for this client.
     public let configuration: BetterAuthConfiguration
     /// Session manager for sign-in, sign-out, refresh, and all auth flows.
     public let auth: BetterAuthSessionManager
     /// Authenticated HTTP request client with automatic 401 retry.
     public let requests: BetterAuthRequestClient
+    /// Registered optional modules for this client instance.
+    public let modules: BetterAuthModuleRegistry
 
     /// Creates a client from a full configuration object.
     ///
@@ -28,7 +30,8 @@ public struct BetterAuthClient: Sendable {
     public init(configuration: BetterAuthConfiguration,
                 sessionStore: BetterAuthSessionStore? = nil,
                 transport: BetterAuthTransport = URLSessionTransport(),
-                eventEmitter: AuthEventEmitter = AuthEventEmitter())
+                eventEmitter: AuthEventEmitter = AuthEventEmitter(),
+                modules: [any BetterAuthModule] = [])
     {
         self.configuration = configuration
         let resolvedStore = sessionStore ?? KeychainSessionStore(service: configuration.storage.service,
@@ -41,13 +44,29 @@ public struct BetterAuthClient: Sendable {
                                             logger: configuration.logger,
                                             eventEmitter: eventEmitter)
         self.auth = auth
+        self.modules = BetterAuthModuleRegistry.build(configuration: configuration,
+                                                      authLifecycle: BetterAuthSessionLifecycleAdapter(manager: auth),
+                                                      requestsPerformer: BetterAuthRequestClient(configuration: configuration,
+                                                                                                sessionManager: auth,
+                                                                                                transport: transport),
+                                                      modules: modules)
         self.requests = BetterAuthRequestClient(configuration: configuration,
                                                 sessionManager: auth,
-                                                transport: transport)
+                                                transport: transport,
+                                                requestHooks: self.modules.registeredRequestHooks)
+        auth.installAuthStateListeners(self.modules.registeredAuthStateListeners)
     }
 }
 
 public extension BetterAuthClient {
+    var authLifecycle: any BetterAuthSessionLifecycle {
+        BetterAuthSessionLifecycleAdapter(manager: auth)
+    }
+
+    var requestsPerformer: any BetterAuthRequestPerforming {
+        requests
+    }
+
     /// Convenience initializer that builds a configuration from individual parameters.
     init(baseURL: URL,
          storage: BetterAuthConfiguration.SessionStorage = .init(),
@@ -61,7 +80,8 @@ public extension BetterAuthClient {
          logger: BetterAuthLogger? = nil,
          sessionStore: BetterAuthSessionStore? = nil,
          transport: BetterAuthTransport = URLSessionTransport(),
-         eventEmitter: AuthEventEmitter = AuthEventEmitter())
+         eventEmitter: AuthEventEmitter = AuthEventEmitter(),
+         modules: [any BetterAuthModule] = [])
     {
         self.init(configuration: BetterAuthConfiguration(baseURL: baseURL,
                                                          storage: storage,
@@ -75,7 +95,8 @@ public extension BetterAuthClient {
                                                          logger: logger),
                   sessionStore: sessionStore,
                   transport: transport,
-                  eventEmitter: eventEmitter)
+                  eventEmitter: eventEmitter,
+                  modules: modules)
     }
 
     /// Alias for ``auth``.
@@ -91,5 +112,9 @@ public extension BetterAuthClient {
     /// Async stream of auth state changes, yielding the latest event to new subscribers.
     var authStateChanges: AsyncStream<AuthStateChange> {
         auth.authStateChanges
+    }
+
+    var currentAuthState: AuthStateChange? {
+        auth.currentAuthState
     }
 }

@@ -23,6 +23,7 @@ Derived/InfoPlists/*
 !better-auth-swift.xcodeproj/xcshareddata/xcschemes/BetterAuth.xcscheme
 !better-auth-swift.xcodeproj/xcshareddata/xcschemes/BetterAuthSwiftUI.xcscheme
 !better-auth-swift.xcodeproj/xcshareddata/xcschemes/BetterAuth-Package.xcscheme
+.tuist/
 .swiftpm/configuration/registries.json
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
