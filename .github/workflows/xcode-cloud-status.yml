@@ -21,15 +21,18 @@ jobs:
     steps:
       - name: Trigger and poll Xcode Cloud build
         env:
-          XC: /Users/james/bin/xc
+          XC: xc
         run: |
+          command -v "$XC" >/dev/null 2>&1
+          command -v python3 >/dev/null 2>&1
+
           "$XC" ci cloud trigger \
             --workflow-id "${{ vars.XCODE_CLOUD_WORKFLOW_ID }}" \
             --ref main \
             --json \
           | tee /tmp/xc-trigger.ndjson
 
-          RUN_ID=$(/opt/homebrew/bin/python3 -c "
+          RUN_ID=$(python3 -c "
           import json, sys
           for line in open('/tmp/xc-trigger.ndjson'):
               d = json.loads(line)

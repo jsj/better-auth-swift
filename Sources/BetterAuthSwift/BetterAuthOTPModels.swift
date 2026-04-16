@@ -98,10 +98,14 @@ public struct PhoneOTPRequest: Codable, Sendable, Equatable {
 }
 
 public struct PhoneOTPRequestResponse: Codable, Sendable, Equatable {
-    public let message: String
+    public let message: String?
+    public let success: Bool?
+    public let status: Bool?
 
-    public init(message: String) {
+    public init(message: String? = nil, success: Bool? = nil, status: Bool? = nil) {
         self.message = message
+        self.success = success
+        self.status = status
     }
 }
 

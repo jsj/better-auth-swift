@@ -1,9 +1,8 @@
+import BetterAuthTestHelpers
 import Foundation
 import Testing
-import BetterAuthTestHelpers
 @testable import BetterAuth
 @testable import BetterAuthSwiftUI
-
 
 struct BetterAuthSwiftTestsPart1 {
     @Test
@@ -229,6 +228,37 @@ struct BetterAuthSwiftTestsPart1 {
                                                             headers: ["Origin": "custom://origin"],
                                                             body: ["provider": "apple"],
                                                             requiresAuthentication: false)
+    }
+
+    @Test
+    func authenticatedRequestsRejectCrossOriginAbsoluteURLs() async throws {
+        let transport = MockTransport { request in
+            Issue.record("Transport should not be invoked for cross-origin request: \(String(describing: request.url))")
+            return emptyResponse(for: request)
+        }
+
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                    storage: .init(key: "test-key")),
+                             sessionStore: InMemorySessionStore(),
+                             transport: transport)
+
+        try await client.auth.updateSession(BetterAuthSession(session: .init(id: "session-1",
+                                                                             userId: "user-1",
+                                                                             accessToken: "current-token",
+                                                                             expiresAt: Date()
+                                                                                 .addingTimeInterval(3600)),
+                                                              user: .init(id: "user-1", email: "test@example.com")))
+
+        do {
+            let _: String? = try await client.requests.sendJSON(path: "https://evil.example.com/api/me")
+            Issue.record("Expected cross-origin absolute URL to be rejected")
+        } catch let error as BetterAuthError {
+            guard case .invalidURL = error else {
+                Issue.record("Expected BetterAuthError.invalidURL but got \(error)")
+                return
+            }
+        }
     }
 
     @Test
@@ -518,6 +548,24 @@ struct BetterAuthSwiftTestsPart1 {
         #expect(await manager.parseIncomingURL(verifyEmailURL) == .verifyEmail(.init(token: "verify-token")))
     }
 
+    @Test
+    func genericOAuthCallbackPathUsesConfiguredTemplate() async throws {
+        let manager =
+            BetterAuthSessionManager(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                            endpoints: .init(genericOAuthCallbackPath: "/api/auth/custom-oauth/{providerId}/complete")),
+                                     sessionStore: InMemorySessionStore(),
+                                     transport: MockTransport { request in
+                                         Issue.record("Transport should not be used while parsing incoming URL")
+                                         return emptyResponse(for: request)
+                                     })
+
+        let oauthURL =
+            try #require(URL(string: "betterauth://host/api/auth/custom-oauth/fixture-generic/complete?code=fixture-code&state=fixture-state"))
+
+        #expect(await manager.parseIncomingURL(oauthURL)
+            == .genericOAuth(.init(providerId: "fixture-generic", code: "fixture-code", state: "fixture-state")))
+    }
+
     @Test @MainActor
     func authStoreBootstrapUsesDetailedRestoreResult() async throws {
         let stored = BetterAuthSession(session: .init(id: "session-1",
@@ -543,6 +591,34 @@ struct BetterAuthSwiftTestsPart1 {
         #expect(authStore.lastRestoreResult == .restored(stored, source: .keychain, refresh: .notNeeded))
         #expect(authStore.launchState == .authenticated(stored))
         #expect(authStore.statusMessage == "Session restored")
+    }
+
+    @Test @MainActor
+    func authStoreBootstrapSurfacesRecoverableFailureForDeferredRefresh() async throws {
+        let stored = BetterAuthSession(session: .init(id: "session-1",
+                                                      userId: "user-1",
+                                                      accessToken: "token",
+                                                      refreshToken: "refresh-token",
+                                                      expiresAt: Date().addingTimeInterval(5)),
+                                       user: .init(id: "user-1", email: "test@example.com"))
+
+        let store = InMemorySessionStore()
+        try store.saveSession(stored, for: "test-key")
+
+        let authStore =
+            AuthStore(client: BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                                      storage: .init(key: "test-key"),
+                                                                                      clockSkew: 60),
+                                               sessionStore: store,
+                                               transport: MockTransport { _ in
+                                                   throw URLError(.networkConnectionLost)
+                                               }))
+
+        await authStore.bootstrap()
+        #expect(authStore.session == stored)
+        #expect(authStore.lastRestoreResult == .restored(stored, source: .keychain, refresh: .deferred))
+        #expect(authStore.launchState == .recoverableFailure(stored))
+        #expect(authStore.statusMessage == "Session restored; refresh deferred")
     }
 
     @Test @MainActor
@@ -818,13 +894,14 @@ struct BetterAuthSwiftTestsPart1 {
         let emitter = AuthEventEmitter()
         let signedIn = BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "token"),
                                          user: .init(id: "user-1", email: "test@example.com"))
-        let client = BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
-                                      sessionStore: InMemorySessionStore(),
-                                      transport: MockTransport { request in
-                                          #expect(request.url?.path == "/api/auth/email/sign-in")
-                                          return try response(for: request, statusCode: 200, data: encodeJSON(signedIn))
-                                      },
-                                      eventEmitter: emitter)
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
+                             sessionStore: InMemorySessionStore(),
+                             transport: MockTransport { request in
+                                 #expect(request.url?.path == "/api/auth/email/sign-in")
+                                 return try response(for: request, statusCode: 200, data: encodeJSON(signedIn))
+                             },
+                             eventEmitter: emitter)
 
         try await client.auth.signInWithEmail(.init(email: "test@example.com", password: "password123"))
         var iterator = client.authStateChanges.makeAsyncIterator()
@@ -841,13 +918,14 @@ struct BetterAuthSwiftTestsPart1 {
         let emitter = AuthEventEmitter()
         let signedIn = BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "token"),
                                          user: .init(id: "user-1", email: "test@example.com"))
-        let client = BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
-                                      sessionStore: InMemorySessionStore(),
-                                      transport: MockTransport { request in
-                                          #expect(request.url?.path == "/api/auth/email/sign-in")
-                                          return try response(for: request, statusCode: 200, data: encodeJSON(signedIn))
-                                      },
-                                      eventEmitter: emitter)
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
+                             sessionStore: InMemorySessionStore(),
+                             transport: MockTransport { request in
+                                 #expect(request.url?.path == "/api/auth/email/sign-in")
+                                 return try response(for: request, statusCode: 200, data: encodeJSON(signedIn))
+                             },
+                             eventEmitter: emitter)
 
         let recorder = Locked<AuthStateChange?>(nil)
         let registration = emitter.on { change in
@@ -856,7 +934,6 @@ struct BetterAuthSwiftTestsPart1 {
         defer { registration.remove() }
 
         try await client.auth.signInWithEmail(.init(email: "test@example.com", password: "password123"))
-        try? await Task.sleep(for: .milliseconds(50))
         let observed = recorder.withLock { $0 }
         #expect(observed?.event == .signedIn)
         #expect(observed?.session == signedIn)
@@ -876,23 +953,24 @@ struct BetterAuthSwiftTestsPart1 {
     func authStoreTracksExternalAuthStateChanges() async throws {
         let signedIn = BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "token"),
                                          user: .init(id: "user-1", email: "test@example.com"))
-        let client = BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
-                                      sessionStore: InMemorySessionStore(),
-                                      transport: MockTransport { request in
-                                          #expect(request.url?.path == "/api/auth/email/sign-in")
-                                          return try response(for: request, statusCode: 200, data: encodeJSON(signedIn))
-                                      })
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
+                             sessionStore: InMemorySessionStore(),
+                             transport: MockTransport { request in
+                                 #expect(request.url?.path == "/api/auth/email/sign-in")
+                                 return try response(for: request, statusCode: 200, data: encodeJSON(signedIn))
+                             })
         let store = AuthStore(client: client)
 
         _ = store
         await Task.yield()
         try await client.auth.signInWithEmail(.init(email: "test@example.com", password: "password123"))
-        try? await Task.sleep(for: .milliseconds(50))
+        await waitUntil { store.session == signedIn }
         #expect(store.session == signedIn)
         #expect(store.launchState == .authenticated(signedIn))
 
         try await client.auth.signOut(remotely: false)
-        try? await Task.sleep(for: .milliseconds(50))
+        await waitUntil { store.session == nil && store.launchState == .unauthenticated }
         #expect(store.session == nil)
         #expect(store.launchState == .unauthenticated)
     }
@@ -951,5 +1029,4 @@ struct BetterAuthSwiftTestsPart1 {
         #expect(await client.auth.currentSession() == nil)
         #expect(try store.loadSession(for: "test-key") == nil)
     }
-
 }

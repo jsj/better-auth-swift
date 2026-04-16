@@ -13,14 +13,12 @@ protocol BetterAuthTransporting: Sendable {
                                   accessToken: String?) async throws -> Response
 }
 
-extension AuthNetworkClient: BetterAuthTransporting {}
-
 protocol BetterAuthSessionStoring: Sendable {
     func loadStoredSession() throws -> BetterAuthSession?
     func persist(_ session: BetterAuthSession?) throws
 }
 
-struct BetterAuthSessionService: BetterAuthSessionStoring, Sendable {
+struct BetterAuthSessionService: BetterAuthSessionStoring {
     let configuration: BetterAuthConfiguration
     let sessionStore: BetterAuthSessionStore
 

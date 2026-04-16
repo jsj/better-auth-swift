@@ -27,7 +27,7 @@ public struct BetterAuthAnyModuleRuntime: BetterAuthModuleRuntime {
         let moduleIdentifier: String
     }
 
-    public init<Runtime: BetterAuthModuleRuntime>(_ runtime: Runtime) {
+    public init(_ runtime: some BetterAuthModuleRuntime) {
         moduleIdentifier = runtime.moduleIdentifier
         storage = runtime
     }
@@ -83,12 +83,12 @@ public struct BetterAuthModuleRegistry: Sendable {
 
 public struct BetterAuthModuleContext: BetterAuthClientProtocol, Sendable {
     public let configuration: BetterAuthConfiguration
-    public let authLifecycle: any BetterAuthSessionLifecycle
+    public let authLifecycle: any BetterAuthAuthPerforming
     public let requestsPerformer: any BetterAuthRequestPerforming
     public let modules: BetterAuthModuleRegistry
 
     public init(configuration: BetterAuthConfiguration,
-                authLifecycle: any BetterAuthSessionLifecycle,
+                authLifecycle: any BetterAuthAuthPerforming,
                 requestsPerformer: any BetterAuthRequestPerforming,
                 modules: BetterAuthModuleRegistry = .init())
     {
@@ -101,7 +101,7 @@ public struct BetterAuthModuleContext: BetterAuthClientProtocol, Sendable {
 
 public extension BetterAuthModuleRegistry {
     static func build(configuration: BetterAuthConfiguration,
-                      authLifecycle: any BetterAuthSessionLifecycle,
+                      authLifecycle: any BetterAuthAuthPerforming,
                       requestsPerformer: any BetterAuthRequestPerforming,
                       modules: [any BetterAuthModule]) -> BetterAuthModuleRegistry
     {

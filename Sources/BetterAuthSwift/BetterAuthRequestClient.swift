@@ -131,10 +131,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
             return request
         }
 
-        guard let url = URL(string: path, relativeTo: configuration.baseURL) else {
-            throw BetterAuthError.invalidURL
-        }
-
+        let url = try BetterAuthURLResolver.resolve(path, relativeTo: configuration.baseURL)
         var request = URLRequest(url: url)
         request.httpMethod = method
         if let requestOrigin = configuration.requestOrigin, request.value(forHTTPHeaderField: "Origin") == nil {

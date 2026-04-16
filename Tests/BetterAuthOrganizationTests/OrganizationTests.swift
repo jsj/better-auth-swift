@@ -9,10 +9,11 @@ struct OrganizationTests {
         let session = BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "token-1"),
                                         user: .init(id: "user-1", email: "user@example.com", name: "Test User"))
         let store = InMemorySessionStore()
-        let client = BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
-                                                                             storage: .init(key: "test-key")),
-                                      sessionStore: store,
-                                      transport: transport)
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                    storage: .init(key: "test-key")),
+                             sessionStore: store,
+                             transport: transport)
         try store.saveSession(session, for: "test-key")
         return client
     }
@@ -32,9 +33,7 @@ struct OrganizationTests {
         _ = try await client.auth.restoreSession()
         let manager = OrganizationManager(client: client)
 
-        let result = try await manager.createOrganization(
-            CreateOrganizationRequest(name: "Acme", slug: "acme")
-        )
+        let result = try await manager.createOrganization(CreateOrganizationRequest(name: "Acme", slug: "acme"))
         #expect(result.id == "org-1")
         #expect(result.name == "Acme")
         #expect(result.slug == "acme")
@@ -42,10 +41,8 @@ struct OrganizationTests {
 
     @Test
     func listOrganizationsDecodesArray() async throws {
-        let orgs = [
-            Organization(id: "org-1", name: "Acme", slug: "acme", createdAt: Date()),
-            Organization(id: "org-2", name: "Beta", slug: "beta", createdAt: Date()),
-        ]
+        let orgs = [Organization(id: "org-1", name: "Acme", slug: "acme", createdAt: Date()),
+                    Organization(id: "org-2", name: "Beta", slug: "beta", createdAt: Date())]
 
         let transport = MockTransport { request in
             #expect(request.url?.path == "/api/auth/organization/list")
@@ -61,6 +58,47 @@ struct OrganizationTests {
         #expect(result.count == 2)
         #expect(result[0].slug == "acme")
         #expect(result[1].slug == "beta")
+    }
+
+    @Test
+    func getFullOrganizationUsesQueryAndReturnsMembersAndInvitations() async throws {
+        let full = FullOrganization(id: "org-1",
+                                    name: "Acme",
+                                    slug: "acme",
+                                    createdAt: Date(),
+                                    members: [OrganizationMember(id: "member-1",
+                                                                 organizationId: "org-1",
+                                                                 userId: "user-1",
+                                                                 role: "owner")],
+                                    invitations: [OrganizationInvitation(id: "invite-1",
+                                                                         organizationId: "org-1",
+                                                                         email: "new@example.com",
+                                                                         role: "member",
+                                                                         inviterId: "user-1",
+                                                                         expiresAt: Date().addingTimeInterval(3600))])
+
+        let transport = MockTransport { request in
+            #expect(request.url?.path == "/api/auth/organization/get-full-organization")
+            #expect(request.httpMethod == "GET")
+            #expect(request.httpBody == nil)
+            let components = URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: true)
+            #expect(components?.queryItems?.first(where: { $0.name == "organizationId" })?.value == "org-1")
+            return try response(for: request, statusCode: 200, data: encodeJSON(full))
+        }
+
+        let client = try makeClient(transport: transport)
+        _ = try await client.auth.restoreSession()
+        let manager = OrganizationManager(client: client)
+
+        let result = try await manager.getFullOrganization(organizationId: "org-1")
+        #expect(result.id == full.id)
+        #expect(result.members.count == 1)
+        #expect(result.members.first?.id == full.members.first?.id)
+        #expect(result.members.first?.role == full.members.first?.role)
+        #expect(result.invitations.count == 1)
+        #expect(result.invitations.first?.id == full.invitations.first?.id)
+        #expect(result.invitations.first?.email == full.invitations.first?.email)
+        #expect(result.organization.slug == "acme")
     }
 
     @Test
@@ -101,11 +139,36 @@ struct OrganizationTests {
         _ = try await client.auth.restoreSession()
         let manager = OrganizationManager(client: client)
 
-        let result = try await manager.inviteMember(
-            InviteMemberRequest(organizationId: "org-1", email: "new@example.com")
-        )
+        let result = try await manager.inviteMember(InviteMemberRequest(organizationId: "org-1",
+                                                                        email: "new@example.com"))
         #expect(result.id == "inv-1")
         #expect(result.email == "new@example.com")
+    }
+
+    @Test
+    func listMembersUsesQueryParameter() async throws {
+        let members = [OrganizationMember(id: "member-1",
+                                          organizationId: "org-1",
+                                          userId: "user-1",
+                                          role: "member")]
+
+        let transport = MockTransport { request in
+            #expect(request.url?.path == "/api/auth/organization/list-members")
+            #expect(request.httpMethod == "GET")
+            #expect(request.httpBody == nil)
+            let components = URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: true)
+            #expect(components?.queryItems?.first(where: { $0.name == "organizationId" })?.value == "org-1")
+            return try response(for: request, statusCode: 200, data: encodeJSON(members))
+        }
+
+        let client = try makeClient(transport: transport)
+        _ = try await client.auth.restoreSession()
+        let manager = OrganizationManager(client: client)
+
+        let result = try await manager.listMembers(organizationId: "org-1")
+        #expect(result.count == 1)
+        #expect(result.first?.id == members.first?.id)
+        #expect(result.first?.role == members.first?.role)
     }
 
     @Test
@@ -152,6 +215,34 @@ struct OrganizationTests {
     }
 
     @Test
+    func listInvitationsUsesQueryParameter() async throws {
+        let invitations = [OrganizationInvitation(id: "invite-1",
+                                                  organizationId: "org-1",
+                                                  email: "new@example.com",
+                                                  role: "member",
+                                                  inviterId: "user-1",
+                                                  expiresAt: Date().addingTimeInterval(3600))]
+
+        let transport = MockTransport { request in
+            #expect(request.url?.path == "/api/auth/organization/list-invitations")
+            #expect(request.httpMethod == "GET")
+            #expect(request.httpBody == nil)
+            let components = URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: true)
+            #expect(components?.queryItems?.first(where: { $0.name == "organizationId" })?.value == "org-1")
+            return try response(for: request, statusCode: 200, data: encodeJSON(invitations))
+        }
+
+        let client = try makeClient(transport: transport)
+        _ = try await client.auth.restoreSession()
+        let manager = OrganizationManager(client: client)
+
+        let result = try await manager.listInvitations(organizationId: "org-1")
+        #expect(result.count == 1)
+        #expect(result.first?.id == invitations.first?.id)
+        #expect(result.first?.email == invitations.first?.email)
+    }
+
+    @Test
     func pluginUsesOnlyPublicAPIWithoutTestableImport() async throws {
         // This test validates the plugin pattern: OrganizationManager uses
         // only public BetterAuth API (BetterAuthClient, requests.sendJSON).
@@ -175,8 +266,10 @@ struct OrganizationTests {
         })
 
         let store = InMemorySessionStore()
-        try store.saveSession(BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "token-1"),
-                                                user: .init(id: "user-1", email: "user@example.com", name: "Test User")),
+        try store.saveSession(BetterAuthSession(session: .init(id: "session-1", userId: "user-1",
+                                                               accessToken: "token-1"),
+                                                user: .init(id: "user-1", email: "user@example.com",
+                                                            name: "Test User")),
                               for: "test-key")
         let modularClient = BetterAuthClient(configuration: client.configuration,
                                              sessionStore: store,
@@ -244,21 +337,22 @@ struct OrganizationTests {
         }
 
         let store = InMemorySessionStore()
-        try store.saveSession(BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "token-1"),
-                                                user: .init(id: "user-1", email: "user@example.com", name: "Test User")),
+        try store.saveSession(BetterAuthSession(session: .init(id: "session-1", userId: "user-1",
+                                                               accessToken: "token-1"),
+                                                user: .init(id: "user-1", email: "user@example.com",
+                                                            name: "Test User")),
                               for: "test-key")
-        let client = BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
-                                                                             storage: .init(key: "test-key")),
-                                      sessionStore: store,
-                                      transport: transport,
-                                      modules: [
-                                          ProbeModule(moduleIdentifier: "first",
-                                                      observedPaths: observedPaths,
-                                                      observedEvents: observedEvents),
-                                          ProbeModule(moduleIdentifier: "second",
-                                                      observedPaths: observedPaths,
-                                                      observedEvents: observedEvents),
-                                      ])
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                    storage: .init(key: "test-key")),
+                             sessionStore: store,
+                             transport: transport,
+                             modules: [ProbeModule(moduleIdentifier: "first",
+                                                   observedPaths: observedPaths,
+                                                   observedEvents: observedEvents),
+                                       ProbeModule(moduleIdentifier: "second",
+                                                   observedPaths: observedPaths,
+                                                   observedEvents: observedEvents)])
 
         _ = try await client.auth.restoreSession()
         let firstRuntime = try #require(client.modules.runtime(for: "first", as: ProbeRuntime.self))
@@ -275,7 +369,9 @@ struct OrganizationTests {
 
         let restored = try await client.auth.restoreSession()
         #expect(restored?.session.accessToken == "token-1")
-        try await Task.sleep(for: .milliseconds(50))
+        for _ in 0 ..< 20 {
+            await Task.yield()
+        }
         #expect(observedEvents.withLock { $0 }.isEmpty)
     }
 }

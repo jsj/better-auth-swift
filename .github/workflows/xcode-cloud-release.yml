@@ -21,10 +21,12 @@ jobs:
     steps:
       - name: Trigger and poll Xcode Cloud release build
         env:
-          XC: /Users/james/bin/xc
+          XC: xc
           WORKFLOW_ID: ${{ vars.XCODE_CLOUD_RELEASE_WORKFLOW_ID || vars.XCODE_CLOUD_WORKFLOW_ID }}
           REF_NAME: ${{ github.ref_name }}
         run: |
+          command -v "$XC" >/dev/null 2>&1
+          command -v python3 >/dev/null 2>&1
           test -n "$WORKFLOW_ID"
 
           "$XC" ci cloud trigger \
@@ -34,7 +36,7 @@ jobs:
             --json \
           | tee /tmp/xc-trigger.ndjson
 
-          RUN_ID=$(/opt/homebrew/bin/python3 - <<'PY'
+          RUN_ID=$(python3 - <<'PY'
           import json, sys
           for line in open('/tmp/xc-trigger.ndjson'):
               d = json.loads(line)
@@ -58,11 +60,14 @@ jobs:
 
       - name: List Xcode Cloud actions and artifacts
         env:
-          XC: /Users/james/bin/xc
+          XC: xc
         run: |
+          command -v "$XC" >/dev/null 2>&1
+          command -v python3 >/dev/null 2>&1
+
           "$XC" ci cloud actions --run-id "$RUN_ID" --json | tee /tmp/xc-actions.ndjson
 
-          /opt/homebrew/bin/python3 - <<'PY'
+          python3 - <<'PY'
           import json, pathlib, subprocess, os
 
           action_ids = []
@@ -86,7 +91,8 @@ jobs:
 
       - name: Publish workflow summary
         run: |
-          /opt/homebrew/bin/python3 - <<'PY'
+          command -v python3 >/dev/null 2>&1
+          python3 - <<'PY'
           import json, pathlib, os
 
           lines = [

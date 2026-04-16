@@ -1,9 +1,8 @@
+import BetterAuthTestHelpers
 import Foundation
 import Testing
-import BetterAuthTestHelpers
 @testable import BetterAuth
 @testable import BetterAuthSwiftUI
-
 
 struct BetterAuthSwiftTestsPart3 {
     @Test
@@ -1174,7 +1173,7 @@ struct BetterAuthSwiftTestsPart3 {
             #expect(payload.phoneNumber == "+15555550123")
 
             return try response(for: request, statusCode: 200,
-                                data: encodeJSON(PhoneOTPRequestResponse(message: "code sent")))
+                                data: encodeJSON(PhoneOTPRequestResponse(message: "otp queued")))
         }
 
         let client =
@@ -1229,5 +1228,4 @@ struct BetterAuthSwiftTestsPart3 {
                                                                                 name: "Phone User")))
         #expect(await client.auth.currentSession()?.session.accessToken == "phone-token")
     }
-
 }

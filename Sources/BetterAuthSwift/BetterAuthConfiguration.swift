@@ -34,9 +34,17 @@ public struct BetterAuthConfiguration: Sendable {
 }
 
 public extension BetterAuthConfiguration {
-    var autoRefreshToken: Bool { auth.autoRefreshToken }
-    var retryPolicy: RetryPolicy { networking.retryPolicy }
-    var requestOrigin: String? { networking.requestOrigin }
+    var autoRefreshToken: Bool {
+        auth.autoRefreshToken
+    }
+
+    var retryPolicy: RetryPolicy {
+        networking.retryPolicy
+    }
+
+    var requestOrigin: String? {
+        networking.requestOrigin
+    }
 
     struct Auth: Sendable {
         public let clockSkew: TimeInterval
@@ -108,6 +116,7 @@ public extension BetterAuthConfiguration {
         public let deleteUserPath: String
         public let genericOAuthSignInPath: String
         public let genericOAuthLinkPath: String
+        public let genericOAuthCallbackPath: String
         public let listLinkedAccountsPath: String
         public let linkSocialAccountPath: String
         public let passkeyRegisterOptionsPath: String
@@ -163,6 +172,7 @@ public extension BetterAuthConfiguration {
                     deleteUserPath: String = "/api/auth/delete-user",
                     genericOAuthSignInPath: String = "/api/auth/sign-in/oauth2",
                     genericOAuthLinkPath: String = "/api/auth/oauth2/link",
+                    genericOAuthCallbackPath: String = "/api/auth/oauth2/callback/{providerId}",
                     listLinkedAccountsPath: String = "/api/auth/list-accounts",
                     linkSocialAccountPath: String = "/api/auth/link-social",
                     passkeyRegisterOptionsPath: String = "/api/auth/passkey/generate-register-options",
@@ -218,6 +228,7 @@ public extension BetterAuthConfiguration {
             self.deleteUserPath = deleteUserPath
             self.genericOAuthSignInPath = genericOAuthSignInPath
             self.genericOAuthLinkPath = genericOAuthLinkPath
+            self.genericOAuthCallbackPath = genericOAuthCallbackPath
             self.listLinkedAccountsPath = listLinkedAccountsPath
             self.linkSocialAccountPath = linkSocialAccountPath
             self.passkeyRegisterOptionsPath = passkeyRegisterOptionsPath

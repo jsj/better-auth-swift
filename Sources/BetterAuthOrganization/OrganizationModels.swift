@@ -92,6 +92,45 @@ public struct OrganizationInvitation: Codable, Sendable, Equatable {
     }
 }
 
+public struct FullOrganization: Codable, Sendable, Equatable {
+    public let id: String
+    public let name: String
+    public let slug: String
+    public let logo: String?
+    public let metadata: [String: String]?
+    public let createdAt: Date
+    public let members: [OrganizationMember]
+    public let invitations: [OrganizationInvitation]
+
+    public init(id: String,
+                name: String,
+                slug: String,
+                logo: String? = nil,
+                metadata: [String: String]? = nil,
+                createdAt: Date = Date(),
+                members: [OrganizationMember] = [],
+                invitations: [OrganizationInvitation] = [])
+    {
+        self.id = id
+        self.name = name
+        self.slug = slug
+        self.logo = logo
+        self.metadata = metadata
+        self.createdAt = createdAt
+        self.members = members
+        self.invitations = invitations
+    }
+
+    public var organization: Organization {
+        Organization(id: id,
+                     name: name,
+                     slug: slug,
+                     logo: logo,
+                     metadata: metadata,
+                     createdAt: createdAt)
+    }
+}
+
 // MARK: - Requests
 
 public struct CreateOrganizationRequest: Codable, Sendable, Equatable {
@@ -162,22 +201,7 @@ public struct RemoveMemberRequest: Codable, Sendable, Equatable {
 
 // MARK: - Responses
 
-struct FullOrganizationResponse: Codable, Sendable {
-    let id: String
-    let name: String
-    let slug: String
-    let logo: String?
-    let metadata: [String: String]?
-    let createdAt: Date
-    let members: [OrganizationMember]
-    let invitations: [OrganizationInvitation]
-
-    var organization: Organization {
-        Organization(id: id, name: name, slug: slug, logo: logo, metadata: metadata, createdAt: createdAt)
-    }
-}
-
-struct StatusResponse: Codable, Sendable {
+struct StatusResponse: Codable {
     let status: Bool?
     let message: String?
 }

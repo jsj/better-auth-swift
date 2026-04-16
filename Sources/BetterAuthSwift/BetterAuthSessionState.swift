@@ -54,7 +54,8 @@ public protocol BetterAuthAuthPerforming: BetterAuthSessionLifecycle {
     func verifyTwoFactorRecoveryCode(_ payload: TwoFactorVerifyBackupCodeRequest) async throws -> BetterAuthSession
     func disableTwoFactor(_ payload: TwoFactorDisableRequest) async throws -> Bool
     func generateTwoFactorRecoveryCodes(password: String) async throws -> [String]
-    func passkeyRegistrationOptions(_ payload: PasskeyRegistrationOptionsRequest) async throws -> PasskeyRegistrationOptions
+    func passkeyRegistrationOptions(_ payload: PasskeyRegistrationOptionsRequest) async throws
+        -> PasskeyRegistrationOptions
     func passkeyAuthenticateOptions() async throws -> PasskeyAuthenticationOptions
     func registerPasskey(_ payload: PasskeyRegistrationRequest) async throws -> Passkey
     func authenticateWithPasskey(_ payload: PasskeyAuthenticationRequest) async throws -> BetterAuthSession
@@ -185,11 +186,15 @@ public struct BetterAuthSessionLifecycleAdapter: BetterAuthAuthPerforming {
         try await manager.signInWithSocial(payload)
     }
 
-    public func beginGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws -> GenericOAuthAuthorizationResponse {
+    public func beginGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws
+        -> GenericOAuthAuthorizationResponse
+    {
         try await manager.beginGenericOAuth(payload)
     }
 
-    public func linkGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws -> GenericOAuthAuthorizationResponse {
+    public func linkGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws
+        -> GenericOAuthAuthorizationResponse
+    {
         try await manager.linkGenericOAuth(payload)
     }
 
@@ -277,7 +282,9 @@ public struct BetterAuthSessionLifecycleAdapter: BetterAuthAuthPerforming {
         try await manager.verifyTwoFactorOTP(payload)
     }
 
-    public func verifyTwoFactorRecoveryCode(_ payload: TwoFactorVerifyBackupCodeRequest) async throws -> BetterAuthSession {
+    public func verifyTwoFactorRecoveryCode(_ payload: TwoFactorVerifyBackupCodeRequest) async throws
+        -> BetterAuthSession
+    {
         try await manager.verifyTwoFactorRecoveryCode(payload)
     }
 
@@ -289,7 +296,9 @@ public struct BetterAuthSessionLifecycleAdapter: BetterAuthAuthPerforming {
         try await manager.generateTwoFactorRecoveryCodes(password: password)
     }
 
-    public func passkeyRegistrationOptions(_ payload: PasskeyRegistrationOptionsRequest) async throws -> PasskeyRegistrationOptions {
+    public func passkeyRegistrationOptions(_ payload: PasskeyRegistrationOptionsRequest) async throws
+        -> PasskeyRegistrationOptions
+    {
         try await manager.passkeyRegistrationOptions(payload)
     }
 
@@ -349,7 +358,9 @@ public struct BetterAuthSessionLifecycleAdapter: BetterAuthAuthPerforming {
         try await manager.listDeviceSessions()
     }
 
-    public func setActiveDeviceSession(_ payload: BetterAuthSetActiveDeviceSessionRequest) async throws -> BetterAuthSession {
+    public func setActiveDeviceSession(_ payload: BetterAuthSetActiveDeviceSessionRequest) async throws
+        -> BetterAuthSession
+    {
         try await manager.setActiveDeviceSession(payload)
     }
 

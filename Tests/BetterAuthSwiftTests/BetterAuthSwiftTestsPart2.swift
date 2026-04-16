@@ -1,9 +1,8 @@
+import BetterAuthTestHelpers
 import Foundation
 import Testing
-import BetterAuthTestHelpers
 @testable import BetterAuth
 @testable import BetterAuthSwiftUI
-
 
 struct BetterAuthSwiftTestsPart2 {
     @Test
@@ -548,20 +547,18 @@ struct BetterAuthSwiftTestsPart2 {
         let session = BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "token-1"),
                                         user: .init(id: "user-1", email: "user@example.com"))
 
-        let transport = SequencedMockTransport([
-            // Enable 2FA
+        let transport = SequencedMockTransport([// Enable 2FA
             .handler { request in
                 #expect(request.url?.path == "/api/auth/two-factor/enable")
                 return try response(for: request, statusCode: 200,
                                     data: encodeJSON(TwoFactorEnableResponse(totpURI: "otpauth://totp/Example:user@example.com?secret=ABC",
-                                                                              backupCodes: ["code-1", "code-2"])))
+                                                                             backupCodes: ["code-1", "code-2"])))
             },
             // Disable 2FA
             .handler { request in
                 #expect(request.url?.path == "/api/auth/two-factor/disable")
                 return try response(for: request, statusCode: 200, data: encodeJSON(["status": true]))
-            },
-        ])
+            }])
 
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
@@ -582,8 +579,9 @@ struct BetterAuthSwiftTestsPart2 {
 
     @Test
     func revokeSessionPreservesCurrentSessionWhenRevokingDifferentToken() async throws {
-        let session = BetterAuthSession(session: .init(id: "session-current", userId: "user-1", accessToken: "current-token"),
-                                        user: .init(id: "user-1", email: "user@example.com"))
+        let session =
+            BetterAuthSession(session: .init(id: "session-current", userId: "user-1", accessToken: "current-token"),
+                              user: .init(id: "user-1", email: "user@example.com"))
 
         let transport = SequencedMockTransport([.handler { request in
             #expect(request.url?.path == "/api/auth/revoke-session")
@@ -966,6 +964,43 @@ struct BetterAuthSwiftTestsPart2 {
         #expect(try store.loadSession(for: "better-auth.session") == nil)
     }
 
+    @Test
+    func anonymousSignInRejectsMismatchedMaterializedUser() async throws {
+        let transport = SequencedMockTransport([.response(statusCode: 200, jsonObject: ["token": "anon-token",
+                                                                                        "user": ["id": "anon-user",
+                                                                                                 "email": "temp@anon.example.com",
+                                                                                                 "name": "Anonymous"]]),
+                                                .response(statusCode: 200,
+                                                          jsonObject: ["session": ["id": "session-anon",
+                                                                                   "userId": "different-user",
+                                                                                   "accessToken": "anon-token",
+                                                                                   "expiresAt": ISO8601DateFormatter()
+                                                                                       .string(from: Date()
+                                                                                           .addingTimeInterval(3600))],
+                                                                       "user": ["id": "different-user",
+                                                                                "email": "other@example.com",
+                                                                                "name": "Other User"]])])
+
+        let store = InMemorySessionStore()
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
+                             sessionStore: store,
+                             transport: transport)
+
+        do {
+            _ = try await client.auth.signInAnonymously()
+            Issue.record("Expected anonymous sign-in to reject mismatched materialized user")
+        } catch let error as BetterAuthError {
+            guard case .invalidResponse = error else {
+                Issue.record("Expected BetterAuthError.invalidResponse but got \(error)")
+                return
+            }
+        }
+
+        #expect(await client.auth.currentSession() == nil)
+        #expect(try store.loadSession(for: "better-auth.session") == nil)
+    }
+
     // MARK: - Delete User
 
     @Test
@@ -1057,8 +1092,8 @@ struct BetterAuthSwiftTestsPart2 {
         let location = SourceLocation(fileID: #fileID, filePath: #filePath, line: #line + 1, column: #column)
         do {
             _ = try await client.auth.upgradeAnonymousWithEmail(EmailSignUpRequest(email: "user@example.com",
-                                                                                    password: "password123",
-                                                                                    name: "Test"))
+                                                                                   password: "password123",
+                                                                                   name: "Test"))
             Issue.record("Expected BetterAuthError.missingSession", sourceLocation: location)
         } catch BetterAuthError.missingSession {
             // expected
@@ -1068,12 +1103,14 @@ struct BetterAuthSwiftTestsPart2 {
     @Test
     func upgradeAnonymousWithEmailPersistsUpgradedSession() async throws {
         let upgradedSession = BetterAuthSession(session: .init(id: "session-upgraded",
-                                                                userId: "user-upgraded",
-                                                                accessToken: "upgraded-token",
-                                                                expiresAt: Date().addingTimeInterval(3600)),
-                                                user: .init(id: "user-upgraded", email: "real@example.com", name: "Real User"))
-        let anonSession = BetterAuthSession(session: .init(id: "session-anon", userId: "anon-user", accessToken: "anon-token"),
-                                            user: .init(id: "anon-user", email: "temp@anon.example.com"))
+                                                               userId: "user-upgraded",
+                                                               accessToken: "upgraded-token",
+                                                               expiresAt: Date().addingTimeInterval(3600)),
+                                                user: .init(id: "user-upgraded", email: "real@example.com",
+                                                            name: "Real User"))
+        let anonSession =
+            BetterAuthSession(session: .init(id: "session-anon", userId: "anon-user", accessToken: "anon-token"),
+                              user: .init(id: "anon-user", email: "temp@anon.example.com"))
 
         let transport = SequencedMockTransport([.handler { request in
             #expect(request.url?.path == "/api/auth/email/sign-up")
@@ -1089,8 +1126,8 @@ struct BetterAuthSwiftTestsPart2 {
         try await client.auth.applyRestoredSession(anonSession)
 
         let result = try await client.auth.upgradeAnonymousWithEmail(EmailSignUpRequest(email: "real@example.com",
-                                                                                         password: "password123",
-                                                                                         name: "Real User"))
+                                                                                        password: "password123",
+                                                                                        name: "Real User"))
         if case let .signedIn(session) = result {
             #expect(session.user.email == "real@example.com")
             #expect(session.session.accessToken == "upgraded-token")
@@ -1105,11 +1142,13 @@ struct BetterAuthSwiftTestsPart2 {
     @Test
     func upgradeAnonymousWithApplePersistsUpgradedSession() async throws {
         let upgradedSession = BetterAuthSession(session: .init(id: "session-apple",
-                                                                userId: "apple-user",
-                                                                accessToken: "apple-token"),
-                                                user: .init(id: "apple-user", email: "apple@example.com", name: "Apple User"))
-        let anonSession = BetterAuthSession(session: .init(id: "session-anon", userId: "anon-user", accessToken: "anon-token"),
-                                            user: .init(id: "anon-user"))
+                                                               userId: "apple-user",
+                                                               accessToken: "apple-token"),
+                                                user: .init(id: "apple-user", email: "apple@example.com",
+                                                            name: "Apple User"))
+        let anonSession =
+            BetterAuthSession(session: .init(id: "session-anon", userId: "anon-user", accessToken: "anon-token"),
+                              user: .init(id: "anon-user"))
 
         let transport = SequencedMockTransport([.handler { request in
             #expect(request.url?.path == "/api/auth/apple/native")
@@ -1125,7 +1164,7 @@ struct BetterAuthSwiftTestsPart2 {
         try await client.auth.applyRestoredSession(anonSession)
 
         let session = try await client.auth.upgradeAnonymousWithApple(AppleNativeSignInPayload(token: "apple-id-token",
-                                                                                                nonce: "nonce"))
+                                                                                               nonce: "nonce"))
         #expect(session.user.email == "apple@example.com")
         #expect(session.session.accessToken == "apple-token")
         #expect(try store.loadSession(for: "test-key")?.user.email == "apple@example.com")
@@ -1139,22 +1178,23 @@ struct BetterAuthSwiftTestsPart2 {
                                         user: .init(id: "user-1", email: "user@example.com"))
 
         let transport = SequencedMockTransport([.handler { request in
-            #expect(request.url?.path == "/api/auth/email/sign-in")
-            #expect(request.httpMethod == "POST")
-            let payload = try JSONDecoder().decode(EmailSignInRequest.self, from: try #require(request.httpBody))
-            #expect(payload.email == "user@example.com")
-            #expect(payload.password == "correct-password")
-            return try response(for: request, statusCode: 200,
-                                data: encodeJSON(BetterAuthSession(session: .init(id: "session-reauth",
-                                                                                  userId: "user-1",
-                                                                                  accessToken: "reauth-token"),
-                                                                    user: .init(id: "user-1", email: "user@example.com"))))
-        },
-        // Revoke ephemeral verification session
-        .handler { request in
-            #expect(request.url?.path == "/api/auth/revoke-session")
-            return response(for: request, statusCode: 200, data: Data())
-        }])
+                #expect(request.url?.path == "/api/auth/email/sign-in")
+                #expect(request.httpMethod == "POST")
+                let payload = try JSONDecoder().decode(EmailSignInRequest.self, from: try #require(request.httpBody))
+                #expect(payload.email == "user@example.com")
+                #expect(payload.password == "correct-password")
+                return try response(for: request, statusCode: 200,
+                                    data: encodeJSON(BetterAuthSession(session: .init(id: "session-reauth",
+                                                                                      userId: "user-1",
+                                                                                      accessToken: "reauth-token"),
+                                                                       user: .init(id: "user-1",
+                                                                                   email: "user@example.com"))))
+            },
+            // Revoke ephemeral verification session
+            .handler { request in
+                #expect(request.url?.path == "/api/auth/revoke-session")
+                return response(for: request, statusCode: 200, data: Data())
+            }])
 
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
@@ -1168,19 +1208,18 @@ struct BetterAuthSwiftTestsPart2 {
 
     @Test
     func reauthenticateDoesNotReplaceCurrentSession() async throws {
-        let originalSession = BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "original-token"),
-                                                user: .init(id: "user-1", email: "user@example.com"))
+        let originalSession =
+            BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "original-token"),
+                              user: .init(id: "user-1", email: "user@example.com"))
 
-        let transport = SequencedMockTransport([
-            .response(statusCode: 200,
-                      encodable: BetterAuthSession(session: .init(id: "session-reauth",
-                                                                   userId: "user-1",
-                                                                   accessToken: "reauth-token"),
-                                                    user: .init(id: "user-1",
-                                                                email: "user@example.com"))),
-            // Revoke ephemeral verification session
-            .response(statusCode: 200, jsonObject: ["status": true])
-        ])
+        let transport = SequencedMockTransport([.response(statusCode: 200,
+                                                          encodable: BetterAuthSession(session: .init(id: "session-reauth",
+                                                                                                      userId: "user-1",
+                                                                                                      accessToken: "reauth-token"),
+                                                                                       user: .init(id: "user-1",
+                                                                                                   email: "user@example.com"))),
+                                                // Revoke ephemeral verification session
+                                                .response(statusCode: 200, jsonObject: ["status": true])])
 
         let store = InMemorySessionStore()
         let client =
@@ -1273,6 +1312,31 @@ struct BetterAuthSwiftTestsPart2 {
         #expect(session.user.email == "oauth@example.com")
         #expect(await client.auth.currentSession() == session)
         #expect(try store.loadSession(for: "better-auth.session") == session)
+    }
+
+    @Test
+    func genericOAuthCompletionUsesConfiguredCallbackTemplate() async throws {
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                    endpoints: .init(genericOAuthCallbackPath: "/api/auth/custom-oauth/{providerId}/complete")),
+                             sessionStore: InMemorySessionStore(),
+                             transport: MockTransport { request in
+                                 #expect(request.url?.path == "/api/auth/custom-oauth/fixture-generic/complete")
+                                 return try response(for: request,
+                                                     statusCode: 200,
+                                                     data: encodeJSON(BetterAuthSession(session: .init(id: "session-oauth",
+                                                                                                       userId: "oauth-user",
+                                                                                                       accessToken: "oauth-token"),
+                                                                                        user: .init(id: "oauth-user",
+                                                                                                    email: "oauth@example.com"))))
+                             })
+
+        let session = try await client.auth
+            .completeGenericOAuth(GenericOAuthCallbackRequest(providerId: "fixture-generic",
+                                                              code: "fixture-code",
+                                                              state: "fixture-state"))
+
+        #expect(session.session.accessToken == "oauth-token")
     }
 
     @Test
@@ -1382,5 +1446,4 @@ struct BetterAuthSwiftTestsPart2 {
         #expect(await client.auth.currentSession() == reconciledSession)
         #expect(try store.loadSession(for: "better-auth.session") == reconciledSession)
     }
-
 }

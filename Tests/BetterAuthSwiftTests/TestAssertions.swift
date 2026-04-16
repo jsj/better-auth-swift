@@ -46,3 +46,20 @@ func assertRequestFailedJSON(statusCode expectedStatusCode: Int,
         Issue.record("Expected BetterAuthError.requestFailed but got \(error)", sourceLocation: sourceLocation)
     }
 }
+
+func waitUntil(fileID: String = #fileID,
+               filePath: String = #filePath,
+               line: Int = #line,
+               column: Int = #column,
+               maxYields: Int = 200,
+               condition: @escaping @MainActor () -> Bool) async
+{
+    let sourceLocation = SourceLocation(fileID: fileID, filePath: filePath, line: line, column: column)
+    for _ in 0 ..< maxYields {
+        if await MainActor.run(body: condition) {
+            return
+        }
+        await Task.yield()
+    }
+    Issue.record("Condition not met after \(maxYields) task yields", sourceLocation: sourceLocation)
+}

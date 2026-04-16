@@ -1,9 +1,8 @@
+import BetterAuthTestHelpers
 import Foundation
 import Testing
-import BetterAuthTestHelpers
 @testable import BetterAuth
 @testable import BetterAuthSwiftUI
-
 
 struct BetterAuthSwiftTestsPart4 {
     @Test

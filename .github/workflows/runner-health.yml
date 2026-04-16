@@ -22,7 +22,9 @@ jobs:
           xcodebuild -version
           swift --version
           tuist version
-          /Users/james/.local/bin/chimera status || true
+          if command -v chimera >/dev/null 2>&1; then
+            chimera status || true
+          fi
 
       - name: Show disk and power state
         run: |

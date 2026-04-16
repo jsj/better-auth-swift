@@ -24,7 +24,7 @@ public final class AuthStore {
     private var authStateTask: Task<Void, Never>?
 
     public init(client: some BetterAuthClientProtocol) {
-        auth = client.authLifecycle as! any BetterAuthAuthPerforming
+        auth = client.authLifecycle
         startAuthStateObservation()
     }
 
@@ -604,41 +604,12 @@ public final class AuthStore {
 
     private func startAuthStateObservation() {
         authStateTask?.cancel()
-        authStateTask = Task { [weak self] in
-            guard let self else { return }
+        let auth = auth
+        authStateTask = Task { [weak self, auth] in
             for await change in auth.authStateChanges {
                 guard !Task.isCancelled else { return }
-                await MainActor.run {
-                    self.session = change.session
-                    switch change.transition?.phase {
-                    case .authenticated:
-                        if let session = change.session {
-                            self.launchState = .authenticated(session)
-                        }
-                    case .unauthenticated:
-                        self.launchState = .unauthenticated
-                    case .refreshing:
-                        if let session = change.session {
-                            self.launchState = .authenticated(session)
-                        }
-                    case .restoring:
-                        self.launchState = .restoring
-                    case .failed:
-                        self.launchState = .failed
-                    case .idle, nil:
-                        if let session = change.session {
-                            self.launchState = .authenticated(session)
-                        } else if change.event == .signedOut || change.event == .sessionExpired {
-                            self.launchState = .unauthenticated
-                        }
-                    @unknown default:
-                        if let session = change.session {
-                            self.launchState = .authenticated(session)
-                        } else if change.event == .signedOut || change.event == .sessionExpired {
-                            self.launchState = .unauthenticated
-                        }
-                    }
-                }
+                guard let self else { return }
+                self.applyAuthStateChange(change)
             }
         }
     }
@@ -657,18 +628,21 @@ public final class AuthStore {
 
         case let .restored(restoredSession, _, refresh):
             session = restoredSession
-            launchState = .authenticated(restoredSession)
             switch refresh {
             case .notNeeded:
+                launchState = .authenticated(restoredSession)
                 statusMessage = "Session restored"
 
             case .refreshed:
+                launchState = .authenticated(restoredSession)
                 statusMessage = "Session restored and refreshed"
 
             case .deferred:
+                launchState = .recoverableFailure(restoredSession)
                 statusMessage = "Session restored; refresh deferred"
 
             @unknown default:
+                launchState = .authenticated(restoredSession)
                 statusMessage = "Session restored"
             }
 
@@ -681,6 +655,44 @@ public final class AuthStore {
             session = nil
             launchState = .unauthenticated
             statusMessage = "Session state updated"
+        }
+    }
+
+    private func applyAuthStateChange(_ change: AuthStateChange) {
+        session = change.session
+        switch change.transition?.phase {
+        case .authenticated:
+            if let session = change.session {
+                launchState = .authenticated(session)
+            }
+
+        case .unauthenticated:
+            launchState = .unauthenticated
+
+        case .refreshing:
+            if let session = change.session {
+                launchState = .authenticated(session)
+            }
+
+        case .restoring:
+            launchState = .restoring
+
+        case .failed:
+            launchState = .failed
+
+        case .idle, nil:
+            if let session = change.session {
+                launchState = .authenticated(session)
+            } else if change.event == .signedOut || change.event == .sessionExpired {
+                launchState = .unauthenticated
+            }
+
+        @unknown default:
+            if let session = change.session {
+                launchState = .authenticated(session)
+            } else if change.event == .signedOut || change.event == .sessionExpired {
+                launchState = .unauthenticated
+            }
         }
     }
 

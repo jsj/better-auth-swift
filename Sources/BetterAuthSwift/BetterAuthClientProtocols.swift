@@ -81,7 +81,7 @@ public extension BetterAuthRequestPerforming {
 
 public protocol BetterAuthClientProtocol: Sendable {
     var configuration: BetterAuthConfiguration { get }
-    var authLifecycle: any BetterAuthSessionLifecycle { get }
+    var authLifecycle: any BetterAuthAuthPerforming { get }
     var requestsPerformer: any BetterAuthRequestPerforming { get }
     var modules: BetterAuthModuleRegistry { get }
 }

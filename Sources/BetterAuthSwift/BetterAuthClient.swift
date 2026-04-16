@@ -47,8 +47,8 @@ public struct BetterAuthClient: BetterAuthModuleSupporting, Sendable {
         self.modules = BetterAuthModuleRegistry.build(configuration: configuration,
                                                       authLifecycle: BetterAuthSessionLifecycleAdapter(manager: auth),
                                                       requestsPerformer: BetterAuthRequestClient(configuration: configuration,
-                                                                                                sessionManager: auth,
-                                                                                                transport: transport),
+                                                                                                 sessionManager: auth,
+                                                                                                 transport: transport),
                                                       modules: modules)
         self.requests = BetterAuthRequestClient(configuration: configuration,
                                                 sessionManager: auth,
@@ -59,7 +59,7 @@ public struct BetterAuthClient: BetterAuthModuleSupporting, Sendable {
 }
 
 public extension BetterAuthClient {
-    var authLifecycle: any BetterAuthSessionLifecycle {
+    var authLifecycle: any BetterAuthAuthPerforming {
         BetterAuthSessionLifecycleAdapter(manager: auth)
     }
 

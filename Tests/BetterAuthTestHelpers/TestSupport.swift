@@ -1,5 +1,5 @@
-import Foundation
 import BetterAuth
+import Foundation
 
 public struct MockTransport: BetterAuthTransport {
     public let handler: @Sendable (URLRequest) async throws -> (Data, URLResponse)

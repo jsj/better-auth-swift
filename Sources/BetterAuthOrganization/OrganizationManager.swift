@@ -22,13 +22,11 @@ public actor OrganizationManager {
                                     method: "GET")
     }
 
-    public func getFullOrganization(organizationId: String) async throws -> Organization {
-        let response: FullOrganizationResponse = try await requests.sendJSON(
-            path: "/api/auth/organization/get-full-organization",
-            method: "GET",
-            body: OrganizationIdRequest(organizationId: organizationId)
-        )
-        return response.organization
+    public func getFullOrganization(organizationId: String) async throws -> FullOrganization {
+        try await requests.sendJSON(path: path("/api/auth/organization/get-full-organization",
+                                               queryItems: [URLQueryItem(name: "organizationId",
+                                                                         value: organizationId)]),
+                                    method: "GET")
     }
 
     @discardableResult
@@ -40,40 +38,33 @@ public actor OrganizationManager {
 
     @discardableResult
     public func deleteOrganization(organizationId: String) async throws -> Bool {
-        let response: StatusResponse = try await requests.sendJSON(
-            path: "/api/auth/organization/delete",
-            method: "POST",
-            body: OrganizationIdRequest(organizationId: organizationId)
-        )
+        let response: StatusResponse = try await requests.sendJSON(path: "/api/auth/organization/delete",
+                                                                   method: "POST",
+                                                                   body: OrganizationIdRequest(organizationId: organizationId))
         return response.status ?? false
     }
 
     public func checkSlug(_ slug: String) async throws -> Bool {
-        let response: SlugAvailabilityResponse = try await requests.sendJSON(
-            path: "/api/auth/organization/check-slug",
-            method: "POST",
-            body: SlugCheckRequest(slug: slug)
-        )
+        let response: SlugAvailabilityResponse = try await requests.sendJSON(path: "/api/auth/organization/check-slug",
+                                                                             method: "POST",
+                                                                             body: SlugCheckRequest(slug: slug))
         return response.status
     }
 
     // MARK: - Members
 
     public func listMembers(organizationId: String) async throws -> [OrganizationMember] {
-        try await requests.sendJSON(
-            path: "/api/auth/organization/list-members",
-            method: "GET",
-            body: OrganizationIdRequest(organizationId: organizationId)
-        )
+        try await requests.sendJSON(path: path("/api/auth/organization/list-members",
+                                               queryItems: [URLQueryItem(name: "organizationId",
+                                                                         value: organizationId)]),
+                                    method: "GET")
     }
 
     @discardableResult
     public func removeMember(_ payload: RemoveMemberRequest) async throws -> Bool {
-        let response: StatusResponse = try await requests.sendJSON(
-            path: "/api/auth/organization/remove-member",
-            method: "POST",
-            body: payload
-        )
+        let response: StatusResponse = try await requests.sendJSON(path: "/api/auth/organization/remove-member",
+                                                                   method: "POST",
+                                                                   body: payload)
         return response.status ?? false
     }
 
@@ -102,30 +93,25 @@ public actor OrganizationManager {
 
     @discardableResult
     public func cancelInvitation(invitationId: String) async throws -> Bool {
-        let response: StatusResponse = try await requests.sendJSON(
-            path: "/api/auth/organization/cancel-invitation",
-            method: "POST",
-            body: InvitationIdRequest(invitationId: invitationId)
-        )
+        let response: StatusResponse = try await requests.sendJSON(path: "/api/auth/organization/cancel-invitation",
+                                                                   method: "POST",
+                                                                   body: InvitationIdRequest(invitationId: invitationId))
         return response.status ?? false
     }
 
     @discardableResult
     public func rejectInvitation(invitationId: String) async throws -> Bool {
-        let response: StatusResponse = try await requests.sendJSON(
-            path: "/api/auth/organization/reject-invitation",
-            method: "POST",
-            body: InvitationIdRequest(invitationId: invitationId)
-        )
+        let response: StatusResponse = try await requests.sendJSON(path: "/api/auth/organization/reject-invitation",
+                                                                   method: "POST",
+                                                                   body: InvitationIdRequest(invitationId: invitationId))
         return response.status ?? false
     }
 
     public func listInvitations(organizationId: String) async throws -> [OrganizationInvitation] {
-        try await requests.sendJSON(
-            path: "/api/auth/organization/list-invitations",
-            method: "GET",
-            body: OrganizationIdRequest(organizationId: organizationId)
-        )
+        try await requests.sendJSON(path: path("/api/auth/organization/list-invitations",
+                                               queryItems: [URLQueryItem(name: "organizationId",
+                                                                         value: organizationId)]),
+                                    method: "GET")
     }
 
     // MARK: - Active Organization
@@ -141,22 +127,29 @@ public actor OrganizationManager {
         try await requests.sendJSON(path: "/api/auth/organization/get-active-member",
                                     method: "GET")
     }
+
+    private func path(_ base: String, queryItems: [URLQueryItem]) -> String {
+        var components = URLComponents()
+        components.path = base
+        components.queryItems = queryItems
+        return components.string ?? base
+    }
 }
 
 // MARK: - Internal Request Types
 
-private struct OrganizationIdRequest: Encodable, Sendable {
+private struct OrganizationIdRequest: Encodable {
     let organizationId: String
 }
 
-private struct InvitationIdRequest: Encodable, Sendable {
+private struct InvitationIdRequest: Encodable {
     let invitationId: String
 }
 
-private struct SlugCheckRequest: Encodable, Sendable {
+private struct SlugCheckRequest: Encodable {
     let slug: String
 }
 
-private struct SlugAvailabilityResponse: Decodable, Sendable {
+private struct SlugAvailabilityResponse: Decodable {
     let status: Bool
 }

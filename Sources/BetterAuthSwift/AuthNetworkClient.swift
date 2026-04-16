@@ -1,6 +1,6 @@
 import Foundation
 
-struct AuthNetworkClient: Sendable {
+struct AuthNetworkClient {
     let baseURL: URL
     let transport: BetterAuthTransport
     let retryPolicy: RetryPolicy
@@ -40,8 +40,9 @@ struct AuthNetworkClient: Sendable {
                                   queryItems: [URLQueryItem],
                                   accessToken: String?) async throws -> Response
     {
-        guard let base = URL(string: path, relativeTo: baseURL),
-              var components = URLComponents(url: base, resolvingAgainstBaseURL: true)
+        let base = try BetterAuthURLResolver.resolve(path, relativeTo: baseURL)
+        guard
+            var components = URLComponents(url: base, resolvingAgainstBaseURL: true)
         else {
             throw BetterAuthError.invalidURL
         }
@@ -61,9 +62,7 @@ struct AuthNetworkClient: Sendable {
                               method: String,
                               accessToken: String?) throws -> URLRequest
     {
-        guard let url = URL(string: path, relativeTo: baseURL) else {
-            throw BetterAuthError.invalidURL
-        }
+        let url = try BetterAuthURLResolver.resolve(path, relativeTo: baseURL)
         var request = URLRequest(url: url)
         request.httpMethod = method
         applyDefaultHeaders(to: &request, accessToken: accessToken)
@@ -157,3 +156,5 @@ struct AuthNetworkClient: Sendable {
         throw lastError ?? BetterAuthError.invalidResponse
     }
 }
+
+extension AuthNetworkClient: BetterAuthTransporting {}
