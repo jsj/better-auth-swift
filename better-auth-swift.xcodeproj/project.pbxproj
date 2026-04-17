@@ -32,7 +32,6 @@
 		7FC1C581116A20312C456E9A /* BetterAuthCallbackHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCB60C17621015691F128613 /* BetterAuthCallbackHandler.swift */; };
 		83C001E6F760C6BFCEA243A3 /* AuthLaunchState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45110BC7E5FCE348040BF749 /* AuthLaunchState.swift */; };
 		846481C73C7F779A07E921AD /* BetterAuthClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA86DCDE259E29B7CBB81610 /* BetterAuthClient.swift */; };
-		870D3DA2A4E7F01485F324C8 /* BetterAuthSwiftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67324ADE830ABAC5CEA77365 /* BetterAuthSwiftTests.swift */; };
 		929A9275CA5E12E7B2CC7B90 /* TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 022F5AE8EC0943DFF262FB5F /* TestSupport.swift */; };
 		98B5E7ECCBD4BE6EBEDB2963 /* BetterAuth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 57EB16147F04703645966CFD /* BetterAuth.framework */; };
 		A0E957F92875AC1FD4712703 /* BetterAuthModules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF506A7466E44C132787F22 /* BetterAuthModules.swift */; };
@@ -41,6 +40,7 @@
 		B4E917A6723BFEC3A19F540C /* BetterAuthSwiftTestsPart4.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A12983B9438B15DFCD7CCE /* BetterAuthSwiftTestsPart4.swift */; };
 		BE7595B89C6656783B1A6FAE /* BetterAuth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 57EB16147F04703645966CFD /* BetterAuth.framework */; };
 		C1C55BD444F7298BE0C911DA /* BetterAuthSessionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B35306E0371C4649852A1BB /* BetterAuthSessionModels.swift */; };
+		C2B2FD2A49AB431215261199 /* BetterAuthURLResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9455F787C29E48E9F46089A /* BetterAuthURLResolver.swift */; };
 		C6E67C108F81E79A82075CEC /* BetterAuthEventEmitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 492C9D23F023C9ABEC11A4B0 /* BetterAuthEventEmitter.swift */; };
 		C6F365799AE643BCD249DC43 /* BetterAuthSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4A34744C742DB2ECFC3B96A /* BetterAuthSessionStore.swift */; };
 		CBB9AC5D7707AC446A1AF215 /* BetterAuthRequestClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E813D4177672D5A1B6BA73B /* BetterAuthRequestClient.swift */; };
@@ -212,7 +212,6 @@
 		5B1EF8E235D159A75B33DB2E /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		62965F148D946A7DAB65C1B7 /* OrganizationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizationModels.swift; sourceTree = "<group>"; };
 		65F78D987C1ABAE96B18515E /* extract_upstream_endpoints.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = extract_upstream_endpoints.sh; sourceTree = "<group>"; };
-		67324ADE830ABAC5CEA77365 /* BetterAuthSwiftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthSwiftTests.swift; sourceTree = "<group>"; };
 		7071732D7777F820CEC4651A /* BetterAuthOrganizationTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BetterAuthOrganizationTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		761EB3A99984CCA7FA195F6B /* OrganizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizationTests.swift; sourceTree = "<group>"; };
 		7976A0428DAB03AD5FA3285E /* AuthNetworkClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthNetworkClient.swift; sourceTree = "<group>"; };
@@ -226,6 +225,7 @@
 		9B35306E0371C4649852A1BB /* BetterAuthSessionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthSessionModels.swift; sourceTree = "<group>"; };
 		9CA87939C83219581B31E1F7 /* BetterAuthConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthConfiguration.swift; sourceTree = "<group>"; };
 		9EAB03AAFA96BAECB4BA6244 /* BetterAuthSwiftUI-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "BetterAuthSwiftUI-Info.plist"; sourceTree = "<group>"; };
+		A9455F787C29E48E9F46089A /* BetterAuthURLResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthURLResolver.swift; sourceTree = "<group>"; };
 		AA0E1D635B6FD15D606BB99D /* BetterAuthSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthSessionManager.swift; sourceTree = "<group>"; };
 		AEED91AA410D65BFF9CF538F /* drift-prompt.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "drift-prompt.md"; sourceTree = "<group>"; };
 		B485B1057B52337938DBB4F2 /* bootstrap_runner_env.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = bootstrap_runner_env.sh; sourceTree = "<group>"; };
@@ -346,6 +346,7 @@
 				E4A34744C742DB2ECFC3B96A /* BetterAuthSessionStore.swift */,
 				1A5144ACC78A6C42E2F62055 /* BetterAuthSocialModels.swift */,
 				185BEC72718C8C0D041DECF1 /* BetterAuthTransport.swift */,
+				A9455F787C29E48E9F46089A /* BetterAuthURLResolver.swift */,
 				395D8B13481D1B69A469043F /* PKCE.swift */,
 				82C1C763A397D8A7292C1444 /* RetryPolicy.swift */,
 			);
@@ -355,7 +356,6 @@
 		268705AFFF09B84568EE8F57 /* BetterAuthSwiftTests */ = {
 			isa = PBXGroup;
 			children = (
-				67324ADE830ABAC5CEA77365 /* BetterAuthSwiftTests.swift */,
 				105D67400B7A2E3E54FAF416 /* BetterAuthSwiftTestsPart1.swift */,
 				1DF8B07DEC1A29E329B9FEDA /* BetterAuthSwiftTestsPart2.swift */,
 				C6FE89AA156FCB6E3B8773C1 /* BetterAuthSwiftTestsPart3.swift */,
@@ -748,7 +748,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				870D3DA2A4E7F01485F324C8 /* BetterAuthSwiftTests.swift in Sources */,
 				6682650BFE5C8AD6204E355B /* BetterAuthSwiftTestsPart1.swift in Sources */,
 				F784869E3D0562358F4DB388 /* BetterAuthSwiftTestsPart2.swift in Sources */,
 				74D145487EC3AC5B9296DF3C /* BetterAuthSwiftTestsPart3.swift in Sources */,
@@ -802,6 +801,7 @@
 				C6F365799AE643BCD249DC43 /* BetterAuthSessionStore.swift in Sources */,
 				7AB9F794B6C86E7E3E9748E1 /* BetterAuthSocialModels.swift in Sources */,
 				680E5602B8A1B0C2E72F649E /* BetterAuthTransport.swift in Sources */,
+				C2B2FD2A49AB431215261199 /* BetterAuthURLResolver.swift in Sources */,
 				21EB788B4643A8A04E976181 /* PKCE.swift in Sources */,
 				422AF1A63BDE51E040D080A1 /* RetryPolicy.swift in Sources */,
 			);
