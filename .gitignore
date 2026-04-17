@@ -13,6 +13,11 @@ Derived/*
 !Derived/InfoPlists/
 Derived/InfoPlists/*
 !Derived/InfoPlists/BetterAuth-Info.plist
+!Derived/InfoPlists/BetterAuthOrganization-Info.plist
+!Derived/InfoPlists/BetterAuthSwiftUI-Info.plist
+!Derived/InfoPlists/BetterAuthTestHelpers-Info.plist
+!Derived/InfoPlists/BetterAuthSwiftTests-Info.plist
+!Derived/InfoPlists/BetterAuthOrganizationTests-Info.plist
 *.xcodeproj
 !better-auth-swift.xcodeproj/
 !better-auth-swift.xcodeproj/project.pbxproj
