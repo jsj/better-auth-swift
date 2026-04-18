@@ -20,15 +20,35 @@ public actor BetterAuthSessionManager {
     private let authFlowService: BetterAuthAuthFlowService
     private let userAccountService: BetterAuthUserAccountService
     private let callbackHandler: BetterAuthCallbackHandler
-    private nonisolated(unsafe) var authStateListeners: [any BetterAuthAuthStateListener] = []
+    private var authStateListeners: [any BetterAuthAuthStateListener] = []
     private var inFlightRefreshTask: Task<BetterAuthSession, Error>?
     private var autoRefreshTask: Task<Void, Never>?
+
+    private var context: BetterAuthSessionContext {
+        BetterAuthSessionContext(configuration: configuration,
+                                 state: state,
+                                 sessionService: sessionService,
+                                 refreshService: refreshService,
+                                 authFlowService: authFlowService,
+                                 userAccountService: userAccountService,
+                                 callbackHandler: callbackHandler,
+                                 network: network,
+                                 logger: logger)
+    }
+
+    private func makeRelay() -> BetterAuthSessionEventRelay {
+        BetterAuthSessionEventRelay(context: context,
+                                    refreshSession: {
+                                        try await self.refreshSession()
+                                    })
+    }
 
     public init(configuration: BetterAuthConfiguration,
                 sessionStore: BetterAuthSessionStore,
                 transport: BetterAuthTransport,
                 logger: BetterAuthLogger? = nil,
-                eventEmitter: AuthEventEmitter = AuthEventEmitter())
+                eventEmitter: AuthEventEmitter = AuthEventEmitter(),
+                authStateListeners: [any BetterAuthAuthStateListener] = [])
     {
         self.configuration = configuration
         self.sessionStore = sessionStore
@@ -43,6 +63,7 @@ public actor BetterAuthSessionManager {
         self.authFlowService = BetterAuthAuthFlowService(configuration: configuration, network: self.network)
         self.userAccountService = BetterAuthUserAccountService(configuration: configuration, network: self.network)
         self.callbackHandler = BetterAuthCallbackHandler(endpoints: configuration.endpoints)
+        self.authStateListeners = authStateListeners
     }
 
     // MARK: - Event Stream
@@ -68,40 +89,13 @@ public actor BetterAuthSessionManager {
 
     /// Restores the session from storage into memory and starts auto-refresh if configured.
     public func restoreSession() throws -> BetterAuthSession? {
-        let session = try loadStoredSession()
-        try applyRestoredSession(session)
-        return session
+        try BetterAuthSessionBootstrapService(context: context, relay: makeRelay()).restoreSession()
     }
 
     /// Restores the best available session for app launch and reports how it was recovered.
     public func restoreSessionOnLaunch() async throws -> BetterAuthRestoreResult {
-        let source: BetterAuthRestoreSource
-        if state.currentSession != nil {
-            source = .memory
-        } else {
-            do {
-                _ = try restoreSession()
-            } catch {
-                try clearSession(event: .signedOut)
-                return .cleared(.storageFailure)
-            }
-            source = .keychain
-        }
-
-        guard let current = state.currentSession else { return .noStoredSession }
-        guard current.needsRefresh(clockSkew: configuration.auth.clockSkew) else {
-            return .restored(current, source: source, refresh: .notNeeded)
-        }
-
-        do {
-            let refreshed = try await refreshSession()
-            return .restored(refreshed, source: source, refresh: .refreshed)
-        } catch {
-            if shouldClearSession(for: error) {
-                return .cleared(clearReason(for: error))
-            }
-            return .restored(current, source: source, refresh: .deferred)
-        }
+        try await BetterAuthSessionBootstrapService(context: context, relay: makeRelay())
+            .restoreSessionOnLaunch(refreshSession: { try await self.refreshSession() })
     }
 
     /// Returns the current in-memory session, if any.
@@ -110,11 +104,7 @@ public actor BetterAuthSessionManager {
     }
 
     public func applyRestoredSession(_ session: BetterAuthSession?) throws {
-        state.replaceCurrentSession(session)
-        logger?.debug("Session restored: \(session != nil ? "found" : "none")")
-        state.emit(.initialSession,
-                   session: session,
-                   transition: BetterAuthSessionTransition(phase: session == nil ? .unauthenticated : .authenticated))
+        try BetterAuthSessionBootstrapService(context: context, relay: makeRelay()).applyRestoredSession(session)
         if configuration.autoRefreshToken {
             if session != nil {
                 startAutoRefresh()
@@ -436,15 +426,7 @@ public actor BetterAuthSessionManager {
 
     @discardableResult
     public func fetchCurrentSession() async throws -> BetterAuthSession {
-        let existingToken = state.currentSession?.session.accessToken
-        do {
-            let session = try await refreshService.fetchCurrentSession(accessToken: existingToken)
-            try setSession(session, event: .tokenRefreshed)
-            return session
-        } catch {
-            if shouldClearSession(for: error) { try clearSession(event: .sessionExpired) }
-            throw error
-        }
+        try await BetterAuthSessionBootstrapService(context: context, relay: makeRelay()).fetchCurrentSession()
     }
 
     // MARK: - Session Management
@@ -779,20 +761,10 @@ public actor BetterAuthSessionManager {
 
     /// Restores from storage and refreshes if expired. The recommended way to bootstrap a session at app launch.
     public func restoreOrRefreshSession() async throws -> BetterAuthSession? {
-        if state.currentSession == nil {
-            do { _ = try restoreSession() } catch {
-                try clearSession(event: .signedOut)
-                throw error
-            }
-        }
-        guard let current = state.currentSession else { return nil }
-        if current.needsRefresh(clockSkew: configuration.auth.clockSkew) {
-            do { return try await refreshSession() } catch {
-                if shouldClearSession(for: error) { try clearSession(event: .sessionExpired) }
-                throw error
-            }
-        }
-        return current
+        let bootstrap = BetterAuthSessionBootstrapService(context: context, relay: makeRelay())
+        return try await bootstrap
+            .restoreOrRefreshSession(restoreSession: { try bootstrap.restoreSession() },
+                                     refreshSession: { try await self.refreshSession() })
     }
 
     // MARK: - Authorized Request
@@ -894,18 +866,17 @@ public actor BetterAuthSessionManager {
         }
     }
 
-    public nonisolated func installAuthStateListeners(_ listeners: [any BetterAuthAuthStateListener]) {
+    public func installAuthStateListeners(_ listeners: [any BetterAuthAuthStateListener]) {
         authStateListeners = listeners
     }
 
     // MARK: - Session Lifecycle Helpers
 
     private func setSession(_ session: BetterAuthSession?, event: AuthChangeEvent) throws {
-        try updateSession(session)
+        try makeRelay().setSession(session, event: event)
         let change = AuthStateChange(event: event,
                                      session: session,
-                                     transition: transition(for: event, session: session))
-        state.eventEmitter.yield(change)
+                                     transition: makeRelay().transition(for: event, session: session))
         notifyAuthStateListeners(of: change)
         if session != nil, configuration.autoRefreshToken {
             startAutoRefresh()

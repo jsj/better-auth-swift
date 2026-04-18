@@ -975,6 +975,27 @@ struct BetterAuthSwiftTestsPart1 {
         #expect(store.launchState == .unauthenticated)
     }
 
+    @Test @MainActor
+    func authStoreExposesStructuredErrorForBetterAuthFailures() async throws {
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
+                             sessionStore: InMemorySessionStore(),
+                             transport: MockTransport { request in
+                                 #expect(request.url?.path == "/api/auth/email/sign-in")
+                                 return response(for: request,
+                                                 statusCode: 401,
+                                                 data: Data(#"{"message":"nope","code":"INVALID_CREDENTIALS"}"#.utf8))
+                             })
+        let store = AuthStore(client: client)
+
+        await store.signInWithEmail(.init(email: "test@example.com", password: "wrong"))
+
+        let error = try #require(store.lastError)
+        #expect(error.statusCode == 401)
+        #expect(error.authErrorCode == .invalidCredentials)
+        #expect(store.statusMessage == "Invalid credentials.")
+    }
+
     @Test
     func configurationSupportsNestedAuthAndNetworkingOptions() throws {
         let configuration = BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),

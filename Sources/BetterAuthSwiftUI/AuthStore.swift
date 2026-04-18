@@ -19,6 +19,8 @@ public final class AuthStore {
     public private(set) var isLoading = false
     /// Human-readable status or error message from the last operation.
     public private(set) var statusMessage: String?
+    /// Structured error captured from the last failed operation.
+    public private(set) var lastError: BetterAuthError?
 
     private let auth: any BetterAuthAuthPerforming
     private var authStateTask: Task<Void, Never>?
@@ -40,11 +42,13 @@ public final class AuthStore {
         defer { isLoading = false }
         do {
             let result = try await auth.restoreSessionOnLaunch()
+            lastError = nil
             lastRestoreResult = result
             applyRestoreResult(result)
         } catch {
             session = nil
             launchState = .failed
+            lastError = normalizeError(error)
             statusMessage = error.localizedDescription
         }
     }
@@ -701,7 +705,9 @@ public final class AuthStore {
         defer { isLoading = false }
         do {
             try await operation()
+            lastError = nil
         } catch {
+            lastError = normalizeError(error)
             statusMessage = error.localizedDescription
         }
     }
@@ -710,11 +716,21 @@ public final class AuthStore {
         isLoading = true
         defer { isLoading = false }
         do {
-            return try await operation()
+            let result = try await operation()
+            lastError = nil
+            return result
         } catch {
+            lastError = normalizeError(error)
             statusMessage = error.localizedDescription
             throw error
         }
+    }
+
+    private func normalizeError(_ error: Error) -> BetterAuthError? {
+        if let betterAuthError = error as? BetterAuthError {
+            return betterAuthError
+        }
+        return nil
     }
 
     public func shutdown() {

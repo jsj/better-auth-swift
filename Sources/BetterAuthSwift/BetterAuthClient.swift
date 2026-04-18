@@ -42,7 +42,8 @@ public struct BetterAuthClient: BetterAuthModuleSupporting, Sendable {
                                             sessionStore: resolvedStore,
                                             transport: transport,
                                             logger: configuration.logger,
-                                            eventEmitter: eventEmitter)
+                                            eventEmitter: eventEmitter,
+                                            authStateListeners: [])
         self.auth = auth
         self.modules = BetterAuthModuleRegistry.build(configuration: configuration,
                                                       authLifecycle: BetterAuthSessionLifecycleAdapter(manager: auth),
@@ -54,7 +55,6 @@ public struct BetterAuthClient: BetterAuthModuleSupporting, Sendable {
                                                 sessionManager: auth,
                                                 transport: transport,
                                                 requestHooks: self.modules.registeredRequestHooks)
-        auth.installAuthStateListeners(self.modules.registeredAuthStateListeners)
     }
 }
 

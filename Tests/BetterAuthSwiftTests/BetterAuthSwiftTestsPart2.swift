@@ -6,6 +6,15 @@ import Testing
 
 struct BetterAuthSwiftTestsPart2 {
     @Test
+    func retryPolicyDelayAppliesBoundedJitter() {
+        let policy = RetryPolicy(maxRetries: 3, baseDelay: 2, maxDelay: 10, jitterFactor: 0.25)
+        let delay = policy.delay(for: 2)
+
+        #expect(delay >= 3)
+        #expect(delay <= 4)
+    }
+
+    @Test
     func refreshSessionFailureClearsStaleSessionState() async throws {
         let expired = BetterAuthSession(session: .init(id: "session-1",
                                                        userId: "user-1",

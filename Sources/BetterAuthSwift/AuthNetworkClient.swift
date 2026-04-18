@@ -89,37 +89,8 @@ struct AuthNetworkClient {
     }
 
     private func executeWithRetry<Response: Decodable>(_ request: URLRequest) async throws -> Response {
-        var lastError: Error?
-        for attempt in 0 ... retryPolicy.maxRetries {
-            if attempt > 0 {
-                let delay = retryPolicy.delay(for: attempt)
-                try await Task.sleep(for: .seconds(delay))
-            }
-            do {
-                let (data, response) = try await transport.execute(request)
-                guard let httpResponse = response as? HTTPURLResponse else {
-                    throw BetterAuthError.invalidResponse
-                }
-                guard (200 ..< 300).contains(httpResponse.statusCode) else {
-                    let error = ErrorParsing.parse(statusCode: httpResponse.statusCode, data: data)
-                    if retryPolicy.isRetryable(statusCode: httpResponse.statusCode), attempt < retryPolicy.maxRetries {
-                        lastError = error
-                        continue
-                    }
-                    throw error
-                }
-                return try BetterAuthCoding.makeDecoder().decode(Response.self, from: data)
-            } catch let error as BetterAuthError {
-                throw error
-            } catch {
-                if retryPolicy.isRetryable(error: error), attempt < retryPolicy.maxRetries {
-                    lastError = error
-                    continue
-                }
-                throw error
-            }
-        }
-        throw lastError ?? BetterAuthError.invalidResponse
+        let (data, _) = try await executeRawWithRetry(request)
+        return try BetterAuthCoding.makeDecoder().decode(Response.self, from: data)
     }
 
     private func executeRawWithRetry(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
