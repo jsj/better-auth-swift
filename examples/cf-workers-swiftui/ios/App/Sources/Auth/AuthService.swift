@@ -186,6 +186,76 @@ struct AuthService {
         try await client.auth.listLinkedAccounts()
     }
 
+    func signInWithSocial(_ request: SocialSignInRequest) async throws -> SocialSignInResult {
+        try await client.auth.signInWithSocial(request)
+    }
+
+    func beginGenericOAuth(_ request: GenericOAuthSignInRequest) async throws -> GenericOAuthAuthorizationResponse {
+        try await client.auth.beginGenericOAuth(request)
+    }
+
+    func linkGenericOAuth(_ request: GenericOAuthSignInRequest) async throws -> GenericOAuthAuthorizationResponse {
+        try await client.auth.linkGenericOAuth(request)
+    }
+
+    func completeGenericOAuth(_ request: GenericOAuthCallbackRequest) async throws -> BetterAuthSession {
+        try await client.auth.completeGenericOAuth(request)
+    }
+
+    func reauthenticate(password: String) async throws -> Bool {
+        try await client.auth.reauthenticate(password: password)
+    }
+
+    func setActiveDeviceSession(sessionToken: String) async throws -> BetterAuthSession {
+        try await client.auth.setActiveDeviceSession(.init(sessionToken: sessionToken))
+    }
+
+    func revokeDeviceSession(sessionToken: String) async throws {
+        _ = try await client.auth.revokeDeviceSession(.init(sessionToken: sessionToken))
+    }
+
+    func revokeSession(token: String) async throws {
+        _ = try await client.auth.revokeSession(token: token)
+    }
+
+    func getJWKS() async throws -> BetterAuthJWKS {
+        try await client.auth.getJWKS()
+    }
+
+    func passkeyRegistrationOptions() async throws -> PasskeyRegistrationOptions {
+        try await client.auth.passkeyRegistrationOptions()
+    }
+
+    func registerPasskey(name: String) async throws -> Passkey {
+        try await client.auth.registerPasskey(.init(response: .init(id: "example-passkey-registration-id",
+                                                                    rawId: "example-passkey-registration-raw-id",
+                                                                    response: .init(clientDataJSON: "example-client-data",
+                                                                                    attestationObject: "example-attestation",
+                                                                                    transports: ["internal"])),
+                                                    name: name))
+    }
+
+    func authenticateWithPasskey() async throws -> BetterAuthSession {
+        try await client.auth.authenticateWithPasskey(.init(response: .init(id: "example-passkey-auth-id",
+                                                                            rawId: "example-passkey-auth-raw-id",
+                                                                            response: .init(clientDataJSON: "example-client-data",
+                                                                                            authenticatorData: "example-auth-data",
+                                                                                            signature: "example-signature",
+                                                                                            userHandle: nil))))
+    }
+
+    func updatePasskey(id: String, name: String) async throws -> Passkey {
+        try await client.auth.updatePasskey(.init(id: id, name: name))
+    }
+
+    func deletePasskey(id: String) async throws {
+        _ = try await client.auth.deletePasskey(.init(id: id))
+    }
+
+    func linkSocialAccount(_ request: LinkSocialAccountRequest) async throws -> LinkSocialAccountResponse {
+        try await client.auth.linkSocialAccount(request)
+    }
+
     func listPasskeys() async throws -> [Passkey] {
         try await client.auth.listPasskeys()
     }

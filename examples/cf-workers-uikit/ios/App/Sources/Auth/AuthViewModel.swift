@@ -73,6 +73,8 @@ final class AuthViewModel {
     var backupCodes: [String] = []
     var twoFactorSecret: String?
     var jwtToken: String?
+    var jwksKeys: [JWK] = []
+    var lastAuthorizationURL: String?
 
     private let client: BetterAuthClient
     private let service: AuthService
@@ -526,34 +528,6 @@ final class AuthViewModel {
             session = nil
             launchState = .unauthenticated
             statusMessage = "All sessions revoked"
-        }
-    }
-
-    // MARK: - Linked Accounts
-
-    func loadLinkedAccounts() async {
-        await perform {
-            linkedAccounts = try await service.listLinkedAccounts()
-            statusMessage = "\(linkedAccounts.count) linked account(s)"
-        }
-    }
-
-    // MARK: - Passkeys
-
-    func loadPasskeys() async {
-        await perform {
-            passkeys = try await service.listPasskeys()
-            statusMessage = "\(passkeys.count) passkey(s) loaded"
-        }
-    }
-
-    // MARK: - JWT
-
-    func loadJWT() async {
-        await perform {
-            let jwt = try await service.getSessionJWT()
-            jwtToken = jwt.token
-            statusMessage = "JWT loaded"
         }
     }
 

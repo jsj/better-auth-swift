@@ -268,13 +268,75 @@ struct LinkedAccountsAuthSection: View {
     }
 }
 
+struct SocialOAuthAuthSection: View {
+    @Bindable var viewModel: AuthViewModel
+
+    var body: some View {
+        Section("Social + OAuth") {
+            SecureField("Password (reauth)", text: $viewModel.passwordInput)
+            TextField("OAuth State / Username", text: $viewModel.usernameInput)
+                .autocapitalization(.none)
+            TextField("OAuth Code / Token", text: $viewModel.tokenInput)
+                .autocapitalization(.none)
+            Button("Sign In with Google") { Task { await viewModel.signInWithGoogle() } }
+                .disabled(viewModel.isPerformingAuthAction)
+            Button("Begin Generic OAuth") { Task { await viewModel.beginGenericOAuth() } }
+                .disabled(viewModel.isPerformingAuthAction)
+            Button("Link Generic OAuth") { Task { await viewModel.linkGenericOAuth() } }
+                .disabled(viewModel.isPerformingAuthAction || viewModel.session == nil)
+            Button("Complete Generic OAuth") { Task { await viewModel.completeGenericOAuth() } }
+                .disabled(viewModel.isPerformingAuthAction)
+            Button("Link Google Account") { Task { await viewModel.linkGoogleAccount() } }
+                .disabled(viewModel.isPerformingAuthAction || viewModel.session == nil)
+            Button("Reauthenticate") { Task { await viewModel.reauthenticate() } }
+                .disabled(viewModel.isPerformingAuthAction || viewModel.passwordInput.isEmpty || viewModel
+                    .session == nil)
+            if let url = viewModel.lastAuthorizationURL {
+                Text(url)
+                    .font(.caption.monospaced())
+                    .textSelection(.enabled)
+                    .lineLimit(3)
+            }
+        }
+    }
+}
+
+struct SessionAdminAuthSection: View {
+    let viewModel: AuthViewModel
+
+    var body: some View {
+        Section("Session Admin") {
+            Button("Activate First Device Session") { Task { await viewModel.activateFirstDeviceSession() } }
+                .disabled(viewModel.isPerformingAuthAction || viewModel.deviceSessions.isEmpty)
+            Button("Revoke First Device Session", role: .destructive) {
+                Task { await viewModel.revokeFirstDeviceSession() }
+            }
+            .disabled(viewModel.isPerformingAuthAction || viewModel.deviceSessions.isEmpty)
+            Button("Revoke First Session", role: .destructive) { Task { await viewModel.revokeFirstSession() } }
+                .disabled(viewModel.isPerformingAuthAction || viewModel.sessionList.isEmpty)
+        }
+    }
+}
+
 struct PasskeysAuthSection: View {
     let viewModel: AuthViewModel
 
     var body: some View {
         Section("Passkeys") {
+            TextField("Passkey Name", text: $viewModel.nameInput)
+                .autocapitalization(.words)
+            Button("Load Registration Options") { Task { await viewModel.loadPasskeyRegistrationOptions() } }
+                .disabled(viewModel.isPerformingAuthAction || viewModel.session == nil)
+            Button("Register Example Passkey") { Task { await viewModel.registerExamplePasskey() } }
+                .disabled(viewModel.isPerformingAuthAction || viewModel.session == nil)
+            Button("Authenticate with Example Passkey") { Task { await viewModel.authenticateWithExamplePasskey() } }
+                .disabled(viewModel.isPerformingAuthAction)
             Button("Load Passkeys") { Task { await viewModel.loadPasskeys() } }
                 .disabled(viewModel.isPerformingAuthAction || viewModel.session == nil)
+            Button("Rename First Passkey") { Task { await viewModel.renameFirstPasskey() } }
+                .disabled(viewModel.isPerformingAuthAction || viewModel.passkeys.isEmpty)
+            Button("Delete First Passkey", role: .destructive) { Task { await viewModel.deleteFirstPasskey() } }
+                .disabled(viewModel.isPerformingAuthAction || viewModel.passkeys.isEmpty)
             if !viewModel.passkeys.isEmpty {
                 ForEach(viewModel.passkeys, id: \.id) { passkey in
                     LabeledContent(passkey.name ?? "Unnamed") {
@@ -294,11 +356,24 @@ struct JWTAuthSection: View {
         Section("JWT") {
             Button("Get Session JWT") { Task { await viewModel.loadJWT() } }
                 .disabled(viewModel.isPerformingAuthAction || viewModel.session == nil)
+            Button("Get JWKS") { Task { await viewModel.loadJWKS() } }
+                .disabled(viewModel.isPerformingAuthAction)
             if let jwt = viewModel.jwtToken {
                 Text(String(jwt.prefix(64)) + "…")
                     .font(.caption.monospaced())
                     .textSelection(.enabled)
                     .lineLimit(3)
+            }
+            if !viewModel.jwksKeys.isEmpty {
+                ForEach(Array(viewModel.jwksKeys.enumerated()), id: \.offset) { _, key in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(key.keyID ?? "Unnamed key")
+                            .font(.caption.monospaced())
+                        Text(key.algorithm ?? key.keyType ?? "Unknown algorithm")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
         }
     }

@@ -7,6 +7,8 @@ enum AuthOption: Identifiable {
     case profile
     case sessionManagement
     case linkedAccounts
+    case socialOAuth
+    case sessionAdmin
     case jwt
 
     static let allCases: [AuthOption] = [.authMethod(.apple),
@@ -20,6 +22,8 @@ enum AuthOption: Identifiable {
                                          .profile,
                                          .sessionManagement,
                                          .linkedAccounts,
+                                         .socialOAuth,
+                                         .sessionAdmin,
                                          .authMethod(.passkey),
                                          .jwt,
                                          .authMethod(.anonymous)]
@@ -41,6 +45,12 @@ enum AuthOption: Identifiable {
         case .linkedAccounts:
             "linkedAccounts"
 
+        case .socialOAuth:
+            "socialOAuth"
+
+        case .sessionAdmin:
+            "sessionAdmin"
+
         case .jwt:
             "jwt"
         }
@@ -59,6 +69,8 @@ enum AuthOption: Identifiable {
         case .profile: "Profile"
         case .sessionManagement: "Session Management"
         case .linkedAccounts: "Linked Accounts"
+        case .socialOAuth: "Social + OAuth"
+        case .sessionAdmin: "Session Admin"
         case .authMethod(.passkey): "Passkeys"
         case .jwt: "JWT"
         case .authMethod(.anonymous): "Anonymous"
@@ -78,8 +90,10 @@ enum AuthOption: Identifiable {
         case .profile: "Update the current user profile"
         case .sessionManagement: "Inspect and revoke sessions"
         case .linkedAccounts: "Load linked social accounts"
-        case .authMethod(.passkey): "Inspect registered passkeys"
-        case .jwt: "Fetch a session JWT"
+        case .socialOAuth: "Start social and generic OAuth flows"
+        case .sessionAdmin: "Manage individual sessions and JWKS"
+        case .authMethod(.passkey): "Inspect and manage registered passkeys"
+        case .jwt: "Fetch session JWT and JWKS"
         case .authMethod(.anonymous): "Create or delete anonymous users"
         }
     }
@@ -97,6 +111,8 @@ enum AuthOption: Identifiable {
         case .profile: "person.crop.circle"
         case .sessionManagement: "rectangle.stack.badge.person.crop"
         case .linkedAccounts: "person.2.badge.key"
+        case .socialOAuth: "network"
+        case .sessionAdmin: "gearshape.2"
         case .authMethod(.passkey): "key.viewfinder"
         case .jwt: "doc.text.magnifyingglass"
         case .authMethod(.anonymous): "person.crop.circle.badge.questionmark"
