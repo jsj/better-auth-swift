@@ -432,48 +432,40 @@ public actor BetterAuthSessionManager {
     // MARK: - Session Management
 
     public func listSessions() async throws -> [BetterAuthSessionListEntry] {
-        try await network.get(path: configuration.endpoints.listSessionsPath,
-                              accessToken: state.currentSession?.session.accessToken)
+        try await BetterAuthSessionAdministrationService(context: context, relay: makeRelay())
+            .listSessions(accessToken: state.currentSession?.session.accessToken)
     }
 
     public func listDeviceSessions() async throws -> [BetterAuthDeviceSession] {
-        try await network.get(path: configuration.endpoints.listDeviceSessionsPath,
-                              accessToken: state.currentSession?.session.accessToken)
+        try await BetterAuthSessionAdministrationService(context: context, relay: makeRelay())
+            .listDeviceSessions(accessToken: state.currentSession?.session.accessToken)
     }
 
     @discardableResult
     public func setActiveDeviceSession(_ payload: BetterAuthSetActiveDeviceSessionRequest) async throws
         -> BetterAuthSession
     {
-        let session: BetterAuthSession = try await network
-            .post(path: configuration.endpoints.setActiveDeviceSessionPath,
-                  body: payload,
-                  accessToken: state.currentSession?.session.accessToken)
-        try setSession(session, event: .signedIn)
-        return session
+        try await BetterAuthSessionAdministrationService(context: context, relay: makeRelay())
+            .setActiveDeviceSession(payload, accessToken: state.currentSession?.session.accessToken)
     }
 
     @discardableResult
     public func revokeDeviceSession(_ payload: BetterAuthRevokeDeviceSessionRequest) async throws -> Bool {
-        let response: BetterAuthStatusResponse = try await network
-            .post(path: configuration.endpoints.revokeDeviceSessionPath,
-                  body: payload,
-                  accessToken: state.currentSession?.session.accessToken)
-        if payload.sessionToken == state.currentSession?.session.accessToken {
-            try setSession(nil, event: .signedOut)
-        }
-        return response.status
+        try await BetterAuthSessionAdministrationService(context: context, relay: makeRelay())
+            .revokeDeviceSession(payload,
+                                 accessToken: state.currentSession?.session.accessToken,
+                                 currentAccessToken: state.currentSession?.session.accessToken)
     }
 
     // MARK: - JWT
 
     public func getSessionJWT() async throws -> BetterAuthJWT {
-        try await network.get(path: configuration.endpoints.sessionJWTPath,
-                              accessToken: state.currentSession?.session.accessToken)
+        try await BetterAuthSessionAdministrationService(context: context, relay: makeRelay())
+            .getSessionJWT(accessToken: state.currentSession?.session.accessToken)
     }
 
     public func getJWKS() async throws -> BetterAuthJWKS {
-        try await network.get(path: configuration.endpoints.jwksPath, accessToken: nil)
+        try await BetterAuthSessionAdministrationService(context: context, relay: makeRelay()).getJWKS()
     }
 
     // MARK: - Linked Accounts
@@ -494,171 +486,127 @@ public actor BetterAuthSessionManager {
     public func passkeyRegistrationOptions(_ request: PasskeyRegistrationOptionsRequest = .init()) async throws
         -> PasskeyRegistrationOptions
     {
-        try await network.get(path: configuration.endpoints.passkeyRegisterOptionsPath,
-                              queryItems: [URLQueryItem(name: "name", value: request.name),
-                                           URLQueryItem(name: "authenticatorAttachment",
-                                                        value: request.authenticatorAttachment)],
-                              accessToken: state.currentSession?.session.accessToken)
+        try await BetterAuthPasskeyService(context: context,
+                                           relay: makeRelay(),
+                                           materializer: BetterAuthSessionMaterializer(context: context))
+            .passkeyRegistrationOptions(request, accessToken: state.currentSession?.session.accessToken)
     }
 
     public func passkeyAuthenticateOptions() async throws -> PasskeyAuthenticationOptions {
-        try await network.get(path: configuration.endpoints.passkeyAuthenticateOptionsPath,
-                              accessToken: state.currentSession?.session.accessToken)
+        try await BetterAuthPasskeyService(context: context,
+                                           relay: makeRelay(),
+                                           materializer: BetterAuthSessionMaterializer(context: context))
+            .passkeyAuthenticateOptions(accessToken: state.currentSession?.session.accessToken)
     }
 
     @discardableResult
     public func registerPasskey(_ payload: PasskeyRegistrationRequest) async throws -> Passkey {
-        try await network.post(path: configuration.endpoints.passkeyRegisterPath, body: payload,
-                               accessToken: state.currentSession?.session.accessToken)
+        try await BetterAuthPasskeyService(context: context,
+                                           relay: makeRelay(),
+                                           materializer: BetterAuthSessionMaterializer(context: context))
+            .registerPasskey(payload, accessToken: state.currentSession?.session.accessToken)
     }
 
     @discardableResult
     public func authenticateWithPasskey(_ payload: PasskeyAuthenticationRequest) async throws -> BetterAuthSession {
-        let response: SocialSignInTransportResponse = try await network
-            .post(path: configuration.endpoints.passkeyAuthenticatePath,
-                  body: payload, accessToken: nil)
-        if let session = response.materializedSession {
-            try setSession(session, event: .signedIn)
-            return session
-        }
-        if let signedIn = response.signedIn {
-            let session = try await materializeSession(token: signedIn.token, fallbackUser: signedIn.user)
-            try setSession(session, event: .signedIn)
-            return session
-        }
-        throw BetterAuthError.invalidResponse
+        try await BetterAuthPasskeyService(context: context,
+                                           relay: makeRelay(),
+                                           materializer: BetterAuthSessionMaterializer(context: context))
+            .authenticateWithPasskey(payload)
     }
 
     public func listPasskeys() async throws -> [Passkey] {
-        try await network.get(path: configuration.endpoints.listPasskeysPath,
-                              accessToken: state.currentSession?.session.accessToken)
+        try await BetterAuthPasskeyService(context: context,
+                                           relay: makeRelay(),
+                                           materializer: BetterAuthSessionMaterializer(context: context))
+            .listPasskeys(accessToken: state.currentSession?.session.accessToken)
     }
 
     public func updatePasskey(_ payload: UpdatePasskeyRequest) async throws -> Passkey {
-        let response: UpdatePasskeyResponse = try await network.post(path: configuration.endpoints.updatePasskeyPath,
-                                                                     body: payload,
-                                                                     accessToken: state.currentSession?.session
-                                                                         .accessToken)
-        return response.passkey
+        try await BetterAuthPasskeyService(context: context,
+                                           relay: makeRelay(),
+                                           materializer: BetterAuthSessionMaterializer(context: context))
+            .updatePasskey(payload, accessToken: state.currentSession?.session.accessToken)
     }
 
     @discardableResult
     public func deletePasskey(_ payload: DeletePasskeyRequest) async throws -> Bool {
-        let response: BetterAuthStatusResponse = try await network.post(path: configuration.endpoints.deletePasskeyPath,
-                                                                        body: payload,
-                                                                        accessToken: state.currentSession?.session
-                                                                            .accessToken)
-        return response.status
+        try await BetterAuthPasskeyService(context: context,
+                                           relay: makeRelay(),
+                                           materializer: BetterAuthSessionMaterializer(context: context))
+            .deletePasskey(payload, accessToken: state.currentSession?.session.accessToken)
     }
 
     // MARK: - Magic Link
 
     @discardableResult
     public func requestMagicLink(_ payload: MagicLinkRequest) async throws -> Bool {
-        let response: BetterAuthStatusResponse = try await network
-            .post(path: configuration.endpoints.magicLinkSignInPath,
-                  body: payload, accessToken: nil)
-        return response.status
+        try await BetterAuthOneTimeCodeService(context: context,
+                                               relay: makeRelay(),
+                                               materializer: BetterAuthSessionMaterializer(context: context))
+            .requestMagicLink(payload)
     }
 
     @discardableResult
     public func verifyMagicLink(_ payload: MagicLinkVerifyRequest) async throws -> MagicLinkVerificationResult {
-        let result: MagicLinkVerificationResult = try await network
-            .get(path: configuration.endpoints.magicLinkVerifyPath,
-                 queryItems: [URLQueryItem(name: "token",
-                                           value: payload.token),
-                              URLQueryItem(name: "callbackURL",
-                                           value: payload
-                                               .callbackURL),
-                              URLQueryItem(name: "newUserCallbackURL",
-                                           value: payload
-                                               .newUserCallbackURL),
-                              URLQueryItem(name: "errorCallbackURL",
-                                           value: payload
-                                               .errorCallbackURL)],
-                 accessToken: nil)
-        if case let .signedIn(session) = result {
-            try setSession(session, event: .signedIn)
-        }
-        return result
+        try await BetterAuthOneTimeCodeService(context: context,
+                                               relay: makeRelay(),
+                                               materializer: BetterAuthSessionMaterializer(context: context))
+            .verifyMagicLink(payload)
     }
 
     // MARK: - Email OTP
 
     @discardableResult
     public func requestEmailOTP(_ payload: EmailOTPRequest) async throws -> Bool {
-        let response: EmailOTPRequestResponse = try await network
-            .post(path: configuration.endpoints.emailOTPRequestPath,
-                  body: payload, accessToken: nil)
-        return response.success
+        try await BetterAuthOneTimeCodeService(context: context,
+                                               relay: makeRelay(),
+                                               materializer: BetterAuthSessionMaterializer(context: context))
+            .requestEmailOTP(payload)
     }
 
     @discardableResult
     public func signInWithEmailOTP(_ payload: EmailOTPSignInRequest) async throws -> BetterAuthSession {
-        let response: SocialSignInTransportResponse = try await network
-            .post(path: configuration.endpoints.emailOTPSignInPath,
-                  body: payload, accessToken: nil)
-        if let session = response.materializedSession {
-            try setSession(session, event: .signedIn)
-            return session
-        }
-        if let signedIn = response.signedIn {
-            let session = try await materializeSession(token: signedIn.token, fallbackUser: signedIn.user)
-            try setSession(session, event: .signedIn)
-            return session
-        }
-        throw BetterAuthError.invalidResponse
+        try await BetterAuthOneTimeCodeService(context: context,
+                                               relay: makeRelay(),
+                                               materializer: BetterAuthSessionMaterializer(context: context))
+            .signInWithEmailOTP(payload)
     }
 
     @discardableResult
     public func verifyEmailOTP(_ payload: EmailOTPVerifyRequest) async throws -> EmailOTPVerifyResult {
-        let result: EmailOTPVerifyResult = try await network.post(path: configuration.endpoints.emailOTPVerifyPath,
-                                                                  body: payload, accessToken: nil)
-        if case let .signedIn(session) = result {
-            try setSession(session, event: .signedIn)
-        } else if case let .verified(user) = result, let current = state.currentSession, current.user.id == user.id {
-            try setSession(BetterAuthSession(session: current.session, user: current.user.merged(with: user)),
-                           event: .userUpdated)
-        }
-        return result
+        try await BetterAuthOneTimeCodeService(context: context,
+                                               relay: makeRelay(),
+                                               materializer: BetterAuthSessionMaterializer(context: context))
+            .verifyEmailOTP(payload, currentSession: state.currentSession)
     }
 
     // MARK: - Phone OTP
 
     @discardableResult
     public func requestPhoneOTP(_ payload: PhoneOTPRequest) async throws -> Bool {
-        let response: PhoneOTPRequestResponse = try await network
-            .post(path: configuration.endpoints.phoneOTPRequestPath,
-                  body: payload, accessToken: nil)
-        return response.success ?? response.status ?? true
+        try await BetterAuthOneTimeCodeService(context: context,
+                                               relay: makeRelay(),
+                                               materializer: BetterAuthSessionMaterializer(context: context))
+            .requestPhoneOTP(payload)
     }
 
     @discardableResult
     public func verifyPhoneNumber(_ payload: PhoneOTPVerifyRequest) async throws -> PhoneOTPVerifyResponse {
-        let accessToken = payload.updatePhoneNumber == true ? state.currentSession?.session.accessToken : nil
-        let response: PhoneOTPVerifyResponse = try await network.post(path: configuration.endpoints.phoneOTPVerifyPath,
-                                                                      body: payload, accessToken: accessToken)
-        if let token = response.token, let user = response.user {
-            let twoFactorUser = TwoFactorUser(id: user.id, email: user.email, name: user.name,
-                                              username: user.username, displayUsername: user.displayUsername,
-                                              twoFactorEnabled: false)
-            let session = try await materializeSession(token: token, fallbackUser: twoFactorUser)
-            try setSession(session, event: .signedIn)
-        } else if let user = response.user, let current = state.currentSession, current.user.id == user.id {
-            try setSession(BetterAuthSession(session: current.session, user: current.user.merged(with: user)),
-                           event: .userUpdated)
-        }
-        return response
+        try await BetterAuthOneTimeCodeService(context: context,
+                                               relay: makeRelay(),
+                                               materializer: BetterAuthSessionMaterializer(context: context))
+            .verifyPhoneNumber(payload,
+                               accessToken: payload.updatePhoneNumber == true ? state.currentSession?.session.accessToken : nil,
+                               currentSession: state.currentSession)
     }
 
     @discardableResult
     public func signInWithPhoneOTP(_ payload: PhoneOTPSignInRequest) async throws -> BetterAuthSession {
-        let response: TwoFactorSessionResponse = try await network
-            .post(path: configuration.endpoints.phoneOTPSignInPath,
-                  body: payload, accessToken: nil)
-        let session = try await materializeSession(token: response.token, fallbackUser: response.user)
-        try setSession(session, event: .signedIn)
-        return session
+        try await BetterAuthOneTimeCodeService(context: context,
+                                               relay: makeRelay(),
+                                               materializer: BetterAuthSessionMaterializer(context: context))
+            .signInWithPhoneOTP(payload)
     }
 
     // MARK: - Two Factor
@@ -730,31 +678,22 @@ public actor BetterAuthSessionManager {
 
     @discardableResult
     public func revokeSession(token: String) async throws -> Bool {
-        let response: BetterAuthStatusResponse = try await network.post(path: configuration.endpoints.revokeSessionPath,
-                                                                        body: RevokeSessionRequest(token: token),
-                                                                        accessToken: state.currentSession?.session
-                                                                            .accessToken)
-        if token == state.currentSession?.session.accessToken {
-            try setSession(nil, event: .signedOut)
-        }
-        return response.status
+        try await BetterAuthSessionAdministrationService(context: context, relay: makeRelay())
+            .revokeSession(token: token,
+                           accessToken: state.currentSession?.session.accessToken,
+                           currentAccessToken: state.currentSession?.session.accessToken)
     }
 
     @discardableResult
     public func revokeSessions() async throws -> Bool {
-        let response: BetterAuthStatusResponse = try await network
-            .post(path: configuration.endpoints.revokeSessionsPath,
-                  accessToken: state.currentSession?.session.accessToken)
-        try setSession(nil, event: .signedOut)
-        return response.status
+        try await BetterAuthSessionAdministrationService(context: context, relay: makeRelay())
+            .revokeSessions(accessToken: state.currentSession?.session.accessToken)
     }
 
     @discardableResult
     public func revokeOtherSessions() async throws -> Bool {
-        let response: BetterAuthStatusResponse = try await network
-            .post(path: configuration.endpoints.revokeOtherSessionsPath,
-                  accessToken: state.currentSession?.session.accessToken)
-        return response.status
+        try await BetterAuthSessionAdministrationService(context: context, relay: makeRelay())
+            .revokeOtherSessions(accessToken: state.currentSession?.session.accessToken)
     }
 
     // MARK: - Restore / Refresh
@@ -783,11 +722,8 @@ public actor BetterAuthSessionManager {
     /// Signs out and clears the local session. Optionally revokes the session on the backend.
     public func signOut(remotely: Bool = true) async throws {
         stopAutoRefresh()
-        if remotely, state.currentSession != nil {
-            _ = try await network.post(path: configuration.endpoints.signOutPath,
-                                       accessToken: state.currentSession?.session.accessToken) as SignOutResponse
-        }
-        try setSession(nil, event: .signedOut)
+        try await BetterAuthSessionAdministrationService(context: context, relay: makeRelay())
+            .signOut(remotely: remotely, accessToken: state.currentSession?.session.accessToken)
     }
 
     // MARK: - Auto-Refresh
@@ -986,10 +922,10 @@ public actor BetterAuthSessionManager {
     // MARK: - Phone Verification Result Handling
 }
 
-private struct SignOutResponse: Decodable {
+struct SignOutResponse: Decodable {
     let success: Bool
 }
 
-private struct RevokeSessionRequest: Encodable {
+struct RevokeSessionRequest: Encodable {
     let token: String
 }
