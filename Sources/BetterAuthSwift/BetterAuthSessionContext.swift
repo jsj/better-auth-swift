@@ -1,5 +1,6 @@
 import Foundation
 
+/// Internal session dependencies; actor isolation controls most access and state is lock-protected where shared.
 struct BetterAuthSessionContext {
     let configuration: BetterAuthConfiguration
     let state: BetterAuthSessionState
@@ -63,13 +64,13 @@ struct BetterAuthSessionEventRelay {
     }
 
     func validSession() async throws -> BetterAuthSession {
-        if let current = context.state.currentSession,
-           current.needsRefresh(clockSkew: context.configuration.auth.clockSkew)
-        {
+        guard let current = context.state.currentSession else {
+            throw BetterAuthError.missingSession
+        }
+        if current.needsRefresh(clockSkew: context.configuration.auth.clockSkew) {
             return try await refreshSession()
         }
-        if let current = context.state.currentSession { return current }
-        throw BetterAuthError.missingSession
+        return current
     }
 }
 

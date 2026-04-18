@@ -30,16 +30,30 @@ public protocol AuthStateChangeRegistration: Sendable {
     func remove()
 }
 
-/// Thread-safe event emitter backed by a lock.
-///
-/// Safety invariant for `@unchecked Sendable`: all mutable state is accessed only
-/// while `lock` is held, and emitted listener/continuation snapshots are invoked
-/// after releasing the lock.
+private actor AuthEventDeliveryQueue {
+    func deliver(stateChange: AuthStateChange,
+                 listeners: [AuthStateChangeListener],
+                 continuations: [AsyncStream<AuthStateChange>.Continuation]) async
+    {
+        for listener in listeners {
+            await listener(stateChange)
+        }
+        for continuation in continuations {
+            continuation.yield(stateChange)
+        }
+
+        NotificationCenter.default.post(name: .betterAuthStateDidChange,
+                                        object: nil,
+                                        userInfo: ["event": stateChange.event.rawValue,
+                                                   "session": stateChange.session as Any])
+    }
+}
+
 public final class AuthEventEmitter: @unchecked Sendable {
     private let lock = NSLock()
+    private let deliveryQueue = AuthEventDeliveryQueue()
     private var listeners: [UUID: AuthStateChangeListener] = [:]
-    private var continuations: [UUID: AsyncStream<AuthStateChange>.Continuation] =
-        [:]
+    private var continuations: [UUID: AsyncStream<AuthStateChange>.Continuation] = [:]
     private var latestStateChange: AuthStateChange?
 
     public init() {}
@@ -61,7 +75,8 @@ public final class AuthEventEmitter: @unchecked Sendable {
             continuations[id] = continuation
             lock.unlock()
             if let latestStateChange {
-                continuation.yield(latestStateChange)
+                Task { await deliveryQueue.deliver(stateChange: latestStateChange, listeners: [],
+                                                   continuations: [continuation]) }
             }
             continuation.onTermination = { [weak self] _ in
                 self?.removeContinuation(id)
@@ -90,23 +105,15 @@ public final class AuthEventEmitter: @unchecked Sendable {
     func yield(_ stateChange: AuthStateChange) {
         lock.lock()
         latestStateChange = stateChange
-        let currentListeners = listeners.values
-        let currentContinuations = continuations.values
+        let currentListeners = Array(listeners.values)
+        let currentContinuations = Array(continuations.values)
         lock.unlock()
 
-        for listener in currentListeners {
-            Task {
-                await listener(stateChange)
-            }
+        Task {
+            await deliveryQueue.deliver(stateChange: stateChange,
+                                        listeners: currentListeners,
+                                        continuations: currentContinuations)
         }
-        for continuation in currentContinuations {
-            continuation.yield(stateChange)
-        }
-
-        NotificationCenter.default.post(name: .betterAuthStateDidChange,
-                                        object: nil,
-                                        userInfo: ["event": stateChange.event.rawValue,
-                                                   "session": stateChange.session as Any])
     }
 
     private func removeListener(_ id: UUID) {
@@ -121,7 +128,6 @@ public final class AuthEventEmitter: @unchecked Sendable {
         lock.unlock()
     }
 
-    /// Safety invariant for `@unchecked Sendable`: `emitter` is weak and `id` is immutable.
     private final class Registration: AuthStateChangeRegistration, @unchecked Sendable {
         private weak var emitter: AuthEventEmitter?
         private let id: UUID
