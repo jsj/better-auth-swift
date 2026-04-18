@@ -9,6 +9,19 @@ permissions:
   contents: read
 
 jobs:
+  github-hosted-health:
+    runs-on: macos-15
+    timeout-minutes: 10
+
+    steps:
+      - name: Show hosted runner details
+        run: |
+          echo "runner=$(uname -a)"
+          sw_vers
+          xcode-select -p
+          xcodebuild -version
+          swift --version
+
   health:
     runs-on: [self-hosted, macOS, ARM64, mac-ci]
     timeout-minutes: 10

@@ -175,7 +175,7 @@ public final class AuthStore {
 
     public func completeGenericOAuth(_ payload: GenericOAuthCallbackRequest) async {
         await perform {
-            session = try await auth.completeGenericOAuth(payload)
+            _ = try await auth.completeGenericOAuth(payload)
             statusMessage = "OAuth completed"
         }
     }
@@ -185,18 +185,24 @@ public final class AuthStore {
             let result = try await auth.handleIncomingURL(url)
             switch result {
             case let .genericOAuth(restoredSession):
-                applyAuthenticatedSession(restoredSession)
+                applyAuthStateChange(AuthStateChange(event: .signedIn,
+                                                     session: restoredSession,
+                                                     transition: .init(phase: .authenticated)))
                 statusMessage = "OAuth completed"
 
             case let .magicLink(verificationResult):
                 if case let .signedIn(restoredSession) = verificationResult {
-                    applyAuthenticatedSession(restoredSession)
+                    applyAuthStateChange(AuthStateChange(event: .signedIn,
+                                                         session: restoredSession,
+                                                         transition: .init(phase: .authenticated)))
                 }
                 statusMessage = "Magic link handled"
 
             case let .verifyEmail(verificationResult):
                 if case let .signedIn(restoredSession) = verificationResult {
-                    applyAuthenticatedSession(restoredSession)
+                    applyAuthStateChange(AuthStateChange(event: .signedIn,
+                                                         session: restoredSession,
+                                                         transition: .init(phase: .authenticated)))
                 }
                 statusMessage = "Verification handled"
 
@@ -285,7 +291,9 @@ public final class AuthStore {
         await perform {
             let result = try await auth.verifyMagicLink(payload)
             if case let .signedIn(session) = result {
-                applyAuthenticatedSession(session)
+                applyAuthStateChange(AuthStateChange(event: .signedIn,
+                                                     session: session,
+                                                     transition: .init(phase: .authenticated)))
             }
             statusMessage = "Magic link verified"
         }
@@ -311,7 +319,9 @@ public final class AuthStore {
         await perform {
             let result = try await auth.verifyEmailOTP(payload)
             if case let .signedIn(session) = result {
-                applyAuthenticatedSession(session)
+                applyAuthStateChange(AuthStateChange(event: .signedIn,
+                                                     session: session,
+                                                     transition: .init(phase: .authenticated)))
             }
             statusMessage = "Email OTP verified"
         }
@@ -481,10 +491,7 @@ public final class AuthStore {
 
     public func updateUser(_ payload: UpdateUserRequest) async {
         await perform {
-            let response = try await auth.updateUser(payload)
-            if let current = session, let updatedUser = response.user {
-                session = BetterAuthSession(session: current.session, user: updatedUser)
-            }
+            _ = try await auth.updateUser(payload)
             statusMessage = "Profile updated"
         }
     }
@@ -680,15 +687,11 @@ public final class AuthStore {
         }
     }
 
-    private func applyAuthenticatedSession(_ session: BetterAuthSession) {
-        self.session = session
-        launchState = .authenticated(session)
-    }
-
     private func perform(_ operation: () async throws -> Void) async {
         isLoading = true
         defer { isLoading = false }
         do {
+            try Task.checkCancellation()
             try await operation()
             lastError = nil
         } catch {
@@ -701,6 +704,7 @@ public final class AuthStore {
         isLoading = true
         defer { isLoading = false }
         do {
+            try Task.checkCancellation()
             let result = try await operation()
             lastError = nil
             return result

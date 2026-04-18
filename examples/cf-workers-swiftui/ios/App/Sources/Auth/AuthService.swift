@@ -39,13 +39,13 @@ struct AuthService {
             }
         }
 
-        if path.hasSuffix(client.configuration.endpoints.magicLinkVerifyPath),
+        if path.hasSuffix(client.configuration.endpoints.magicLink.verifyPath),
            queryItems.first(where: { $0.name == "token" })?.value != nil
         {
             return true
         }
 
-        if path.hasSuffix(client.configuration.endpoints.verifyEmailPath),
+        if path.hasSuffix(client.configuration.endpoints.user.verifyEmailPath),
            queryItems.first(where: { $0.name == "token" })?.value != nil
         {
             return true

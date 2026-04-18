@@ -14,7 +14,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validate:
+  validate-spm:
+    runs-on: macos-15
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Show environment
+        run: |
+          echo "runner=$(uname -a)"
+          xcode-select -p
+          swift --version
+
+      - name: Run SPM tests
+        run: ./Scripts/swift_test_wrapper.sh
+
+  validate-xcode:
     runs-on: [self-hosted, macOS, ARM64, mac-ci]
     timeout-minutes: 20
 
@@ -31,9 +48,6 @@ jobs:
 
       - name: Generate Xcode project
         run: ./Scripts/generate_xcodeproj.sh
-
-      - name: Run SPM tests
-        run: ./Scripts/swift_test_wrapper.sh
 
       - name: Run Xcode tests
         run: |

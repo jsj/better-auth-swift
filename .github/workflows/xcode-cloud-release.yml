@@ -19,12 +19,25 @@ jobs:
     timeout-minutes: 45
 
     steps:
+      - name: Preflight checks
+        env:
+          XC: xc
+          WORKFLOW_ID: ${{ vars.XCODE_CLOUD_RELEASE_WORKFLOW_ID || vars.XCODE_CLOUD_WORKFLOW_ID }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          command -v "$XC" >/dev/null 2>&1 || { echo "::error::xc CLI is not installed"; exit 1; }
+          command -v python3 >/dev/null 2>&1 || { echo "::error::python3 is not installed"; exit 1; }
+          test -n "$WORKFLOW_ID" || { echo "::error::No Xcode Cloud workflow ID is configured"; exit 1; }
+          test -n "$REF_NAME" || { echo "::error::github.ref_name is unavailable"; exit 1; }
+
       - name: Trigger and poll Xcode Cloud release build
         env:
           XC: xc
           WORKFLOW_ID: ${{ vars.XCODE_CLOUD_RELEASE_WORKFLOW_ID || vars.XCODE_CLOUD_WORKFLOW_ID }}
           REF_NAME: ${{ github.ref_name }}
         run: |
+          set -euo pipefail
           command -v "$XC" >/dev/null 2>&1
           command -v python3 >/dev/null 2>&1
           test -n "$WORKFLOW_ID"
@@ -90,6 +103,7 @@ jobs:
           PY
 
       - name: Publish workflow summary
+        if: always()
         run: |
           command -v python3 >/dev/null 2>&1
           python3 - <<'PY'
@@ -98,10 +112,28 @@ jobs:
           lines = [
               '# Xcode Cloud release run',
               '',
+              f'- Workflow ID: `{os.environ.get("WORKFLOW_ID", "")}`',
               f'- Run ID: `{os.environ["RUN_ID"]}`',
               f'- Ref: `{os.environ.get("GITHUB_REF_NAME", "")}`',
               ''
           ]
+
+          poll_path = pathlib.Path('/tmp/xc-poll.ndjson')
+          if poll_path.exists():
+              final_payload = None
+              for line in poll_path.read_text().splitlines():
+                  try:
+                      data = json.loads(line)
+                  except json.JSONDecodeError:
+                      continue
+                  if data.get('event') == 'xcode_cloud_status':
+                      final_payload = data.get('payload', final_payload)
+              if final_payload:
+                  for key in ('status', 'result', 'workflow_name', 'branch'):
+                      value = final_payload.get(key)
+                      if value:
+                          lines.append(f'- {key.replace("_", " ").title()}: `{value}`')
+                  lines.append('')
 
           for path in sorted(pathlib.Path('/tmp/xc-cloud-artifacts').glob('*.ndjson')):
               action_id = path.stem

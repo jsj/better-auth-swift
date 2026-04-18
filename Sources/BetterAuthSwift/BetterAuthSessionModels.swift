@@ -69,18 +69,33 @@ public struct BetterAuthSession: Codable, Sendable, Equatable {
         public let name: String?
         public let username: String?
         public let displayUsername: String?
+        public let image: String?
+        public let emailVerified: Bool?
+        public let createdAt: Date?
+        public let updatedAt: Date?
+        public let phoneNumber: String?
 
         public init(id: String,
                     email: String? = nil,
                     name: String? = nil,
                     username: String? = nil,
-                    displayUsername: String? = nil)
+                    displayUsername: String? = nil,
+                    image: String? = nil,
+                    emailVerified: Bool? = nil,
+                    createdAt: Date? = nil,
+                    updatedAt: Date? = nil,
+                    phoneNumber: String? = nil)
         {
             self.id = id
             self.email = email
             self.name = name
             self.username = username
             self.displayUsername = displayUsername
+            self.image = image
+            self.emailVerified = emailVerified
+            self.createdAt = createdAt
+            self.updatedAt = updatedAt
+            self.phoneNumber = phoneNumber
         }
 
         public func merged(with other: User) -> User {
@@ -88,7 +103,12 @@ public struct BetterAuthSession: Codable, Sendable, Equatable {
                  email: other.email ?? email,
                  name: other.name ?? name,
                  username: other.username ?? username,
-                 displayUsername: other.displayUsername ?? displayUsername)
+                 displayUsername: other.displayUsername ?? displayUsername,
+                 image: other.image ?? image,
+                 emailVerified: other.emailVerified ?? emailVerified,
+                 createdAt: other.createdAt ?? createdAt,
+                 updatedAt: other.updatedAt ?? updatedAt,
+                 phoneNumber: other.phoneNumber ?? phoneNumber)
         }
     }
 }

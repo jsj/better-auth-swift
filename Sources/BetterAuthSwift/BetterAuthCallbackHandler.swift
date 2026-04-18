@@ -20,7 +20,7 @@ struct BetterAuthCallbackHandler {
             return .genericOAuth(.init(providerId: providerId, code: code, state: state, issuer: issuer))
         }
 
-        if path.hasSuffix(endpoints.magicLinkVerifyPath),
+        if path.hasSuffix(endpoints.magicLink.verifyPath),
            let token = queryItems.first(where: { $0.name == "token" })?.value
         {
             return .magicLink(.init(token: token,
@@ -31,7 +31,7 @@ struct BetterAuthCallbackHandler {
                                         .value))
         }
 
-        if path.hasSuffix(endpoints.verifyEmailPath),
+        if path.hasSuffix(endpoints.user.verifyEmailPath),
            let token = queryItems.first(where: { $0.name == "token" })?.value
         {
             return .verifyEmail(.init(token: token))
@@ -42,7 +42,7 @@ struct BetterAuthCallbackHandler {
 
     func oauthCallbackPath(for payload: GenericOAuthCallbackRequest) -> String {
         var components = URLComponents()
-        components.path = endpoints.genericOAuthCallbackPath
+        components.path = endpoints.oauth.genericOAuthCallbackPath
             .replacingOccurrences(of: Self.providerPlaceholder, with: payload.providerId)
         components.queryItems = [URLQueryItem(name: "code", value: payload.code),
                                  URLQueryItem(name: "state", value: payload.state)]
@@ -61,7 +61,7 @@ struct BetterAuthCallbackHandler {
     }
 
     private func configuredProviderID(from path: String) -> String? {
-        let template = endpoints.genericOAuthCallbackPath
+        let template = endpoints.oauth.genericOAuthCallbackPath
         guard let placeholderRange = template.range(of: Self.providerPlaceholder) else {
             return nil
         }

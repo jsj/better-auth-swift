@@ -11,7 +11,7 @@ struct AuthNetworkClient {
                                    accessToken: String?) async throws -> Response
     {
         let request = try buildRequest(path: path, method: "POST", accessToken: accessToken, body: body)
-        return try await executeWithRetry(request)
+        return try await execute(request)
     }
 
     func postRaw(path: String,
@@ -19,21 +19,21 @@ struct AuthNetworkClient {
                  accessToken: String?) async throws -> (Data, HTTPURLResponse)
     {
         let request = try buildRequest(path: path, method: "POST", accessToken: accessToken, body: body)
-        return try await executeRawWithRetry(request)
+        return try await execute(request)
     }
 
     func post<Response: Decodable>(path: String,
                                    accessToken: String?) async throws -> Response
     {
         let request = try buildRequest(path: path, method: "POST", accessToken: accessToken)
-        return try await executeWithRetry(request)
+        return try await execute(request)
     }
 
     func get<Response: Decodable>(path: String,
                                   accessToken: String?) async throws -> Response
     {
         let request = try buildRequest(path: path, method: "GET", accessToken: accessToken)
-        return try await executeWithRetry(request)
+        return try await execute(request)
     }
 
     func get<Response: Decodable>(path: String,
@@ -53,7 +53,7 @@ struct AuthNetworkClient {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         applyDefaultHeaders(to: &request, accessToken: accessToken)
-        return try await executeWithRetry(request)
+        return try await execute(request)
     }
 
     // MARK: - Private
@@ -88,12 +88,12 @@ struct AuthNetworkClient {
         }
     }
 
-    private func executeWithRetry<Response: Decodable>(_ request: URLRequest) async throws -> Response {
-        let (data, _) = try await executeRawWithRetry(request)
+    private func execute<Response: Decodable>(_ request: URLRequest) async throws -> Response {
+        let (data, _) = try await execute(request)
         return try BetterAuthCoding.makeDecoder().decode(Response.self, from: data)
     }
 
-    private func executeRawWithRetry(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+    private func execute(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         var lastError: Error?
         for attempt in 0 ... retryPolicy.maxRetries {
             if attempt > 0 {

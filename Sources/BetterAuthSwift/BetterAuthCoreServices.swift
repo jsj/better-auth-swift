@@ -42,16 +42,16 @@ struct BetterAuthSessionRefreshService: @unchecked Sendable {
     func refresh(using existingSession: BetterAuthSession) async throws -> BetterAuthSession {
         if let refreshToken = existingSession.session.refreshToken {
             struct RefreshPayload: Encodable, Sendable { let refreshToken: String }
-            return try await network.post(path: configuration.endpoints.sessionRefreshPath,
+            return try await network.post(path: configuration.endpoints.session.sessionRefreshPath,
                                           body: RefreshPayload(refreshToken: refreshToken),
                                           accessToken: existingSession.session.accessToken)
         }
-        return try await network.post(path: configuration.endpoints.sessionRefreshPath,
+        return try await network.post(path: configuration.endpoints.session.sessionRefreshPath,
                                       accessToken: existingSession.session.accessToken)
     }
 
     func fetchCurrentSession(accessToken: String?) async throws -> BetterAuthSession {
-        try await network.get(path: configuration.endpoints.currentSessionPath,
+        try await network.get(path: configuration.endpoints.session.currentSessionPath,
                               accessToken: accessToken)
     }
 }
@@ -61,13 +61,13 @@ struct BetterAuthAuthFlowService: @unchecked Sendable {
     let network: any BetterAuthTransporting
 
     func beginGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws -> GenericOAuthAuthorizationResponse {
-        try await network.post(path: configuration.endpoints.genericOAuthSignInPath, body: payload, accessToken: nil)
+        try await network.post(path: configuration.endpoints.oauth.genericOAuthSignInPath, body: payload, accessToken: nil)
     }
 
     func linkGenericOAuth(_ payload: GenericOAuthSignInRequest,
                           accessToken: String?) async throws -> GenericOAuthAuthorizationResponse
     {
-        try await network.post(path: configuration.endpoints.genericOAuthLinkPath,
+        try await network.post(path: configuration.endpoints.oauth.genericOAuthLinkPath,
                                body: payload,
                                accessToken: accessToken)
     }
@@ -80,7 +80,7 @@ struct BetterAuthUserAccountService: @unchecked Sendable {
     func updateUser(_ payload: UpdateUserRequest,
                     accessToken: String?) async throws -> UpdateUserResponse
     {
-        try await network.post(path: configuration.endpoints.updateUserPath,
+        try await network.post(path: configuration.endpoints.user.updateUserPath,
                                body: payload,
                                accessToken: accessToken)
     }
@@ -88,7 +88,7 @@ struct BetterAuthUserAccountService: @unchecked Sendable {
     func changePassword(_ payload: ChangePasswordRequest,
                         accessToken: String?) async throws -> ChangePasswordResponse
     {
-        try await network.post(path: configuration.endpoints.changePasswordPath,
+        try await network.post(path: configuration.endpoints.user.changePasswordPath,
                                body: payload,
                                accessToken: accessToken)
     }
