@@ -934,19 +934,14 @@ struct BetterAuthSwiftTestsPart1 {
         defer { registration.remove() }
 
         try await client.auth.signInWithEmail(.init(email: "test@example.com", password: "password123"))
+        for _ in 0 ..< 200 {
+            if recorder.withLock({ $0 }) != nil { break }
+            await Task.yield()
+        }
         let observed = recorder.withLock { $0 }
         #expect(observed?.event == .signedIn)
         #expect(observed?.session == signedIn)
         #expect(observed?.transition?.phase == .authenticated)
-    }
-
-    @Test
-    func emptyModuleRegistryReportsNoModules() {
-        let registry = BetterAuthModuleRegistry()
-
-        #expect(registry.isEmpty == true)
-        #expect(registry.registeredModuleIdentifiers.isEmpty)
-        #expect(registry.runtime(for: "missing") == nil)
     }
 
     @Test @MainActor

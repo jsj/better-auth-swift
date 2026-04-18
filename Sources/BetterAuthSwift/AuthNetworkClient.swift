@@ -5,6 +5,7 @@ struct AuthNetworkClient {
     let transport: BetterAuthTransport
     let retryPolicy: RetryPolicy
     let requestOrigin: String?
+    let timeoutInterval: TimeInterval
 
     func post<Response: Decodable>(path: String,
                                    body: some Encodable & Sendable,
@@ -53,6 +54,7 @@ struct AuthNetworkClient {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         applyDefaultHeaders(to: &request, accessToken: accessToken)
+        applyTimeout(to: &request)
         return try await execute(request)
     }
 
@@ -66,6 +68,7 @@ struct AuthNetworkClient {
         var request = URLRequest(url: url)
         request.httpMethod = method
         applyDefaultHeaders(to: &request, accessToken: accessToken)
+        applyTimeout(to: &request)
         return request
     }
 
@@ -86,6 +89,10 @@ struct AuthNetworkClient {
         } else if let requestOrigin, request.value(forHTTPHeaderField: "Origin") == nil {
             request.setValue(requestOrigin, forHTTPHeaderField: "Origin")
         }
+    }
+
+    private func applyTimeout(to request: inout URLRequest) {
+        request.timeoutInterval = timeoutInterval
     }
 
     private func execute<Response: Decodable>(_ request: URLRequest) async throws -> Response {

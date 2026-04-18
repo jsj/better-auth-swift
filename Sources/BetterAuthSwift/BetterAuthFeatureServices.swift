@@ -107,7 +107,7 @@ struct BetterAuthSessionBootstrapService: Sendable {
         let existingToken = context.state.currentSession?.session.accessToken
         do {
             let session = try await context.refreshService.fetchCurrentSession(accessToken: existingToken)
-            try relay.setSession(session, event: .tokenRefreshed)
+            _ = try relay.setSession(session, event: .tokenRefreshed)
             return session
         } catch {
             if relay.shouldClearSession(for: error) { try relay.clearSession(event: .sessionExpired) }
@@ -137,7 +137,7 @@ struct BetterAuthSessionAdministrationService: Sendable {
             .post(path: context.configuration.endpoints.session.setActiveDeviceSessionPath,
                   body: payload,
                   accessToken: accessToken)
-        try relay.setSession(session, event: .signedIn)
+        _ = try relay.setSession(session, event: .signedIn)
         return session
     }
 
@@ -232,12 +232,12 @@ struct BetterAuthPasskeyService: Sendable {
                   body: payload,
                   accessToken: nil)
         if let session = response.materializedSession {
-            try relay.setSession(session, event: .signedIn)
+            _ = try relay.setSession(session, event: .signedIn)
             return session
         }
         if let signedIn = response.signedIn {
             let session = try await materializer.materializeSession(token: signedIn.token, fallbackUser: signedIn.user)
-            try relay.setSession(session, event: .signedIn)
+            _ = try relay.setSession(session, event: .signedIn)
             return session
         }
         throw BetterAuthError.invalidResponse
@@ -287,7 +287,7 @@ struct BetterAuthOneTimeCodeService: Sendable {
                               URLQueryItem(name: "errorCallbackURL", value: payload.errorCallbackURL)],
                  accessToken: nil)
         if case let .signedIn(session) = result {
-            try relay.setSession(session, event: .signedIn)
+            _ = try relay.setSession(session, event: .signedIn)
         }
         return result
     }
@@ -306,12 +306,12 @@ struct BetterAuthOneTimeCodeService: Sendable {
                   body: payload,
                   accessToken: nil)
         if let session = response.materializedSession {
-            try relay.setSession(session, event: .signedIn)
+            _ = try relay.setSession(session, event: .signedIn)
             return session
         }
         if let signedIn = response.signedIn {
             let session = try await materializer.materializeSession(token: signedIn.token, fallbackUser: signedIn.user)
-            try relay.setSession(session, event: .signedIn)
+            _ = try relay.setSession(session, event: .signedIn)
             return session
         }
         throw BetterAuthError.invalidResponse
@@ -325,9 +325,9 @@ struct BetterAuthOneTimeCodeService: Sendable {
                   body: payload,
                   accessToken: nil)
         if case let .signedIn(session) = result {
-            try relay.setSession(session, event: .signedIn)
+            _ = try relay.setSession(session, event: .signedIn)
         } else if case let .verified(user) = result, let currentSession, currentSession.user.id == user.id {
-            try relay.setSession(BetterAuthSession(session: currentSession.session,
+            _ = try relay.setSession(BetterAuthSession(session: currentSession.session,
                                                    user: currentSession.user.merged(with: user)),
                                  event: .userUpdated)
         }
@@ -339,7 +339,9 @@ struct BetterAuthOneTimeCodeService: Sendable {
             .post(path: context.configuration.endpoints.phoneOTP.requestPath,
                   body: payload,
                   accessToken: nil)
-        return response.success ?? response.status ?? true
+        if let success = response.success { return success }
+        if let status = response.status { return status }
+        throw BetterAuthError.invalidResponse
     }
 
     func verifyPhoneNumber(_ payload: PhoneOTPVerifyRequest,
@@ -358,9 +360,9 @@ struct BetterAuthOneTimeCodeService: Sendable {
                                               displayUsername: user.displayUsername,
                                               twoFactorEnabled: false)
             let session = try await materializer.materializeSession(token: token, fallbackUser: twoFactorUser)
-            try relay.setSession(session, event: .signedIn)
+            _ = try relay.setSession(session, event: .signedIn)
         } else if let user = response.user, let currentSession, currentSession.user.id == user.id {
-            try relay.setSession(BetterAuthSession(session: currentSession.session,
+            _ = try relay.setSession(BetterAuthSession(session: currentSession.session,
                                                    user: currentSession.user.merged(with: user)),
                                  event: .userUpdated)
         }
@@ -373,7 +375,7 @@ struct BetterAuthOneTimeCodeService: Sendable {
                   body: payload,
                   accessToken: nil)
         let session = try await materializer.materializeSession(token: response.token, fallbackUser: response.user)
-        try relay.setSession(session, event: .signedIn)
+        _ = try relay.setSession(session, event: .signedIn)
         return session
     }
 }
@@ -397,7 +399,7 @@ struct BetterAuthTwoFactorService: Sendable {
                   body: payload,
                   accessToken: nil)
         let session = try await materializer.materializeSession(token: response.token, fallbackUser: response.user)
-        try relay.setSession(session, event: .signedIn)
+        _ = try relay.setSession(session, event: .signedIn)
         return session
     }
 
@@ -415,7 +417,7 @@ struct BetterAuthTwoFactorService: Sendable {
                   body: payload,
                   accessToken: nil)
         let session = try await materializer.materializeSession(token: response.token, fallbackUser: response.user)
-        try relay.setSession(session, event: .signedIn)
+        _ = try relay.setSession(session, event: .signedIn)
         return session
     }
 
@@ -425,7 +427,7 @@ struct BetterAuthTwoFactorService: Sendable {
                   body: payload,
                   accessToken: nil)
         let session = try await materializer.materializeSession(token: response.token, fallbackUser: response.user)
-        try relay.setSession(session, event: .signedIn)
+        _ = try relay.setSession(session, event: .signedIn)
         return session
     }
 
@@ -462,7 +464,7 @@ struct BetterAuthPrimaryAuthService: Sendable {
                   body: payload,
                   accessToken: nil)
         if case let .signedIn(session) = result {
-            try relay.setSession(session, event: .signedIn)
+            _ = try relay.setSession(session, event: .signedIn)
         }
         return result
     }
@@ -472,7 +474,7 @@ struct BetterAuthPrimaryAuthService: Sendable {
             .post(path: context.configuration.endpoints.auth.emailSignInPath,
                   body: payload,
                   accessToken: nil)
-        try relay.setSession(session, event: .signedIn)
+        _ = try relay.setSession(session, event: .signedIn)
         return session
     }
 
@@ -489,7 +491,7 @@ struct BetterAuthPrimaryAuthService: Sendable {
             .post(path: context.configuration.endpoints.auth.usernameSignInPath,
                   body: payload,
                   accessToken: nil)
-        try relay.setSession(session, event: .signedIn)
+        _ = try relay.setSession(session, event: .signedIn)
         return session
     }
 
@@ -498,7 +500,7 @@ struct BetterAuthPrimaryAuthService: Sendable {
             .post(path: context.configuration.endpoints.auth.nativeAppleSignInPath,
                   body: payload,
                   accessToken: nil)
-        try relay.setSession(session, event: .signedIn)
+        _ = try relay.setSession(session, event: .signedIn)
         return session
     }
 
@@ -509,7 +511,7 @@ struct BetterAuthPrimaryAuthService: Sendable {
                   accessToken: nil)
 
         if let session = response.materializedSession {
-            try relay.setSession(session, event: .signedIn)
+            _ = try relay.setSession(session, event: .signedIn)
             let signedIn = SocialSignInSuccessResponse(redirect: response.redirect,
                                                        token: session.session.accessToken,
                                                        url: response.url,
@@ -519,7 +521,7 @@ struct BetterAuthPrimaryAuthService: Sendable {
 
         if let signedIn = response.signedIn {
             let session = try await materializer.materializeSession(token: signedIn.token, fallbackUser: signedIn.user)
-            try relay.setSession(session, event: .signedIn)
+            _ = try relay.setSession(session, event: .signedIn)
             return .signedIn(signedIn)
         }
 
@@ -537,7 +539,7 @@ struct BetterAuthPrimaryAuthService: Sendable {
             .post(path: context.configuration.endpoints.auth.anonymousSignInPath,
                   accessToken: nil)
         let session = try await materializer.materializeSession(token: response.token, fallbackUser: response.user)
-        try relay.setSession(session, event: .signedIn)
+        _ = try relay.setSession(session, event: .signedIn)
         return session
     }
 
@@ -574,6 +576,7 @@ struct BetterAuthPrimaryAuthService: Sendable {
                       body: RevokeSessionRequest(token: verificationSession.session.id),
                       accessToken: verificationSession.session.accessToken)
         } catch {
+            context.logger?.warning("Failed to revoke temporary reauthentication session: \(error)")
         }
         return true
     }
@@ -616,7 +619,7 @@ struct BetterAuthProfileService: Sendable {
                  queryItems: [URLQueryItem(name: "token", value: payload.token)],
                  accessToken: nil)
         if case let .signedIn(session) = result {
-            try relay.setSession(session, event: .signedIn)
+            _ = try relay.setSession(session, event: .signedIn)
         }
         return result
     }
@@ -633,7 +636,7 @@ struct BetterAuthProfileService: Sendable {
         let response = try await context.userAccountService.updateUser(payload,
                                                                        accessToken: currentSession?.session.accessToken)
         if let user = response.user, let currentSession {
-            try relay.setSession(BetterAuthSession(session: currentSession.session,
+            _ = try relay.setSession(BetterAuthSession(session: currentSession.session,
                                                    user: currentSession.user.merged(with: user)),
                                  event: .userUpdated)
         }
@@ -646,14 +649,14 @@ struct BetterAuthProfileService: Sendable {
         let response = try await context.userAccountService.changePassword(payload,
                                                                            accessToken: currentSession?.session.accessToken)
         if payload.revokeOtherSessions == true, let session = response.session {
-            try relay.setSession(session, event: .tokenRefreshed)
+            _ = try relay.setSession(session, event: .tokenRefreshed)
         } else if payload.revokeOtherSessions == true, let rotatedToken = response.token {
             let materializedSession: BetterAuthSession = try await context.network
                 .get(path: context.configuration.endpoints.session.currentSessionPath,
                      accessToken: rotatedToken)
-            try relay.setSession(materializedSession, event: .tokenRefreshed)
+            _ = try relay.setSession(materializedSession, event: .tokenRefreshed)
         } else if let currentSession {
-            try relay.setSession(BetterAuthSession(session: currentSession.session,
+            _ = try relay.setSession(BetterAuthSession(session: currentSession.session,
                                                    user: currentSession.user.merged(with: response.user)),
                                  event: .userUpdated)
         }
@@ -694,7 +697,7 @@ struct BetterAuthOAuthService: Sendable {
         let session: BetterAuthSession = try await context.network
             .get(path: context.callbackHandler.oauthCallbackPath(for: payload),
                  accessToken: accessToken)
-        try relay.setSession(session, event: .signedIn)
+        _ = try relay.setSession(session, event: .signedIn)
         return session
     }
 }

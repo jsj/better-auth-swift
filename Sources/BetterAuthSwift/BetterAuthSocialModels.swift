@@ -151,18 +151,21 @@ public struct SocialSignInTransportResponse: Codable, Sendable, Equatable {
     }
 
     public init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        if let session = try? container.decode(BetterAuthSession.self) {
-            self.init(redirect: false, token: session.session.accessToken, user: session.user, session: session)
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if container.contains(.redirect) || container.contains(.token) || container.contains(.url) ||
+            container.contains(.user) || container.contains(.session)
+        {
+            let value = try DecodedValue(from: decoder)
+            self.init(redirect: value.redirect,
+                      token: value.token,
+                      url: value.url,
+                      user: value.user,
+                      session: value.session)
             return
         }
 
-        let value = try container.decode(DecodedValue.self)
-        self.init(redirect: value.redirect,
-                  token: value.token,
-                  url: value.url,
-                  user: value.user,
-                  session: value.session)
+        let session = try BetterAuthSession(from: decoder)
+        self.init(redirect: false, token: session.session.accessToken, user: session.user, session: session)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -189,6 +192,14 @@ public struct SocialSignInTransportResponse: Codable, Sendable, Equatable {
                                                               debugDescription: "Missing social sign-in response URL")))
         }
         return .success(SocialAuthorizationResponse(url: url, redirect: redirect))
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case redirect
+        case token
+        case url
+        case user
+        case session
     }
 
     private struct DecodedValue: Codable, Equatable {

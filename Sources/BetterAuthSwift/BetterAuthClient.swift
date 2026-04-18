@@ -45,22 +45,27 @@ public struct BetterAuthClient: BetterAuthModuleSupporting, Sendable {
                                             eventEmitter: eventEmitter,
                                             authStateListeners: [])
         self.auth = auth
-        self.modules = BetterAuthModuleRegistry.build(configuration: configuration,
-                                                      authLifecycle: BetterAuthSessionLifecycleAdapter(manager: auth),
-                                                      requestsPerformer: BetterAuthRequestClient(configuration: configuration,
-                                                                                                 sessionManager: auth,
-                                                                                                 transport: transport),
-                                                      modules: modules)
+        let resolvedModules = BetterAuthModuleRegistry.build(configuration: configuration,
+                                                             authLifecycle: auth,
+                                                             requestsPerformer: BetterAuthRequestClient(configuration: configuration,
+                                                                                                        sessionManager: auth,
+                                                                                                        transport: transport),
+                                                             modules: modules)
+        self.modules = resolvedModules
         self.requests = BetterAuthRequestClient(configuration: configuration,
                                                 sessionManager: auth,
                                                 transport: transport,
-                                                requestHooks: self.modules.registeredRequestHooks)
+                                                requestHooks: resolvedModules.registeredRequestHooks)
+        let authStateListeners = resolvedModules.registeredAuthStateListeners
+        Task {
+            await auth.installAuthStateListeners(authStateListeners)
+        }
     }
 }
 
 public extension BetterAuthClient {
     var authLifecycle: any BetterAuthAuthPerforming {
-        BetterAuthSessionLifecycleAdapter(manager: auth)
+        auth
     }
 
     var requestsPerformer: any BetterAuthRequestPerforming {

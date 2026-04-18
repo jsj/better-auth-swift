@@ -16,17 +16,23 @@ struct BetterAuthSessionEventRelay: Sendable {
     let context: BetterAuthSessionContext
     let refreshSession: @Sendable () async throws -> BetterAuthSession
 
-    func setSession(_ session: BetterAuthSession?, event: AuthChangeEvent) throws {
-        context.state.replaceCurrentSession(session)
-        try context.sessionService.persist(session)
+    func setSession(_ session: BetterAuthSession?, event: AuthChangeEvent) throws -> AuthStateChange {
+        let previousSession = context.state.replaceCurrentSession(session)
+        do {
+            try context.sessionService.persist(session)
+        } catch {
+            _ = context.state.replaceCurrentSession(previousSession)
+            throw error
+        }
         let change = AuthStateChange(event: event,
                                      session: session,
                                      transition: transition(for: event, session: session))
         context.state.eventEmitter.yield(change)
+        return change
     }
 
     func clearSession(event: AuthChangeEvent = .signedOut) throws {
-        try setSession(nil, event: event)
+        _ = try setSession(nil, event: event)
     }
 
     func shouldClearSession(for error: Error) -> Bool {

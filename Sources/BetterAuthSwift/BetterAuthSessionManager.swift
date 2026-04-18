@@ -1,8 +1,8 @@
 import Foundation
 
 private enum AutoRefreshConstants {
-    static let tickInterval: TimeInterval = 30
-    static let tickThreshold = 3
+    static let refreshLeadTime: TimeInterval = 90
+    static let minimumSleepInterval: TimeInterval = 1
 }
 /// Actor-isolated session manager that owns the full auth lifecycle.
 ///
@@ -100,7 +100,8 @@ public actor BetterAuthSessionManager {
         self.network = AuthNetworkClient(baseURL: configuration.baseURL,
                                          transport: transport,
                                          retryPolicy: configuration.retryPolicy,
-                                         requestOrigin: configuration.requestOrigin)
+                                         requestOrigin: configuration.requestOrigin,
+                                         timeoutInterval: configuration.timeoutInterval)
         self.logger = logger
         self.state = BetterAuthSessionState(eventEmitter: eventEmitter)
         self.sessionService = BetterAuthSessionService(configuration: configuration, sessionStore: sessionStore)
@@ -159,8 +160,13 @@ public actor BetterAuthSessionManager {
     }
 
     public func updateSession(_ session: BetterAuthSession?) throws {
-        state.replaceCurrentSession(session)
-        try sessionService.persist(session)
+        let previousSession = state.replaceCurrentSession(session)
+        do {
+            try sessionService.persist(session)
+        } catch {
+            _ = state.replaceCurrentSession(previousSession)
+            throw error
+        }
     }
 
     // MARK: - Email + Password
@@ -561,6 +567,7 @@ public actor BetterAuthSessionManager {
         let url = try BetterAuthURLResolver.resolve(path, relativeTo: configuration.baseURL)
         var request = URLRequest(url: url)
         request.httpMethod = method
+        request.timeoutInterval = configuration.timeoutInterval
         request.setValue("Bearer \(session.session.accessToken)", forHTTPHeaderField: "Authorization")
         return request
     }
@@ -579,11 +586,7 @@ public actor BetterAuthSessionManager {
         stopAutoRefresh()
         logger?.debug("Starting auto-refresh timer")
         autoRefreshTask = Task { [weak self] in
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(AutoRefreshConstants.tickInterval))
-                guard !Task.isCancelled else { return }
-                await self?.autoRefreshTick()
-            }
+            await self?.runAutoRefreshLoop()
         }
     }
 
@@ -597,11 +600,18 @@ public actor BetterAuthSessionManager {
         inFlightRefreshTask?.cancel()
     }
 
-    private func autoRefreshTick() async {
-        guard let expiresAt = state.currentSession?.session.expiresAt else { return }
-        let ticksUntilExpiry = Int(expiresAt.timeIntervalSinceNow / AutoRefreshConstants.tickInterval)
-        if ticksUntilExpiry <= AutoRefreshConstants.tickThreshold {
-            logger?.debug("Auto-refreshing session (\(ticksUntilExpiry) ticks until expiry)")
+    private func runAutoRefreshLoop() async {
+        while !Task.isCancelled {
+            guard let expiresAt = state.currentSession?.session.expiresAt else { return }
+            let sleepDuration = max(expiresAt.timeIntervalSinceNow - AutoRefreshConstants.refreshLeadTime,
+                                    AutoRefreshConstants.minimumSleepInterval)
+            do {
+                try await Task.sleep(for: .seconds(sleepDuration))
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            logger?.debug("Auto-refreshing session before expiry")
             _ = try? await refreshSession()
         }
     }
@@ -656,10 +666,7 @@ public actor BetterAuthSessionManager {
     // MARK: - Session Lifecycle Helpers
 
     private func setSession(_ session: BetterAuthSession?, event: AuthChangeEvent) throws {
-        try makeRelay().setSession(session, event: event)
-        let change = AuthStateChange(event: event,
-                                     session: session,
-                                     transition: makeRelay().transition(for: event, session: session))
+        let change = try makeRelay().setSession(session, event: event)
         notifyAuthStateListeners(of: change)
         if session != nil, configuration.autoRefreshToken {
             startAutoRefresh()
@@ -690,3 +697,5 @@ struct SignOutResponse: Decodable {
 struct RevokeSessionRequest: Encodable {
     let token: String
 }
+
+extension BetterAuthSessionManager: BetterAuthAuthPerforming, BetterAuthSessionProviding, BetterAuthStateObserving {}

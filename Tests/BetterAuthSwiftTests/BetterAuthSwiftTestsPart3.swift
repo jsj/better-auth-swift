@@ -1173,7 +1173,7 @@ struct BetterAuthSwiftTestsPart3 {
             #expect(payload.phoneNumber == "+15555550123")
 
             return try response(for: request, statusCode: 200,
-                                data: encodeJSON(PhoneOTPRequestResponse(message: "otp queued")))
+                                data: encodeJSON(PhoneOTPRequestResponse(message: "otp queued", success: true)))
         }
 
         let client =
@@ -1181,7 +1181,7 @@ struct BetterAuthSwiftTestsPart3 {
                              sessionStore: InMemorySessionStore(),
                              transport: transport)
 
-        let success = try await client.auth.requestPhoneOTP(.init(phoneNumber: "+15555550123"))
+        let success = try await client.auth.requestPhoneOTP(PhoneOTPRequest(phoneNumber: "+15555550123"))
         #expect(success)
     }
 
@@ -1228,4 +1228,46 @@ struct BetterAuthSwiftTestsPart3 {
                                                                                 name: "Phone User")))
         #expect(await client.auth.currentSession()?.session.accessToken == "phone-token")
     }
+
+    @Test
+    func requestPhoneOTPThrowsWhenResponseOmitsSuccessAndStatus() async throws {
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
+                             sessionStore: InMemorySessionStore(),
+                             transport: MockTransport { request in
+                                 try response(for: request,
+                                              statusCode: 200,
+                                              data: encodeJSON(PhoneOTPRequestResponse(message: "ambiguous")))
+                             })
+
+        do {
+            _ = try await client.auth.requestPhoneOTP(PhoneOTPRequest(phoneNumber: "+15555550123"))
+            Issue.record("Expected BetterAuthError.invalidResponse")
+        } catch let error as BetterAuthError {
+            #expect(error.localizedDescription == BetterAuthError.invalidResponse.localizedDescription)
+        }
+    }
+
+
+    @Test
+    func requestClientAppliesConfiguredTimeoutToAuthenticatedRequests() async throws {
+        let requests = Locked<[URLRequest]>([])
+        let transport = MockTransport { request in
+            requests.withLock { $0.append(request) }
+            return emptyResponse(for: request)
+        }
+        let configuration = BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                    networking: .init(timeoutInterval: 7))
+        let client = BetterAuthClient(configuration: configuration,
+                                      sessionStore: InMemorySessionStore(),
+                                      transport: transport)
+        try await client.auth.updateSession(BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "current-token", expiresAt: Date().addingTimeInterval(3600)),
+                                                              user: .init(id: "user-1", email: "test@example.com")))
+
+        _ = try await client.requests.send(path: "/protected", retryOnUnauthorized: false)
+        let captured = try #require(requests.withLock { $0.first })
+        #expect(captured.timeoutInterval == 7)
+        #expect(captured.value(forHTTPHeaderField: "Authorization") == "Bearer current-token")
+    }
+
 }

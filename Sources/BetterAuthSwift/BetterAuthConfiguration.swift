@@ -26,7 +26,8 @@ public struct BetterAuthConfiguration: Sendable {
                                 autoRefreshToken: autoRefreshToken ?? auth.autoRefreshToken)
         self.auth = resolvedAuth
         self.networking = Networking(retryPolicy: retryPolicy ?? networking.retryPolicy,
-                                     requestOrigin: requestOrigin ?? networking.requestOrigin)
+                                     requestOrigin: requestOrigin ?? networking.requestOrigin,
+                                     timeoutInterval: networking.timeoutInterval)
         self.logger = logger
     }
 }
@@ -48,6 +49,10 @@ public extension BetterAuthConfiguration {
         networking.requestOrigin
     }
 
+    var timeoutInterval: TimeInterval {
+        networking.timeoutInterval
+    }
+
     struct Auth: Sendable {
         public let clockSkew: TimeInterval
         public let autoRefreshToken: Bool
@@ -63,12 +68,15 @@ public extension BetterAuthConfiguration {
     struct Networking: Sendable {
         public let retryPolicy: RetryPolicy
         public let requestOrigin: String?
+        public let timeoutInterval: TimeInterval
 
         public init(retryPolicy: RetryPolicy = .default,
-                    requestOrigin: String? = nil)
+                    requestOrigin: String? = nil,
+                    timeoutInterval: TimeInterval = 15)
         {
             self.retryPolicy = retryPolicy
             self.requestOrigin = requestOrigin
+            self.timeoutInterval = timeoutInterval
         }
     }
 

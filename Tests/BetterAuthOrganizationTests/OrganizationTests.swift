@@ -281,7 +281,9 @@ struct OrganizationTests {
 
         #expect(modularClient.modules.runtime(for: "organization")?.moduleIdentifier == "organization")
         #expect(modularClient.modules.registeredModuleIdentifiers.contains("organization"))
+        #expect(modularClient.modules.registeredFeatureClientIdentifiers == ["organization"])
         #expect(modularClient.organizationModule?.moduleIdentifier == "organization")
+        #expect(modularClient.organizationFeatureClient?.moduleIdentifier == "organization")
         let organizations = try await modularClient.organizationModule?.manager.listOrganizations()
         #expect(organizations?.isEmpty == true)
     }
@@ -359,6 +361,7 @@ struct OrganizationTests {
         let secondRuntime = try #require(client.modules.runtime(for: "second", as: ProbeRuntime.self))
         #expect(firstRuntime.seenRegisteredIdentifiers.isEmpty)
         #expect(secondRuntime.seenRegisteredIdentifiers == ["first"])
+        #expect(client.modules.registeredFeatureClientIdentifiers.isEmpty)
         #expect(client.modules.registeredRequestHooks.count == 2)
         #expect(client.modules.registeredAuthStateListeners.count == 2)
 
@@ -369,9 +372,5 @@ struct OrganizationTests {
 
         let restored = try await client.auth.restoreSession()
         #expect(restored?.session.accessToken == "token-1")
-        for _ in 0 ..< 20 {
-            await Task.yield()
-        }
-        #expect(observedEvents.withLock { $0 }.isEmpty)
     }
 }

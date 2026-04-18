@@ -24,7 +24,7 @@ public struct AuthStateChange: Sendable, Equatable {
     }
 }
 
-public typealias AuthStateChangeListener = @Sendable (AuthStateChange) -> Void
+public typealias AuthStateChangeListener = @Sendable (AuthStateChange) async -> Void
 
 public protocol AuthStateChangeRegistration: Sendable {
     func remove()
@@ -95,7 +95,9 @@ public final class AuthEventEmitter: @unchecked Sendable {
         lock.unlock()
 
         for listener in currentListeners {
-            listener(stateChange)
+            Task {
+                await listener(stateChange)
+            }
         }
         for continuation in currentContinuations {
             continuation.yield(stateChange)
