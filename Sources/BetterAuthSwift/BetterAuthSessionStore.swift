@@ -1,5 +1,6 @@
 import Foundation
 import Security
+import Synchronization
 
 public protocol BetterAuthSessionStore: Sendable {
     func loadSession(for key: String) throws -> BetterAuthSession?
@@ -22,32 +23,22 @@ public enum BetterAuthSessionStoreError: LocalizedError, Sendable {
     }
 }
 
-/// Thread-safe in-memory session store backed by a lock.
-///
-/// Safety invariant for `@unchecked Sendable`: all access to `storage` is guarded
-/// by `lock`.
-public final class InMemorySessionStore: BetterAuthSessionStore, @unchecked Sendable {
-    private let lock = NSLock()
-    private var storage: [String: BetterAuthSession] = [:]
+/// Thread-safe in-memory session store backed by `Mutex`.
+public final class InMemorySessionStore: BetterAuthSessionStore, Sendable {
+    private let storage = Mutex<[String: BetterAuthSession]>([:])
 
     public init() {}
 
     public func loadSession(for key: String) throws -> BetterAuthSession? {
-        lock.lock()
-        defer { lock.unlock() }
-        return storage[key]
+        storage.withLock { $0[key] }
     }
 
     public func saveSession(_ session: BetterAuthSession, for key: String) throws {
-        lock.lock()
-        defer { lock.unlock() }
-        storage[key] = session
+        storage.withLock { $0[key] = session }
     }
 
     public func clearSession(for key: String) throws {
-        lock.lock()
-        defer { lock.unlock() }
-        storage.removeValue(forKey: key)
+        _ = storage.withLock { $0.removeValue(forKey: key) }
     }
 }
 

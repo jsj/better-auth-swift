@@ -377,3 +377,324 @@ struct BetterAuthOneTimeCodeService: Sendable {
         return session
     }
 }
+
+struct BetterAuthTwoFactorService: Sendable {
+    let context: BetterAuthSessionContext
+    let relay: BetterAuthSessionEventRelay
+    let materializer: BetterAuthSessionMaterializer
+
+    func enableTwoFactor(_ payload: TwoFactorEnableRequest,
+                         accessToken: String?) async throws -> TwoFactorEnableResponse
+    {
+        try await context.network.post(path: context.configuration.endpoints.twoFactorEnablePath,
+                                       body: payload,
+                                       accessToken: accessToken)
+    }
+
+    func verifyTwoFactorTOTP(_ payload: TwoFactorVerifyTOTPRequest) async throws -> BetterAuthSession {
+        let response: TwoFactorSessionResponse = try await context.network
+            .post(path: context.configuration.endpoints.twoFactorVerifyTOTPPath,
+                  body: payload,
+                  accessToken: nil)
+        let session = try await materializer.materializeSession(token: response.token, fallbackUser: response.user)
+        try relay.setSession(session, event: .signedIn)
+        return session
+    }
+
+    func sendTwoFactorOTP(_ payload: TwoFactorSendOTPRequest = .init()) async throws -> Bool {
+        let response: TwoFactorChallengeStatusResponse = try await context.network
+            .post(path: context.configuration.endpoints.twoFactorSendOTPPath,
+                  body: payload,
+                  accessToken: nil)
+        return response.status
+    }
+
+    func verifyTwoFactorOTP(_ payload: TwoFactorVerifyOTPRequest) async throws -> BetterAuthSession {
+        let response: TwoFactorSessionResponse = try await context.network
+            .post(path: context.configuration.endpoints.twoFactorVerifyOTPPath,
+                  body: payload,
+                  accessToken: nil)
+        let session = try await materializer.materializeSession(token: response.token, fallbackUser: response.user)
+        try relay.setSession(session, event: .signedIn)
+        return session
+    }
+
+    func verifyTwoFactorRecoveryCode(_ payload: TwoFactorVerifyBackupCodeRequest) async throws -> BetterAuthSession {
+        let response: TwoFactorSessionResponse = try await context.network
+            .post(path: context.configuration.endpoints.twoFactorVerifyBackupCodePath,
+                  body: payload,
+                  accessToken: nil)
+        let session = try await materializer.materializeSession(token: response.token, fallbackUser: response.user)
+        try relay.setSession(session, event: .signedIn)
+        return session
+    }
+
+    func disableTwoFactor(_ payload: TwoFactorDisableRequest,
+                          accessToken: String?) async throws -> Bool
+    {
+        let response: BetterAuthStatusResponse = try await context.network
+            .post(path: context.configuration.endpoints.twoFactorDisablePath,
+                  body: payload,
+                  accessToken: accessToken)
+        return response.status
+    }
+
+    func generateTwoFactorRecoveryCodes(password: String,
+                                        accessToken: String?) async throws -> [String]
+    {
+        struct Request: Encodable, Sendable { let password: String }
+        let response: TwoFactorGenerateBackupCodesResponse = try await context.network
+            .post(path: context.configuration.endpoints.twoFactorGenerateBackupCodesPath,
+                  body: Request(password: password),
+                  accessToken: accessToken)
+        return response.backupCodes
+    }
+}
+
+struct BetterAuthPrimaryAuthService: Sendable {
+    let context: BetterAuthSessionContext
+    let relay: BetterAuthSessionEventRelay
+    let materializer: BetterAuthSessionMaterializer
+
+    func signUpWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult {
+        let result: EmailSignUpResult = try await context.network
+            .post(path: context.configuration.endpoints.emailSignUpPath,
+                  body: payload,
+                  accessToken: nil)
+        if case let .signedIn(session) = result {
+            try relay.setSession(session, event: .signedIn)
+        }
+        return result
+    }
+
+    func signInWithEmail(_ payload: EmailSignInRequest) async throws -> BetterAuthSession {
+        let session: BetterAuthSession = try await context.network
+            .post(path: context.configuration.endpoints.emailSignInPath,
+                  body: payload,
+                  accessToken: nil)
+        try relay.setSession(session, event: .signedIn)
+        return session
+    }
+
+    func isUsernameAvailable(_ payload: UsernameAvailabilityRequest) async throws -> Bool {
+        let response: UsernameAvailabilityResponse = try await context.network
+            .post(path: context.configuration.endpoints.usernameAvailabilityPath,
+                  body: payload,
+                  accessToken: nil)
+        return response.available
+    }
+
+    func signInWithUsername(_ payload: UsernameSignInRequest) async throws -> BetterAuthSession {
+        let session: BetterAuthSession = try await context.network
+            .post(path: context.configuration.endpoints.usernameSignInPath,
+                  body: payload,
+                  accessToken: nil)
+        try relay.setSession(session, event: .signedIn)
+        return session
+    }
+
+    func signInWithApple(_ payload: AppleNativeSignInPayload) async throws -> BetterAuthSession {
+        let session: BetterAuthSession = try await context.network
+            .post(path: context.configuration.endpoints.nativeAppleSignInPath,
+                  body: payload,
+                  accessToken: nil)
+        try relay.setSession(session, event: .signedIn)
+        return session
+    }
+
+    func signInWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult {
+        let response: SocialSignInTransportResponse = try await context.network
+            .post(path: context.configuration.endpoints.socialSignInPath,
+                  body: payload,
+                  accessToken: nil)
+
+        if let session = response.materializedSession {
+            try relay.setSession(session, event: .signedIn)
+            let signedIn = SocialSignInSuccessResponse(redirect: response.redirect,
+                                                       token: session.session.accessToken,
+                                                       url: response.url,
+                                                       user: session.user)
+            return .signedIn(signedIn)
+        }
+
+        if let signedIn = response.signedIn {
+            let session = try await materializer.materializeSession(token: signedIn.token, fallbackUser: signedIn.user)
+            try relay.setSession(session, event: .signedIn)
+            return .signedIn(signedIn)
+        }
+
+        switch response.authorizationURL {
+        case let .success(authorizationURL):
+            return .authorizationURL(authorizationURL)
+
+        case let .failure(error):
+            throw error
+        }
+    }
+
+    func signInAnonymously() async throws -> BetterAuthSession {
+        let response: SignedInTokenResponse = try await context.network
+            .post(path: context.configuration.endpoints.anonymousSignInPath,
+                  accessToken: nil)
+        let session = try await materializer.materializeSession(token: response.token, fallbackUser: response.user)
+        try relay.setSession(session, event: .signedIn)
+        return session
+    }
+
+    func deleteAnonymousUser(accessToken: String?) async throws -> Bool {
+        let response: BetterAuthStatusResponse = try await context.network
+            .post(path: context.configuration.endpoints.deleteAnonymousUserPath,
+                  accessToken: accessToken)
+        try relay.clearSession(event: .signedOut)
+        return response.status
+    }
+
+    func deleteUser(_ payload: DeleteUserRequest, accessToken: String?) async throws -> Bool {
+        let response: BetterAuthStatusResponse = try await context.network
+            .post(path: context.configuration.endpoints.deleteUserPath,
+                  body: payload,
+                  accessToken: accessToken)
+        try relay.clearSession(event: .signedOut)
+        return response.status
+    }
+
+    func reauthenticate(password: String, currentSession: BetterAuthSession?) async throws -> Bool {
+        guard let currentSession else { throw BetterAuthError.missingSession }
+        guard let email = currentSession.user.email else { throw BetterAuthError.missingSession }
+        let verificationSession: BetterAuthSession = try await context.network
+            .post(path: context.configuration.endpoints.emailSignInPath,
+                  body: EmailSignInRequest(email: email, password: password),
+                  accessToken: nil)
+        guard verificationSession.user.id == currentSession.user.id else {
+            throw BetterAuthError.invalidResponse
+        }
+        do {
+            let _: BetterAuthStatusResponse = try await context.network
+                .post(path: context.configuration.endpoints.revokeSessionPath,
+                      body: RevokeSessionRequest(token: verificationSession.session.id),
+                      accessToken: verificationSession.session.accessToken)
+        } catch {
+        }
+        return true
+    }
+
+    func requestPasswordReset(_ payload: ForgotPasswordRequest) async throws -> Bool {
+        let response: BetterAuthStatusResponse = try await context.network
+            .post(path: context.configuration.endpoints.forgotPasswordPath,
+                  body: payload,
+                  accessToken: nil)
+        return response.status
+    }
+
+    func resetPassword(_ payload: ResetPasswordRequest) async throws -> Bool {
+        let response: BetterAuthStatusResponse = try await context.network
+            .post(path: context.configuration.endpoints.resetPasswordPath,
+                  body: payload,
+                  accessToken: nil)
+        return response.status
+    }
+}
+
+struct BetterAuthProfileService: Sendable {
+    let context: BetterAuthSessionContext
+    let relay: BetterAuthSessionEventRelay
+    let materializer: BetterAuthSessionMaterializer
+
+    func sendVerificationEmail(_ payload: SendVerificationEmailRequest = .init(),
+                               accessToken: String?) async throws -> Bool
+    {
+        let response: BetterAuthStatusResponse = try await context.network
+            .post(path: context.configuration.endpoints.sendVerificationEmailPath,
+                  body: payload,
+                  accessToken: accessToken)
+        return response.status
+    }
+
+    func verifyEmail(_ payload: VerifyEmailRequest) async throws -> VerifyEmailResult {
+        let result: VerifyEmailResult = try await context.network
+            .get(path: context.configuration.endpoints.verifyEmailPath,
+                 queryItems: [URLQueryItem(name: "token", value: payload.token)],
+                 accessToken: nil)
+        if case let .signedIn(session) = result {
+            try relay.setSession(session, event: .signedIn)
+        }
+        return result
+    }
+
+    func changeEmail(_ payload: ChangeEmailRequest, accessToken: String?) async throws -> Bool {
+        let response: BetterAuthStatusResponse = try await context.network
+            .post(path: context.configuration.endpoints.changeEmailPath,
+                  body: payload,
+                  accessToken: accessToken)
+        return response.status
+    }
+
+    func updateUser(_ payload: UpdateUserRequest, currentSession: BetterAuthSession?) async throws -> UpdateUserResponse {
+        let response = try await context.userAccountService.updateUser(payload,
+                                                                       accessToken: currentSession?.session.accessToken)
+        if let user = response.user, let currentSession {
+            try relay.setSession(BetterAuthSession(session: currentSession.session,
+                                                   user: currentSession.user.merged(with: user)),
+                                 event: .userUpdated)
+        }
+        return response
+    }
+
+    func changePassword(_ payload: ChangePasswordRequest,
+                        currentSession: BetterAuthSession?) async throws -> ChangePasswordResponse
+    {
+        let response = try await context.userAccountService.changePassword(payload,
+                                                                           accessToken: currentSession?.session.accessToken)
+        if payload.revokeOtherSessions == true, let session = response.session {
+            try relay.setSession(session, event: .tokenRefreshed)
+        } else if payload.revokeOtherSessions == true, let rotatedToken = response.token {
+            let materializedSession: BetterAuthSession = try await context.network
+                .get(path: context.configuration.endpoints.currentSessionPath,
+                     accessToken: rotatedToken)
+            try relay.setSession(materializedSession, event: .tokenRefreshed)
+        } else if let currentSession {
+            try relay.setSession(BetterAuthSession(session: currentSession.session,
+                                                   user: currentSession.user.merged(with: response.user)),
+                                 event: .userUpdated)
+        }
+        return response
+    }
+
+    func listLinkedAccounts(accessToken: String?) async throws -> [LinkedAccount] {
+        try await context.network.get(path: context.configuration.endpoints.listLinkedAccountsPath,
+                                      accessToken: accessToken)
+    }
+
+    func linkSocialAccount(_ payload: LinkSocialAccountRequest,
+                           accessToken: String?) async throws -> LinkSocialAccountResponse
+    {
+        try await context.network.post(path: context.configuration.endpoints.linkSocialAccountPath,
+                                       body: payload,
+                                       accessToken: accessToken)
+    }
+}
+
+struct BetterAuthOAuthService: Sendable {
+    let context: BetterAuthSessionContext
+    let relay: BetterAuthSessionEventRelay
+
+    func beginGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws -> GenericOAuthAuthorizationResponse {
+        try await context.authFlowService.beginGenericOAuth(payload)
+    }
+
+    func linkGenericOAuth(_ payload: GenericOAuthSignInRequest,
+                          accessToken: String?) async throws -> GenericOAuthAuthorizationResponse
+    {
+        try await context.authFlowService.linkGenericOAuth(payload, accessToken: accessToken)
+    }
+
+    func completeGenericOAuth(_ payload: GenericOAuthCallbackRequest,
+                              accessToken: String?) async throws -> BetterAuthSession
+    {
+        let session: BetterAuthSession = try await context.network
+            .get(path: context.callbackHandler.oauthCallbackPath(for: payload),
+                 accessToken: accessToken)
+        try relay.setSession(session, event: .signedIn)
+        return session
+    }
+}

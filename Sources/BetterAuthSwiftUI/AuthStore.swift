@@ -55,14 +55,14 @@ public final class AuthStore {
 
     public func refresh() async {
         await perform {
-            session = try await auth.refreshSession()
+            _ = try await auth.refreshSession()
             statusMessage = "Session refreshed"
         }
     }
 
     public func fetchCurrentSession() async {
         await perform {
-            session = try await auth.fetchCurrentSession()
+            _ = try await auth.fetchCurrentSession()
             statusMessage = "Session fetched"
         }
     }
@@ -70,8 +70,6 @@ public final class AuthStore {
     public func signOut(remotely: Bool = true) async {
         await perform {
             try await auth.signOut(remotely: remotely)
-            session = nil
-            launchState = .unauthenticated
             statusMessage = "Signed out"
         }
     }
@@ -82,7 +80,6 @@ public final class AuthStore {
     public func signUpWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult {
         try await performThrowing {
             let result = try await auth.signUpWithEmail(payload)
-            if case let .signedIn(s) = result { session = s }
             statusMessage = "Signed up"
             return result
         }
@@ -90,7 +87,7 @@ public final class AuthStore {
 
     public func signInWithEmail(_ payload: EmailSignInRequest) async {
         await perform {
-            session = try await auth.signInWithEmail(payload)
+            _ = try await auth.signInWithEmail(payload)
             statusMessage = "Signed in"
         }
     }
@@ -129,7 +126,7 @@ public final class AuthStore {
 
     public func signInWithUsername(_ payload: UsernameSignInRequest) async {
         await perform {
-            session = try await auth.signInWithUsername(payload)
+            _ = try await auth.signInWithUsername(payload)
             statusMessage = "Signed in"
         }
     }
@@ -138,7 +135,7 @@ public final class AuthStore {
 
     public func signInWithApple(_ payload: AppleNativeSignInPayload) async {
         await perform {
-            session = try await auth.signInWithApple(payload)
+            _ = try await auth.signInWithApple(payload)
             statusMessage = "Signed in with Apple"
         }
     }
@@ -149,9 +146,6 @@ public final class AuthStore {
     public func signInWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult {
         try await performThrowing {
             let result = try await auth.signInWithSocial(payload)
-            if case .signedIn = result {
-                session = await auth.currentSession()
-            }
             statusMessage = "Social sign-in initiated"
             return result
         }
@@ -182,7 +176,6 @@ public final class AuthStore {
     public func completeGenericOAuth(_ payload: GenericOAuthCallbackRequest) async {
         await perform {
             session = try await auth.completeGenericOAuth(payload)
-            launchState = session.map(AuthLaunchState.authenticated) ?? .unauthenticated
             statusMessage = "OAuth completed"
         }
     }
@@ -192,21 +185,18 @@ public final class AuthStore {
             let result = try await auth.handleIncomingURL(url)
             switch result {
             case let .genericOAuth(restoredSession):
-                session = restoredSession
-                launchState = .authenticated(restoredSession)
+                applyAuthenticatedSession(restoredSession)
                 statusMessage = "OAuth completed"
 
             case let .magicLink(verificationResult):
                 if case let .signedIn(restoredSession) = verificationResult {
-                    session = restoredSession
-                    launchState = .authenticated(restoredSession)
+                    applyAuthenticatedSession(restoredSession)
                 }
                 statusMessage = "Magic link handled"
 
             case let .verifyEmail(verificationResult):
                 if case let .signedIn(restoredSession) = verificationResult {
-                    session = restoredSession
-                    launchState = .authenticated(restoredSession)
+                    applyAuthenticatedSession(restoredSession)
                 }
                 statusMessage = "Verification handled"
 
@@ -223,7 +213,7 @@ public final class AuthStore {
 
     public func signInAnonymously() async {
         await perform {
-            session = try await auth.signInAnonymously()
+            _ = try await auth.signInAnonymously()
             statusMessage = "Signed in anonymously"
         }
     }
@@ -231,7 +221,6 @@ public final class AuthStore {
     public func deleteAnonymousUser() async {
         await perform {
             _ = try await auth.deleteAnonymousUser()
-            session = nil
             statusMessage = "Anonymous user deleted"
         }
     }
@@ -241,8 +230,6 @@ public final class AuthStore {
     public func deleteUser(_ payload: DeleteUserRequest = .init()) async {
         await perform {
             _ = try await auth.deleteUser(payload)
-            session = nil
-            launchState = .unauthenticated
             statusMessage = "Account deleted"
         }
     }
@@ -253,7 +240,6 @@ public final class AuthStore {
     public func upgradeAnonymousWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult {
         try await performThrowing {
             let result = try await auth.upgradeAnonymousWithEmail(payload)
-            if case let .signedIn(s) = result { session = s }
             statusMessage = "Account upgraded"
             return result
         }
@@ -261,7 +247,7 @@ public final class AuthStore {
 
     public func upgradeAnonymousWithApple(_ payload: AppleNativeSignInPayload) async {
         await perform {
-            session = try await auth.upgradeAnonymousWithApple(payload)
+            _ = try await auth.upgradeAnonymousWithApple(payload)
             statusMessage = "Account upgraded with Apple"
         }
     }
@@ -270,7 +256,6 @@ public final class AuthStore {
     public func upgradeAnonymousWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult {
         try await performThrowing {
             let result = try await auth.upgradeAnonymousWithSocial(payload)
-            if case .signedIn = result { session = await auth.currentSession() }
             statusMessage = "Account upgraded"
             return result
         }
@@ -299,9 +284,8 @@ public final class AuthStore {
     public func verifyMagicLink(_ payload: MagicLinkVerifyRequest) async {
         await perform {
             let result = try await auth.verifyMagicLink(payload)
-            if case let .signedIn(s) = result {
-                session = s
-                launchState = .authenticated(s)
+            if case let .signedIn(session) = result {
+                applyAuthenticatedSession(session)
             }
             statusMessage = "Magic link verified"
         }
@@ -318,7 +302,7 @@ public final class AuthStore {
 
     public func signInWithEmailOTP(_ payload: EmailOTPSignInRequest) async {
         await perform {
-            session = try await auth.signInWithEmailOTP(payload)
+            _ = try await auth.signInWithEmailOTP(payload)
             statusMessage = "Signed in with email OTP"
         }
     }
@@ -326,9 +310,8 @@ public final class AuthStore {
     public func verifyEmailOTP(_ payload: EmailOTPVerifyRequest) async {
         await perform {
             let result = try await auth.verifyEmailOTP(payload)
-            if case let .signedIn(s) = result {
-                session = s
-                launchState = .authenticated(s)
+            if case let .signedIn(session) = result {
+                applyAuthenticatedSession(session)
             }
             statusMessage = "Email OTP verified"
         }
@@ -352,7 +335,7 @@ public final class AuthStore {
 
     public func signInWithPhoneOTP(_ payload: PhoneOTPSignInRequest) async {
         await perform {
-            session = try await auth.signInWithPhoneOTP(payload)
+            _ = try await auth.signInWithPhoneOTP(payload)
             statusMessage = "Signed in with phone OTP"
         }
     }
@@ -377,21 +360,21 @@ public final class AuthStore {
 
     public func verifyTwoFactorTOTP(_ payload: TwoFactorVerifyTOTPRequest) async {
         await perform {
-            session = try await auth.verifyTwoFactorTOTP(payload)
+            _ = try await auth.verifyTwoFactorTOTP(payload)
             statusMessage = "Two-factor TOTP verified"
         }
     }
 
     public func verifyTwoFactorOTP(_ payload: TwoFactorVerifyOTPRequest) async {
         await perform {
-            session = try await auth.verifyTwoFactorOTP(payload)
+            _ = try await auth.verifyTwoFactorOTP(payload)
             statusMessage = "Two-factor OTP verified"
         }
     }
 
     public func verifyTwoFactorRecoveryCode(_ payload: TwoFactorVerifyBackupCodeRequest) async {
         await perform {
-            session = try await auth.verifyTwoFactorRecoveryCode(payload)
+            _ = try await auth.verifyTwoFactorRecoveryCode(payload)
             statusMessage = "Recovery code accepted"
         }
     }
@@ -443,7 +426,7 @@ public final class AuthStore {
 
     public func authenticateWithPasskey(_ payload: PasskeyAuthenticationRequest) async {
         await perform {
-            session = try await auth.authenticateWithPasskey(payload)
+            _ = try await auth.authenticateWithPasskey(payload)
             statusMessage = "Signed in with passkey"
         }
     }
@@ -482,8 +465,7 @@ public final class AuthStore {
 
     public func verifyEmail(_ payload: VerifyEmailRequest) async {
         await perform {
-            let result = try await auth.verifyEmail(payload)
-            if case let .signedIn(s) = result { session = s }
+            _ = try await auth.verifyEmail(payload)
             statusMessage = "Email verified"
         }
     }
@@ -501,8 +483,7 @@ public final class AuthStore {
         await perform {
             let response = try await auth.updateUser(payload)
             if let current = session, let updatedUser = response.user {
-                session = BetterAuthSession(session: current.session,
-                                            user: updatedUser)
+                session = BetterAuthSession(session: current.session, user: updatedUser)
             }
             statusMessage = "Profile updated"
         }
@@ -550,7 +531,7 @@ public final class AuthStore {
 
     public func setActiveDeviceSession(_ payload: BetterAuthSetActiveDeviceSessionRequest) async {
         await perform {
-            session = try await auth.setActiveDeviceSession(payload)
+            _ = try await auth.setActiveDeviceSession(payload)
             statusMessage = "Active session switched"
         }
     }
@@ -572,7 +553,6 @@ public final class AuthStore {
     public func revokeSessions() async {
         await perform {
             _ = try await auth.revokeSessions()
-            session = nil
             statusMessage = "All sessions revoked"
         }
     }
@@ -698,6 +678,11 @@ public final class AuthStore {
                 launchState = .unauthenticated
             }
         }
+    }
+
+    private func applyAuthenticatedSession(_ session: BetterAuthSession) {
+        self.session = session
+        launchState = .authenticated(session)
     }
 
     private func perform(_ operation: () async throws -> Void) async {
