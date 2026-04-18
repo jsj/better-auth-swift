@@ -1,6 +1,6 @@
 import Foundation
 
-struct BetterAuthSessionContext: Sendable {
+struct BetterAuthSessionContext {
     let configuration: BetterAuthConfiguration
     let state: BetterAuthSessionState
     let sessionService: BetterAuthSessionService
@@ -12,7 +12,7 @@ struct BetterAuthSessionContext: Sendable {
     let logger: BetterAuthLogger?
 }
 
-struct BetterAuthSessionEventRelay: Sendable {
+struct BetterAuthSessionEventRelay {
     let context: BetterAuthSessionContext
     let refreshSession: @Sendable () async throws -> BetterAuthSession
 
@@ -63,7 +63,9 @@ struct BetterAuthSessionEventRelay: Sendable {
     }
 
     func validSession() async throws -> BetterAuthSession {
-        if let current = context.state.currentSession, current.needsRefresh(clockSkew: context.configuration.auth.clockSkew) {
+        if let current = context.state.currentSession,
+           current.needsRefresh(clockSkew: context.configuration.auth.clockSkew)
+        {
             return try await refreshSession()
         }
         if let current = context.state.currentSession { return current }

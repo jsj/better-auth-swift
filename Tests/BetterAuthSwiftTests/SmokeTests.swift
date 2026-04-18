@@ -23,11 +23,9 @@ struct SmokeTests {
                                                  user: .init(id: "user-1",
                                                              email: "user@example.com",
                                                              name: "Smoke User"))
-        let transport = SequencedMockTransport([
-            .response(statusCode: 200, encodable: initialSession),
-            .response(statusCode: 200, encodable: refreshedSession),
-            .response(statusCode: 200, encodable: SignOutResult(success: true))
-        ])
+        let transport = SequencedMockTransport([.response(statusCode: 200, encodable: initialSession),
+                                                .response(statusCode: 200, encodable: refreshedSession),
+                                                .response(statusCode: 200, encodable: SignOutResult(success: true))])
         let store = InMemorySessionStore()
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),

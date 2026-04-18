@@ -24,8 +24,8 @@ jobs:
       - name: Generate Xcode project
         run: ./Scripts/generate_xcodeproj.sh
 
-      - name: Run SPM tests (all targets)
-        run: ./Scripts/swift_test_wrapper.sh
+      - name: Run package validation
+        run: ./Scripts/validate.sh
 
       - name: Run Xcode tests
         run: |

@@ -1,7 +1,7 @@
 import BetterAuth
 import Foundation
 
-public struct BetterAuthOrganizationModuleRuntime: BetterAuthModuleRuntime {
+public struct BetterAuthOrganizationModuleRuntime: BetterAuthModuleRuntime, BetterAuthFeatureClient {
     public let moduleIdentifier = "organization"
     public let manager: OrganizationManager
 
@@ -31,5 +31,9 @@ public struct BetterAuthOrganizationModule: BetterAuthModule {
 public extension BetterAuthModuleSupporting {
     var organizationModule: BetterAuthOrganizationModuleRuntime? {
         moduleRuntime(for: "organization", as: BetterAuthOrganizationModuleRuntime.self)
+    }
+
+    var organizationFeatureClient: BetterAuthOrganizationModuleRuntime? {
+        featureClient(for: "organization", as: BetterAuthOrganizationModuleRuntime.self)
     }
 }

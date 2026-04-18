@@ -16,7 +16,7 @@ struct ModuleSystemTests {
     }
 
     @Test
-    func moduleRegistryExposesTypedFeatureClients() async throws {
+    func moduleRegistryExposesTypedFeatureClients() throws {
         struct ProbeFeatureClient: BetterAuthFeatureClient {
             let moduleIdentifier: String
         }
@@ -58,9 +58,8 @@ struct ModuleSystemTests {
         #expect(client.modules.registeredFeatureClientIdentifiers == ["feature"])
     }
 
-
     @Test
-    func clientAuthLifecycleUsesSessionManagerDirectly() async throws {
+    func clientAuthLifecycleUsesSessionManagerDirectly() throws {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
@@ -71,5 +70,4 @@ struct ModuleSystemTests {
         let lifecycle = client.authLifecycle
         #expect(type(of: lifecycle) == BetterAuthSessionManager.self)
     }
-
 }

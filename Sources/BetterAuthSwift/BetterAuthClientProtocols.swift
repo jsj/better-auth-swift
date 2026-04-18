@@ -88,10 +88,15 @@ public protocol BetterAuthClientProtocol: Sendable {
 
 public protocol BetterAuthModuleSupporting: BetterAuthClientProtocol {
     func moduleRuntime<Runtime>(for identifier: String, as type: Runtime.Type) -> Runtime?
+    func featureClient<Client>(for identifier: String, as type: Client.Type) -> Client?
 }
 
 public extension BetterAuthModuleSupporting {
     func moduleRuntime<Runtime>(for identifier: String, as type: Runtime.Type = Runtime.self) -> Runtime? {
         modules.runtime(for: identifier, as: type)
+    }
+
+    func featureClient<Client>(for identifier: String, as type: Client.Type = Client.self) -> Client? {
+        modules.featureClient(for: identifier, as: type)
     }
 }

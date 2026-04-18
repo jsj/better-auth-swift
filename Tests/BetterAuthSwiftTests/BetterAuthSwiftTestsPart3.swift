@@ -1248,7 +1248,6 @@ struct BetterAuthSwiftTestsPart3 {
         }
     }
 
-
     @Test
     func requestClientAppliesConfiguredTimeoutToAuthenticatedRequests() async throws {
         let requests = Locked<[URLRequest]>([])
@@ -1261,13 +1260,15 @@ struct BetterAuthSwiftTestsPart3 {
         let client = BetterAuthClient(configuration: configuration,
                                       sessionStore: InMemorySessionStore(),
                                       transport: transport)
-        try await client.auth.updateSession(BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "current-token", expiresAt: Date().addingTimeInterval(3600)),
-                                                              user: .init(id: "user-1", email: "test@example.com")))
+        try await client.auth
+            .updateSession(BetterAuthSession(session: .init(id: "session-1", userId: "user-1",
+                                                            accessToken: "current-token",
+                                                            expiresAt: Date().addingTimeInterval(3600)),
+                                             user: .init(id: "user-1", email: "test@example.com")))
 
         _ = try await client.requests.send(path: "/protected", retryOnUnauthorized: false)
         let captured = try #require(requests.withLock { $0.first })
         #expect(captured.timeoutInterval == 7)
         #expect(captured.value(forHTTPHeaderField: "Authorization") == "Bearer current-token")
     }
-
 }

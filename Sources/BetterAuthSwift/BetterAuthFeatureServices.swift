@@ -1,11 +1,12 @@
 import Foundation
 
-struct BetterAuthSessionMaterializer: Sendable {
+struct BetterAuthSessionMaterializer {
     let context: BetterAuthSessionContext
 
     func materializeSession(token: String, fallbackUser: TwoFactorUser) async throws -> BetterAuthSession {
-        let session: BetterAuthSession = try await context.network.get(path: context.configuration.endpoints.session.currentSessionPath,
-                                                                       accessToken: token)
+        let session: BetterAuthSession = try await context.network
+            .get(path: context.configuration.endpoints.session.currentSessionPath,
+                 accessToken: token)
         guard session.user.id == fallbackUser.id else {
             context.logger?.error("Materialized session user did not match expected fallback user")
             throw BetterAuthError.invalidResponse
@@ -15,14 +16,16 @@ struct BetterAuthSessionMaterializer: Sendable {
                                              email: session.user.email ?? fallbackUser.email,
                                              name: session.user.name ?? fallbackUser.name,
                                              username: session.user.username ?? fallbackUser.username,
-                                             displayUsername: session.user.displayUsername ?? fallbackUser.displayUsername))
+                                             displayUsername: session.user.displayUsername ?? fallbackUser
+                                                 .displayUsername))
     }
 
     func materializeSession(token: String,
                             fallbackUser: BetterAuthSession.User) async throws -> BetterAuthSession
     {
-        let session: BetterAuthSession = try await context.network.get(path: context.configuration.endpoints.session.currentSessionPath,
-                                                                       accessToken: token)
+        let session: BetterAuthSession = try await context.network
+            .get(path: context.configuration.endpoints.session.currentSessionPath,
+                 accessToken: token)
         guard session.user.id == fallbackUser.id else {
             context.logger?.error("Materialized session user did not match expected fallback user")
             throw BetterAuthError.invalidResponse
@@ -32,7 +35,7 @@ struct BetterAuthSessionMaterializer: Sendable {
     }
 }
 
-struct BetterAuthSessionBootstrapService: Sendable {
+struct BetterAuthSessionBootstrapService {
     let context: BetterAuthSessionContext
     let relay: BetterAuthSessionEventRelay
 
@@ -45,7 +48,8 @@ struct BetterAuthSessionBootstrapService: Sendable {
         context.logger?.debug("Session restored: \(session != nil ? "found" : "none")")
         context.state.emit(.initialSession,
                            session: session,
-                           transition: BetterAuthSessionTransition(phase: session == nil ? .unauthenticated : .authenticated))
+                           transition: BetterAuthSessionTransition(phase: session == nil ? .unauthenticated :
+                               .authenticated))
     }
 
     func restoreSession() throws -> BetterAuthSession? {
@@ -54,7 +58,9 @@ struct BetterAuthSessionBootstrapService: Sendable {
         return session
     }
 
-    func restoreSessionOnLaunch(refreshSession: @Sendable () async throws -> BetterAuthSession) async throws -> BetterAuthRestoreResult {
+    func restoreSessionOnLaunch(refreshSession: @Sendable () async throws -> BetterAuthSession) async throws
+        -> BetterAuthRestoreResult
+    {
         let source: BetterAuthRestoreSource
         if context.state.currentSession != nil {
             source = .memory
@@ -85,7 +91,8 @@ struct BetterAuthSessionBootstrapService: Sendable {
     }
 
     func restoreOrRefreshSession(restoreSession: @Sendable () throws -> BetterAuthSession?,
-                                 refreshSession: @Sendable () async throws -> BetterAuthSession) async throws -> BetterAuthSession?
+                                 refreshSession: @Sendable () async throws -> BetterAuthSession) async throws
+        -> BetterAuthSession?
     {
         if context.state.currentSession == nil {
             do { _ = try restoreSession() } catch {
@@ -116,7 +123,7 @@ struct BetterAuthSessionBootstrapService: Sendable {
     }
 }
 
-struct BetterAuthSessionAdministrationService: Sendable {
+struct BetterAuthSessionAdministrationService {
     let context: BetterAuthSessionContext
     let relay: BetterAuthSessionEventRelay
 
@@ -200,7 +207,7 @@ struct BetterAuthSessionAdministrationService: Sendable {
     }
 }
 
-struct BetterAuthPasskeyService: Sendable {
+struct BetterAuthPasskeyService {
     let context: BetterAuthSessionContext
     let relay: BetterAuthSessionEventRelay
     let materializer: BetterAuthSessionMaterializer
@@ -265,7 +272,7 @@ struct BetterAuthPasskeyService: Sendable {
     }
 }
 
-struct BetterAuthOneTimeCodeService: Sendable {
+struct BetterAuthOneTimeCodeService {
     let context: BetterAuthSessionContext
     let relay: BetterAuthSessionEventRelay
     let materializer: BetterAuthSessionMaterializer
@@ -328,8 +335,8 @@ struct BetterAuthOneTimeCodeService: Sendable {
             _ = try relay.setSession(session, event: .signedIn)
         } else if case let .verified(user) = result, let currentSession, currentSession.user.id == user.id {
             _ = try relay.setSession(BetterAuthSession(session: currentSession.session,
-                                                   user: currentSession.user.merged(with: user)),
-                                 event: .userUpdated)
+                                                       user: currentSession.user.merged(with: user)),
+                                     event: .userUpdated)
         }
         return result
     }
@@ -363,8 +370,8 @@ struct BetterAuthOneTimeCodeService: Sendable {
             _ = try relay.setSession(session, event: .signedIn)
         } else if let user = response.user, let currentSession, currentSession.user.id == user.id {
             _ = try relay.setSession(BetterAuthSession(session: currentSession.session,
-                                                   user: currentSession.user.merged(with: user)),
-                                 event: .userUpdated)
+                                                       user: currentSession.user.merged(with: user)),
+                                     event: .userUpdated)
         }
         return response
     }
@@ -380,7 +387,7 @@ struct BetterAuthOneTimeCodeService: Sendable {
     }
 }
 
-struct BetterAuthTwoFactorService: Sendable {
+struct BetterAuthTwoFactorService {
     let context: BetterAuthSessionContext
     let relay: BetterAuthSessionEventRelay
     let materializer: BetterAuthSessionMaterializer
@@ -453,7 +460,7 @@ struct BetterAuthTwoFactorService: Sendable {
     }
 }
 
-struct BetterAuthPrimaryAuthService: Sendable {
+struct BetterAuthPrimaryAuthService {
     let context: BetterAuthSessionContext
     let relay: BetterAuthSessionEventRelay
     let materializer: BetterAuthSessionMaterializer
@@ -598,7 +605,7 @@ struct BetterAuthPrimaryAuthService: Sendable {
     }
 }
 
-struct BetterAuthProfileService: Sendable {
+struct BetterAuthProfileService {
     let context: BetterAuthSessionContext
     let relay: BetterAuthSessionEventRelay
     let materializer: BetterAuthSessionMaterializer
@@ -632,13 +639,15 @@ struct BetterAuthProfileService: Sendable {
         return response.status
     }
 
-    func updateUser(_ payload: UpdateUserRequest, currentSession: BetterAuthSession?) async throws -> UpdateUserResponse {
+    func updateUser(_ payload: UpdateUserRequest,
+                    currentSession: BetterAuthSession?) async throws -> UpdateUserResponse
+    {
         let response = try await context.userAccountService.updateUser(payload,
                                                                        accessToken: currentSession?.session.accessToken)
         if let user = response.user, let currentSession {
             _ = try relay.setSession(BetterAuthSession(session: currentSession.session,
-                                                   user: currentSession.user.merged(with: user)),
-                                 event: .userUpdated)
+                                                       user: currentSession.user.merged(with: user)),
+                                     event: .userUpdated)
         }
         return response
     }
@@ -647,7 +656,8 @@ struct BetterAuthProfileService: Sendable {
                         currentSession: BetterAuthSession?) async throws -> ChangePasswordResponse
     {
         let response = try await context.userAccountService.changePassword(payload,
-                                                                           accessToken: currentSession?.session.accessToken)
+                                                                           accessToken: currentSession?.session
+                                                                               .accessToken)
         if payload.revokeOtherSessions == true, let session = response.session {
             _ = try relay.setSession(session, event: .tokenRefreshed)
         } else if payload.revokeOtherSessions == true, let rotatedToken = response.token {
@@ -657,8 +667,8 @@ struct BetterAuthProfileService: Sendable {
             _ = try relay.setSession(materializedSession, event: .tokenRefreshed)
         } else if let currentSession {
             _ = try relay.setSession(BetterAuthSession(session: currentSession.session,
-                                                   user: currentSession.user.merged(with: response.user)),
-                                 event: .userUpdated)
+                                                       user: currentSession.user.merged(with: response.user)),
+                                     event: .userUpdated)
         }
         return response
     }
@@ -677,7 +687,7 @@ struct BetterAuthProfileService: Sendable {
     }
 }
 
-struct BetterAuthOAuthService: Sendable {
+struct BetterAuthOAuthService {
     let context: BetterAuthSessionContext
     let relay: BetterAuthSessionEventRelay
 

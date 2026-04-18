@@ -4,6 +4,7 @@ private enum AutoRefreshConstants {
     static let refreshLeadTime: TimeInterval = 90
     static let minimumSleepInterval: TimeInterval = 1
 }
+
 /// Actor-isolated session manager that owns the full auth lifecycle.
 ///
 /// Access via ``BetterAuthClient/auth``. Handles sign-in, sign-out,
@@ -140,7 +141,8 @@ public actor BetterAuthSessionManager {
 
     /// Restores the best available session for app launch and reports how it was recovered.
     public func restoreSessionOnLaunch() async throws -> BetterAuthRestoreResult {
-        try await makeSessionBootstrapService().restoreSessionOnLaunch(refreshSession: { try await self.refreshSession() })
+        try await makeSessionBootstrapService()
+            .restoreSessionOnLaunch(refreshSession: { try await self.refreshSession() })
     }
 
     /// Returns the current in-memory session, if any.
@@ -268,7 +270,8 @@ public actor BetterAuthSessionManager {
 
     @discardableResult
     public func completeGenericOAuth(_ payload: GenericOAuthCallbackRequest) async throws -> BetterAuthSession {
-        try await makeOAuthService().completeGenericOAuth(payload, accessToken: state.currentSession?.session.accessToken)
+        try await makeOAuthService().completeGenericOAuth(payload,
+                                                          accessToken: state.currentSession?.session.accessToken)
     }
 
     // MARK: - Password Reset
@@ -287,7 +290,8 @@ public actor BetterAuthSessionManager {
 
     @discardableResult
     public func sendVerificationEmail(_ payload: SendVerificationEmailRequest = .init()) async throws -> Bool {
-        try await makeProfileService().sendVerificationEmail(payload, accessToken: state.currentSession?.session.accessToken)
+        try await makeProfileService().sendVerificationEmail(payload,
+                                                             accessToken: state.currentSession?.session.accessToken)
     }
 
     @discardableResult
@@ -363,18 +367,22 @@ public actor BetterAuthSessionManager {
     // MARK: - Session Management
 
     public func listSessions() async throws -> [BetterAuthSessionListEntry] {
-        try await makeSessionAdministrationService().listSessions(accessToken: state.currentSession?.session.accessToken)
+        try await makeSessionAdministrationService()
+            .listSessions(accessToken: state.currentSession?.session.accessToken)
     }
 
     public func listDeviceSessions() async throws -> [BetterAuthDeviceSession] {
-        try await makeSessionAdministrationService().listDeviceSessions(accessToken: state.currentSession?.session.accessToken)
+        try await makeSessionAdministrationService()
+            .listDeviceSessions(accessToken: state.currentSession?.session.accessToken)
     }
 
     @discardableResult
     public func setActiveDeviceSession(_ payload: BetterAuthSetActiveDeviceSessionRequest) async throws
         -> BetterAuthSession
     {
-        try await makeSessionAdministrationService().setActiveDeviceSession(payload, accessToken: state.currentSession?.session.accessToken)
+        try await makeSessionAdministrationService().setActiveDeviceSession(payload,
+                                                                            accessToken: state.currentSession?.session
+                                                                                .accessToken)
     }
 
     @discardableResult
@@ -388,7 +396,8 @@ public actor BetterAuthSessionManager {
     // MARK: - JWT
 
     public func getSessionJWT() async throws -> BetterAuthJWT {
-        try await makeSessionAdministrationService().getSessionJWT(accessToken: state.currentSession?.session.accessToken)
+        try await makeSessionAdministrationService()
+            .getSessionJWT(accessToken: state.currentSession?.session.accessToken)
     }
 
     public func getJWKS() async throws -> BetterAuthJWKS {
@@ -403,7 +412,8 @@ public actor BetterAuthSessionManager {
 
     @discardableResult
     public func linkSocialAccount(_ payload: LinkSocialAccountRequest) async throws -> LinkSocialAccountResponse {
-        try await makeProfileService().linkSocialAccount(payload, accessToken: state.currentSession?.session.accessToken)
+        try await makeProfileService().linkSocialAccount(payload,
+                                                         accessToken: state.currentSession?.session.accessToken)
     }
 
     // MARK: - Passkeys
@@ -411,11 +421,14 @@ public actor BetterAuthSessionManager {
     public func passkeyRegistrationOptions(_ request: PasskeyRegistrationOptionsRequest = .init()) async throws
         -> PasskeyRegistrationOptions
     {
-        try await makePasskeyService().passkeyRegistrationOptions(request, accessToken: state.currentSession?.session.accessToken)
+        try await makePasskeyService().passkeyRegistrationOptions(request,
+                                                                  accessToken: state.currentSession?.session
+                                                                      .accessToken)
     }
 
     public func passkeyAuthenticateOptions() async throws -> PasskeyAuthenticationOptions {
-        try await makePasskeyService().passkeyAuthenticateOptions(accessToken: state.currentSession?.session.accessToken)
+        try await makePasskeyService()
+            .passkeyAuthenticateOptions(accessToken: state.currentSession?.session.accessToken)
     }
 
     @discardableResult
@@ -481,7 +494,8 @@ public actor BetterAuthSessionManager {
     public func verifyPhoneNumber(_ payload: PhoneOTPVerifyRequest) async throws -> PhoneOTPVerifyResponse {
         try await makeOneTimeCodeService()
             .verifyPhoneNumber(payload,
-                               accessToken: payload.updatePhoneNumber == true ? state.currentSession?.session.accessToken : nil,
+                               accessToken: payload.updatePhoneNumber == true ? state.currentSession?.session
+                                   .accessToken : nil,
                                currentSession: state.currentSession)
     }
 
@@ -493,7 +507,8 @@ public actor BetterAuthSessionManager {
     // MARK: - Two Factor
 
     public func enableTwoFactor(_ payload: TwoFactorEnableRequest) async throws -> TwoFactorEnableResponse {
-        try await makeTwoFactorService().enableTwoFactor(payload, accessToken: state.currentSession?.session.accessToken)
+        try await makeTwoFactorService().enableTwoFactor(payload,
+                                                         accessToken: state.currentSession?.session.accessToken)
     }
 
     @discardableResult
@@ -520,7 +535,8 @@ public actor BetterAuthSessionManager {
 
     @discardableResult
     public func disableTwoFactor(_ payload: TwoFactorDisableRequest) async throws -> Bool {
-        try await makeTwoFactorService().disableTwoFactor(payload, accessToken: state.currentSession?.session.accessToken)
+        try await makeTwoFactorService().disableTwoFactor(payload,
+                                                          accessToken: state.currentSession?.session.accessToken)
     }
 
     public func generateTwoFactorRecoveryCodes(password: String) async throws -> [String] {
@@ -541,7 +557,8 @@ public actor BetterAuthSessionManager {
 
     @discardableResult
     public func revokeSessions() async throws -> Bool {
-        try await makeSessionAdministrationService().revokeSessions(accessToken: state.currentSession?.session.accessToken)
+        try await makeSessionAdministrationService()
+            .revokeSessions(accessToken: state.currentSession?.session.accessToken)
     }
 
     @discardableResult
@@ -577,7 +594,8 @@ public actor BetterAuthSessionManager {
     /// Signs out and clears the local session. Optionally revokes the session on the backend.
     public func signOut(remotely: Bool = true) async throws {
         stopAutoRefresh()
-        try await makeSessionAdministrationService().signOut(remotely: remotely, accessToken: state.currentSession?.session.accessToken)
+        try await makeSessionAdministrationService().signOut(remotely: remotely,
+                                                             accessToken: state.currentSession?.session.accessToken)
     }
 
     // MARK: - Auto-Refresh

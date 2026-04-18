@@ -11,6 +11,8 @@ public protocol BetterAuthModuleRuntime: Sendable {
     var moduleIdentifier: String { get }
 }
 
+public protocol BetterAuthFeatureClient: Sendable {}
+
 public protocol BetterAuthRequestHook: Sendable {
     func prepare(_ request: URLRequest) async throws -> URLRequest
 }
@@ -44,14 +46,17 @@ public struct BetterAuthAnyModuleRuntime: BetterAuthModuleRuntime {
 
 public struct BetterAuthModuleRegistry: Sendable {
     private let runtimes: [String: BetterAuthAnyModuleRuntime]
+    private let featureClients: [String: any BetterAuthFeatureClient]
     private let requestHooks: [any BetterAuthRequestHook]
     private let authStateListeners: [any BetterAuthAuthStateListener]
 
     public init(runtimes: [String: BetterAuthAnyModuleRuntime] = [:],
+                featureClients: [String: any BetterAuthFeatureClient] = [:],
                 requestHooks: [any BetterAuthRequestHook] = [],
                 authStateListeners: [any BetterAuthAuthStateListener] = [])
     {
         self.runtimes = runtimes
+        self.featureClients = featureClients
         self.requestHooks = requestHooks
         self.authStateListeners = authStateListeners
     }
@@ -68,8 +73,16 @@ public struct BetterAuthModuleRegistry: Sendable {
         runtimes.keys.sorted()
     }
 
+    public func featureClient<Client>(for identifier: String, as type: Client.Type = Client.self) -> Client? {
+        featureClients[identifier] as? Client
+    }
+
+    public var registeredFeatureClientIdentifiers: [String] {
+        featureClients.keys.sorted()
+    }
+
     public var isEmpty: Bool {
-        runtimes.isEmpty && requestHooks.isEmpty && authStateListeners.isEmpty
+        runtimes.isEmpty && featureClients.isEmpty && requestHooks.isEmpty && authStateListeners.isEmpty
     }
 
     public var registeredRequestHooks: [any BetterAuthRequestHook] {
@@ -106,6 +119,7 @@ public extension BetterAuthModuleRegistry {
                       modules: [any BetterAuthModule]) -> BetterAuthModuleRegistry
     {
         var runtimes: [String: BetterAuthAnyModuleRuntime] = [:]
+        var featureClients: [String: any BetterAuthFeatureClient] = [:]
         var requestHooks: [any BetterAuthRequestHook] = []
         var authStateListeners: [any BetterAuthAuthStateListener] = []
         for module in modules {
@@ -113,14 +127,19 @@ public extension BetterAuthModuleRegistry {
                                                   authLifecycle: authLifecycle,
                                                   requestsPerformer: requestsPerformer,
                                                   modules: BetterAuthModuleRegistry(runtimes: runtimes,
+                                                                                    featureClients: featureClients,
                                                                                     requestHooks: requestHooks,
                                                                                     authStateListeners: authStateListeners))
             let runtime = module.configure(context: context)
             runtimes[module.moduleIdentifier] = BetterAuthAnyModuleRuntime(runtime)
+            if let featureClient = runtime as? any BetterAuthFeatureClient {
+                featureClients[module.moduleIdentifier] = featureClient
+            }
             requestHooks.append(contentsOf: module.makeRequestHooks(context: context))
             authStateListeners.append(contentsOf: module.makeAuthStateListeners(context: context))
         }
         return BetterAuthModuleRegistry(runtimes: runtimes,
+                                        featureClients: featureClients,
                                         requestHooks: requestHooks,
                                         authStateListeners: authStateListeners)
     }
