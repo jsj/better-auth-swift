@@ -4,7 +4,7 @@ import Testing
 @testable import BetterAuth
 @testable import BetterAuthSwiftUI
 
-struct BetterAuthSwiftTestsPart4 {
+struct PhoneAuthAndProfileTests {
     @Test
     func phoneNumberVerifyUsesPublicRouteWhenNotUpdatingPhoneNumber() async throws {
         let transport = MockTransport { request in

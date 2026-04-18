@@ -61,7 +61,8 @@ struct BetterAuthAuthFlowService: @unchecked Sendable {
     let network: any BetterAuthTransporting
 
     func beginGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws -> GenericOAuthAuthorizationResponse {
-        try await network.post(path: configuration.endpoints.oauth.genericOAuthSignInPath, body: payload, accessToken: nil)
+        try await network.post(path: configuration.endpoints.oauth.genericOAuthSignInPath, body: payload,
+                               accessToken: nil)
     }
 
     func linkGenericOAuth(_ payload: GenericOAuthSignInRequest,

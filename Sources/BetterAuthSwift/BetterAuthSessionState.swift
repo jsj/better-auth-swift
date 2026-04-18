@@ -79,6 +79,8 @@ public protocol BetterAuthAuthPerforming: BetterAuthSessionLifecycle {
     func getJWKS() async throws -> BetterAuthJWKS
 }
 
+/// Safety invariant: all mutable session storage is guarded by `lock`, while event delivery is delegated to
+/// `AuthEventEmitter`.
 final class BetterAuthSessionState: @unchecked Sendable {
     let eventEmitter: AuthEventEmitter
     private let lock = NSLock()

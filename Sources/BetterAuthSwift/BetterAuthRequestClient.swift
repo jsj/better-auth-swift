@@ -22,6 +22,10 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
     }
 
     /// Sends a raw HTTP request, returning `(Data, HTTPURLResponse)`.
+    ///
+    /// The raw client preserves non-2xx responses for callers that need direct HTTP inspection.
+    /// After a 401-triggered refresh retry, any non-2xx retried response is surfaced as `BetterAuthError`
+    /// to avoid silently masking retry failures.
     public func send(path: String,
                      method: String = "GET",
                      headers: [String: String] = [:],
@@ -43,7 +47,11 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                                             headers: headers,
                                             body: body,
                                             requiresAuthentication: requiresAuthentication)
-            return try await execute(preparedRequest(from: request))
+            let retried = try await execute(preparedRequest(from: request))
+            guard (200 ..< 300).contains(retried.1.statusCode) else {
+                throw ErrorParsing.parse(statusCode: retried.1.statusCode, data: retried.0)
+            }
+            return retried
         }
 
         return (data, response)
