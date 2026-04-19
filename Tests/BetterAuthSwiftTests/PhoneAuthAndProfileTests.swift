@@ -8,13 +8,13 @@ struct PhoneAuthAndProfileTests {
     @Test
     func phoneNumberVerifyUsesPublicRouteWhenNotUpdatingPhoneNumber() async throws {
         let transport = MockTransport { request in
-            #expect(request.url?.path == "/api/auth/phone-number/verify")
-            #expect(request.httpMethod == "POST")
-            #expect(request.value(forHTTPHeaderField: "Authorization") == nil)
-            let payload = try JSONDecoder().decode(PhoneOTPVerifyRequest.self, from: try #require(request.httpBody))
-            #expect(payload.phoneNumber == "+15555550123")
-            #expect(payload.code == "123456")
-            #expect(payload.updatePhoneNumber == nil)
+            try expect(request.url?.path == "/api/auth/phone-number/verify")
+            try expect(request.httpMethod == "POST")
+            try expect(request.value(forHTTPHeaderField: "Authorization") == nil)
+            let payload = try JSONDecoder().decode(PhoneOTPVerifyRequest.self, from: try requireValue(request.httpBody))
+            try expect(payload.phoneNumber == "+15555550123")
+            try expect(payload.code == "123456")
+            try expect(payload.updatePhoneNumber == nil)
 
             return try response(for: request,
                                 statusCode: 200,
@@ -144,21 +144,21 @@ struct PhoneAuthAndProfileTests {
                                                                     requestOrigin: "app://snoozy"),
                              sessionStore: store,
                              transport: MockTransport { request in
-                                 #expect(request.url?.path == "/api/auth/apple/native")
-                                 #expect(request.httpMethod == "POST")
-                                 #expect(request
+                                 try expect(request.url?.path == "/api/auth/apple/native")
+                                 try expect(request.httpMethod == "POST")
+                                 try expect(request
                                      .value(forHTTPHeaderField: "Content-Type") == "application/json")
-                                 #expect(request.value(forHTTPHeaderField: "Authorization") == nil)
-                                 #expect(request.value(forHTTPHeaderField: "Origin") == "app://snoozy")
+                                 try expect(request.value(forHTTPHeaderField: "Authorization") == nil)
+                                 try expect(request.value(forHTTPHeaderField: "Origin") == "app://snoozy")
 
                                  let payload = try JSONDecoder().decode(AppleNativeSignInPayload.self,
-                                                                        from: try #require(request.httpBody))
-                                 #expect(payload.token == "identity-token")
-                                 #expect(payload.nonce == "raw-nonce")
-                                 #expect(payload.authorizationCode == "auth-code")
-                                 #expect(payload.email == "apple@example.com")
-                                 #expect(payload.givenName == "Apple")
-                                 #expect(payload.familyName == "User")
+                                                                        from: try requireValue(request.httpBody))
+                                 try expect(payload.token == "identity-token")
+                                 try expect(payload.nonce == "raw-nonce")
+                                 try expect(payload.authorizationCode == "auth-code")
+                                 try expect(payload.email == "apple@example.com")
+                                 try expect(payload.givenName == "Apple")
+                                 try expect(payload.familyName == "User")
 
                                  return try response(for: request, statusCode: 200,
                                                      data: encodeJSON(signedInSession))
@@ -206,16 +206,16 @@ struct PhoneAuthAndProfileTests {
                                                                     requestOrigin: "app://snoozy"),
                              sessionStore: store,
                              transport: MockTransport { request in
-                                 #expect(request.url?.path == "/api/auth/apple/native")
-                                 #expect(request.value(forHTTPHeaderField: "Origin") == "app://snoozy")
+                                 try expect(request.url?.path == "/api/auth/apple/native")
+                                 try expect(request.value(forHTTPHeaderField: "Origin") == "app://snoozy")
                                  let payload = try JSONDecoder().decode(AppleNativeSignInPayload.self,
-                                                                        from: try #require(request.httpBody))
-                                 #expect(payload.token == "repeat-identity-token")
-                                 #expect(payload.nonce == "repeat-raw-nonce")
-                                 #expect(payload.email == nil)
-                                 #expect(payload.givenName == nil)
-                                 #expect(payload.familyName == nil)
-                                 #expect(payload.authorizationCode == nil)
+                                                                        from: try requireValue(request.httpBody))
+                                 try expect(payload.token == "repeat-identity-token")
+                                 try expect(payload.nonce == "repeat-raw-nonce")
+                                 try expect(payload.email == nil)
+                                 try expect(payload.givenName == nil)
+                                 try expect(payload.familyName == nil)
+                                 try expect(payload.authorizationCode == nil)
                                  return try response(for: request, statusCode: 200,
                                                      data: encodeJSON(signedInSession))
                              })
@@ -258,10 +258,10 @@ struct PhoneAuthAndProfileTests {
                                                                     requestOrigin: "app://snoozy"),
                              sessionStore: store,
                              transport: MockTransport { request in
-                                 #expect(request.url?.path == "/api/auth/custom-apple/native")
+                                 try expect(request.url?.path == "/api/auth/custom-apple/native")
                                  let payload = try JSONDecoder().decode(AppleNativeSignInPayload.self,
-                                                                        from: try #require(request.httpBody))
-                                 #expect(payload.token == "identity-token")
+                                                                        from: try requireValue(request.httpBody))
+                                 try expect(payload.token == "identity-token")
                                  return try response(for: request, statusCode: 200,
                                                      data: encodeJSON(signedInSession))
                              })

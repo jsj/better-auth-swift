@@ -23,9 +23,9 @@ struct OrganizationTests {
         let org = Organization(id: "org-1", name: "Acme", slug: "acme", createdAt: Date())
 
         let transport = MockTransport { request in
-            #expect(request.url?.path == "/api/auth/organization/create")
-            #expect(request.httpMethod == "POST")
-            #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer token-1")
+            try expect(request.url?.path == "/api/auth/organization/create")
+            try expect(request.httpMethod == "POST")
+            try expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer token-1")
             return try response(for: request, statusCode: 200, data: encodeJSON(org))
         }
 
@@ -45,8 +45,8 @@ struct OrganizationTests {
                     Organization(id: "org-2", name: "Beta", slug: "beta", createdAt: Date())]
 
         let transport = MockTransport { request in
-            #expect(request.url?.path == "/api/auth/organization/list")
-            #expect(request.httpMethod == "GET")
+            try expect(request.url?.path == "/api/auth/organization/list")
+            try expect(request.httpMethod == "GET")
             return try response(for: request, statusCode: 200, data: encodeJSON(orgs))
         }
 
@@ -78,11 +78,11 @@ struct OrganizationTests {
                                                                          expiresAt: Date().addingTimeInterval(3600))])
 
         let transport = MockTransport { request in
-            #expect(request.url?.path == "/api/auth/organization/get-full-organization")
-            #expect(request.httpMethod == "GET")
-            #expect(request.httpBody == nil)
-            let components = URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: true)
-            #expect(components?.queryItems?.first(where: { $0.name == "organizationId" })?.value == "org-1")
+            try expect(request.url?.path == "/api/auth/organization/get-full-organization")
+            try expect(request.httpMethod == "GET")
+            try expect(request.httpBody == nil)
+            let components = URLComponents(url: try requireValue(request.url), resolvingAgainstBaseURL: true)
+            try expect(components?.queryItems?.first(where: { $0.name == "organizationId" })?.value == "org-1")
             return try response(for: request, statusCode: 200, data: encodeJSON(full))
         }
 
@@ -104,8 +104,8 @@ struct OrganizationTests {
     @Test
     func deleteOrganizationReturnsStatus() async throws {
         let transport = MockTransport { request in
-            #expect(request.url?.path == "/api/auth/organization/delete")
-            #expect(request.httpMethod == "POST")
+            try expect(request.url?.path == "/api/auth/organization/delete")
+            try expect(request.httpMethod == "POST")
             return try response(for: request, statusCode: 200, data: encodeJSON(["status": true]))
         }
 
@@ -127,11 +127,11 @@ struct OrganizationTests {
                                                 expiresAt: Date().addingTimeInterval(86400))
 
         let transport = MockTransport { request in
-            #expect(request.url?.path == "/api/auth/organization/invite-member")
-            let body = try JSONSerialization.jsonObject(with: try #require(request.httpBody)) as? [String: Any]
-            #expect(body?["email"] as? String == "new@example.com")
-            #expect(body?["role"] as? String == "member")
-            #expect(body?["organizationId"] as? String == "org-1")
+            try expect(request.url?.path == "/api/auth/organization/invite-member")
+            let body = try JSONSerialization.jsonObject(with: try requireValue(request.httpBody)) as? [String: Any]
+            try expect(body?["email"] as? String == "new@example.com")
+            try expect(body?["role"] as? String == "member")
+            try expect(body?["organizationId"] as? String == "org-1")
             return try response(for: request, statusCode: 200, data: encodeJSON(invitation))
         }
 
@@ -153,11 +153,11 @@ struct OrganizationTests {
                                           role: "member")]
 
         let transport = MockTransport { request in
-            #expect(request.url?.path == "/api/auth/organization/list-members")
-            #expect(request.httpMethod == "GET")
-            #expect(request.httpBody == nil)
-            let components = URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: true)
-            #expect(components?.queryItems?.first(where: { $0.name == "organizationId" })?.value == "org-1")
+            try expect(request.url?.path == "/api/auth/organization/list-members")
+            try expect(request.httpMethod == "GET")
+            try expect(request.httpBody == nil)
+            let components = URLComponents(url: try requireValue(request.url), resolvingAgainstBaseURL: true)
+            try expect(components?.queryItems?.first(where: { $0.name == "organizationId" })?.value == "org-1")
             return try response(for: request, statusCode: 200, data: encodeJSON(members))
         }
 
@@ -180,9 +180,9 @@ struct OrganizationTests {
                                         user: .init(id: "user-1", email: "user@example.com", name: "Test User"))
 
         let transport = MockTransport { request in
-            #expect(request.url?.path == "/api/auth/organization/accept-invitation")
-            let body = try JSONSerialization.jsonObject(with: try #require(request.httpBody)) as? [String: Any]
-            #expect(body?["invitationId"] as? String == "inv-1")
+            try expect(request.url?.path == "/api/auth/organization/accept-invitation")
+            let body = try JSONSerialization.jsonObject(with: try requireValue(request.httpBody)) as? [String: Any]
+            try expect(body?["invitationId"] as? String == "inv-1")
             return try response(for: request, statusCode: 200, data: encodeJSON(member))
         }
 
@@ -201,8 +201,8 @@ struct OrganizationTests {
         let org = Organization(id: "org-1", name: "Acme", slug: "acme", createdAt: Date())
 
         let transport = MockTransport { request in
-            #expect(request.url?.path == "/api/auth/organization/set-active")
-            #expect(request.httpMethod == "POST")
+            try expect(request.url?.path == "/api/auth/organization/set-active")
+            try expect(request.httpMethod == "POST")
             return try response(for: request, statusCode: 200, data: encodeJSON(org))
         }
 
@@ -224,11 +224,11 @@ struct OrganizationTests {
                                                   expiresAt: Date().addingTimeInterval(3600))]
 
         let transport = MockTransport { request in
-            #expect(request.url?.path == "/api/auth/organization/list-invitations")
-            #expect(request.httpMethod == "GET")
-            #expect(request.httpBody == nil)
-            let components = URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: true)
-            #expect(components?.queryItems?.first(where: { $0.name == "organizationId" })?.value == "org-1")
+            try expect(request.url?.path == "/api/auth/organization/list-invitations")
+            try expect(request.httpMethod == "GET")
+            try expect(request.httpBody == nil)
+            let components = URLComponents(url: try requireValue(request.url), resolvingAgainstBaseURL: true)
+            try expect(components?.queryItems?.first(where: { $0.name == "organizationId" })?.value == "org-1")
             return try response(for: request, statusCode: 200, data: encodeJSON(invitations))
         }
 

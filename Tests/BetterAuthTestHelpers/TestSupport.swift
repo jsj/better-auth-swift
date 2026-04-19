@@ -9,12 +9,16 @@ public struct MockTransport: BetterAuthTransport {
     }
 
     public func execute(_ request: URLRequest) async throws -> (Data, URLResponse) {
-        try await handler(request)
+        do {
+            return try await handler(request)
+        } catch {
+            throw error
+        }
     }
 }
 
 public actor SequencedMockTransport: BetterAuthTransport {
-    public enum Entry {
+    public enum Entry: Sendable {
         case raw(Data, Int)
         case handler(@Sendable (URLRequest) throws -> (Data, URLResponse))
 
@@ -59,6 +63,37 @@ public func encodeJSON(_ value: some Encodable) throws -> Data {
     return try encoder.encode(value)
 }
 
+public struct TestFailure: Error, CustomStringConvertible, LocalizedError, Sendable {
+    public let message: String
+
+    public init(_ message: String) {
+        self.message = message
+    }
+
+    public var description: String {
+        message
+    }
+
+    public var errorDescription: String? {
+        message
+    }
+}
+
+public func expect(_ condition: @autoclosure () -> Bool,
+                   _ message: @autoclosure () -> String = "Expectation failed") throws
+{
+    guard condition() else {
+        throw TestFailure(message())
+    }
+}
+
+public func requireValue<T>(_ value: T?, _ message: @autoclosure () -> String = "Required value was nil") throws -> T {
+    guard let value else {
+        throw TestFailure(message())
+    }
+    return value
+}
+
 public func response(for request: URLRequest, statusCode: Int, data: Data) -> (Data, URLResponse) {
     let response = HTTPURLResponse(url: request.url ?? URL(string: "https://example.com")!,
                                    statusCode: statusCode,
@@ -72,7 +107,7 @@ public func secondsBetween(_ lhs: Date?, _ rhs: Date?) -> TimeInterval {
     return abs(lhs.timeIntervalSince1970 - rhs.timeIntervalSince1970)
 }
 
-public struct SignOutResult: Encodable {
+public struct SignOutResult: Encodable, Sendable {
     public let success: Bool
 
     public init(success: Bool) {
@@ -80,7 +115,7 @@ public struct SignOutResult: Encodable {
     }
 }
 
-public struct ProtectedResponse: Codable, Equatable {
+public struct ProtectedResponse: Codable, Equatable, Sendable {
     public let email: String
     public let username: String?
 

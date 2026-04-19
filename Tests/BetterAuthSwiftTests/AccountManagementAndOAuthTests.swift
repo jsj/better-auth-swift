@@ -88,9 +88,9 @@ struct AccountManagementAndOAuthTests {
         try store.saveSession(session, for: "test-key")
 
         let transport = SequencedMockTransport([.handler { request in
-            #expect(request.url?.path == "/api/auth/delete-user")
-            #expect(request.httpMethod == "POST")
-            #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer token-1")
+            try expect(request.url?.path == "/api/auth/delete-user")
+            try expect(request.httpMethod == "POST")
+            try expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer token-1")
             return try response(for: request, statusCode: 200, data: encodeJSON(["status": true]))
         }])
 
@@ -113,10 +113,10 @@ struct AccountManagementAndOAuthTests {
                                         user: .init(id: "user-1", email: "user@example.com"))
 
         let transport = SequencedMockTransport([.handler { request in
-            #expect(request.url?.path == "/api/auth/delete-user")
-            let payload = try JSONDecoder().decode(DeleteUserRequest.self, from: try #require(request.httpBody))
-            #expect(payload.token == "password-confirmation-token")
-            #expect(payload.callbackURL == "https://example.com/deleted")
+            try expect(request.url?.path == "/api/auth/delete-user")
+            let payload = try JSONDecoder().decode(DeleteUserRequest.self, from: try requireValue(request.httpBody))
+            try expect(payload.token == "password-confirmation-token")
+            try expect(payload.callbackURL == "https://example.com/deleted")
             return try response(for: request, statusCode: 200, data: encodeJSON(["status": true]))
         }])
 
@@ -190,7 +190,7 @@ struct AccountManagementAndOAuthTests {
                               user: .init(id: "anon-user", email: "temp@anon.example.com"))
 
         let transport = SequencedMockTransport([.handler { request in
-            #expect(request.url?.path == "/api/auth/email/sign-up")
+            try expect(request.url?.path == "/api/auth/email/sign-up")
             return try response(for: request, statusCode: 200, data: encodeJSON(upgradedSession))
         }])
 
@@ -228,7 +228,7 @@ struct AccountManagementAndOAuthTests {
                               user: .init(id: "anon-user"))
 
         let transport = SequencedMockTransport([.handler { request in
-            #expect(request.url?.path == "/api/auth/apple/native")
+            try expect(request.url?.path == "/api/auth/apple/native")
             return try response(for: request, statusCode: 200, data: encodeJSON(upgradedSession))
         }])
 
@@ -255,11 +255,12 @@ struct AccountManagementAndOAuthTests {
                                         user: .init(id: "user-1", email: "user@example.com"))
 
         let transport = SequencedMockTransport([.handler { request in
-                #expect(request.url?.path == "/api/auth/email/sign-in")
-                #expect(request.httpMethod == "POST")
-                let payload = try JSONDecoder().decode(EmailSignInRequest.self, from: try #require(request.httpBody))
-                #expect(payload.email == "user@example.com")
-                #expect(payload.password == "correct-password")
+                try expect(request.url?.path == "/api/auth/email/sign-in")
+                try expect(request.httpMethod == "POST")
+                let payload = try JSONDecoder().decode(EmailSignInRequest.self,
+                                                       from: try requireValue(request.httpBody))
+                try expect(payload.email == "user@example.com")
+                try expect(payload.password == "correct-password")
                 return try response(for: request, statusCode: 200,
                                     data: encodeJSON(BetterAuthSession(session: .init(id: "session-reauth",
                                                                                       userId: "user-1",
@@ -269,7 +270,7 @@ struct AccountManagementAndOAuthTests {
             },
             // Revoke ephemeral verification session
             .handler { request in
-                #expect(request.url?.path == "/api/auth/revoke-session")
+                try expect(request.url?.path == "/api/auth/revoke-session")
                 return response(for: request, statusCode: 200, data: Data())
             }])
 
@@ -341,11 +342,11 @@ struct AccountManagementAndOAuthTests {
         let store = InMemorySessionStore()
         let transport = MockTransport { request in
             if request.url?.path == "/api/auth/sign-in/oauth2" {
-                #expect(request.httpMethod == "POST")
+                try expect(request.httpMethod == "POST")
                 let payload = try JSONDecoder().decode(GenericOAuthSignInRequest.self,
-                                                       from: try #require(request.httpBody))
-                #expect(payload.providerId == "fixture-generic")
-                #expect(payload.disableRedirect == true)
+                                                       from: try requireValue(request.httpBody))
+                try expect(payload.providerId == "fixture-generic")
+                try expect(payload.disableRedirect == true)
                 return try response(for: request,
                                     statusCode: 200,
                                     data: encodeJSON(GenericOAuthAuthorizationResponse(url: "https://fixture-oauth.example.com/oauth/authorize?state=fixture-state",
@@ -353,10 +354,10 @@ struct AccountManagementAndOAuthTests {
             }
 
             if request.url?.path == "/api/auth/oauth2/callback/fixture-generic" {
-                #expect(request.httpMethod == "GET")
-                let components = URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: true)
-                #expect(components?.queryItems?.first(where: { $0.name == "code" })?.value == "fixture-code")
-                #expect(components?.queryItems?.first(where: { $0.name == "state" })?.value == "fixture-state")
+                try expect(request.httpMethod == "GET")
+                let components = URLComponents(url: try requireValue(request.url), resolvingAgainstBaseURL: true)
+                try expect(components?.queryItems?.first(where: { $0.name == "code" })?.value == "fixture-code")
+                try expect(components?.queryItems?.first(where: { $0.name == "state" })?.value == "fixture-state")
                 return try response(for: request,
                                     statusCode: 200,
                                     data: encodeJSON(BetterAuthSession(session: .init(id: "session-oauth",
@@ -398,7 +399,7 @@ struct AccountManagementAndOAuthTests {
                                                                     endpoints: .init(genericOAuthCallbackPath: "/api/auth/custom-oauth/{providerId}/complete")),
                              sessionStore: InMemorySessionStore(),
                              transport: MockTransport { request in
-                                 #expect(request.url?.path == "/api/auth/custom-oauth/fixture-generic/complete")
+                                 try expect(request.url?.path == "/api/auth/custom-oauth/fixture-generic/complete")
                                  return try response(for: request,
                                                      statusCode: 200,
                                                      data: encodeJSON(BetterAuthSession(session: .init(id: "session-oauth",
@@ -430,8 +431,8 @@ struct AccountManagementAndOAuthTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
                              transport: MockTransport { request in
-                                 #expect(request.url?.path == "/api/auth/list-accounts")
-                                 #expect(request
+                                 try expect(request.url?.path == "/api/auth/list-accounts")
+                                 try expect(request
                                      .value(forHTTPHeaderField: "Authorization") == "Bearer current-token")
                                  return try response(for: request, statusCode: 200,
                                                      data: encodeJSON(linkedAccounts))
@@ -456,14 +457,14 @@ struct AccountManagementAndOAuthTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
                              transport: MockTransport { request in
-                                 #expect(request.url?.path == "/api/auth/oauth2/link")
-                                 #expect(request
+                                 try expect(request.url?.path == "/api/auth/oauth2/link")
+                                 try expect(request
                                      .value(forHTTPHeaderField: "Authorization") == "Bearer current-token")
                                  let payload = try JSONDecoder().decode(GenericOAuthSignInRequest.self,
-                                                                        from: try #require(request.httpBody))
-                                 #expect(payload.providerId == "fixture-generic")
-                                 #expect(payload.callbackURL == "betterauth://oauth/success")
-                                 #expect(payload.disableRedirect == true)
+                                                                        from: try requireValue(request.httpBody))
+                                 try expect(payload.providerId == "fixture-generic")
+                                 try expect(payload.callbackURL == "betterauth://oauth/success")
+                                 try expect(payload.disableRedirect == true)
                                  return try response(for: request,
                                                      statusCode: 200,
                                                      data: encodeJSON(GenericOAuthAuthorizationResponse(url: "https://fixture-oauth.example.com/oauth/authorize?state=link-state",
@@ -498,15 +499,15 @@ struct AccountManagementAndOAuthTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: store,
                              transport: MockTransport { request in
-                                 #expect(request.url?.path == "/api/auth/oauth2/callback/fixture-generic")
-                                 #expect(request.httpMethod == "GET")
-                                 #expect(request
+                                 try expect(request.url?.path == "/api/auth/oauth2/callback/fixture-generic")
+                                 try expect(request.httpMethod == "GET")
+                                 try expect(request
                                      .value(forHTTPHeaderField: "Authorization") == "Bearer current-token")
-                                 let components = URLComponents(url: try #require(request.url),
+                                 let components = URLComponents(url: try requireValue(request.url),
                                                                 resolvingAgainstBaseURL: true)
-                                 #expect(components?.queryItems?.first(where: { $0.name == "code" })?
+                                 try expect(components?.queryItems?.first(where: { $0.name == "code" })?
                                      .value == "fixture-code")
-                                 #expect(components?.queryItems?.first(where: { $0.name == "state" })?
+                                 try expect(components?.queryItems?.first(where: { $0.name == "state" })?
                                      .value == "fixture-state")
                                  return try response(for: request, statusCode: 200,
                                                      data: encodeJSON(reconciledSession))

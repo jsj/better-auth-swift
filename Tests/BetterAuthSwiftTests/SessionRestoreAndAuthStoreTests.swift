@@ -169,7 +169,7 @@ struct SessionRestoreAndAuthStoreTests {
             AuthStore(client: BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                                                sessionStore: InMemorySessionStore(),
                                                transport: MockTransport { request in
-                                                   #expect(request.url?
+                                                   try expect(request.url?
                                                        .path == "/api/auth/magic-link/verify")
                                                    return try response(for: request,
                                                                        statusCode: 200,
@@ -214,7 +214,7 @@ struct SessionRestoreAndAuthStoreTests {
             AuthStore(client: BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                                                sessionStore: InMemorySessionStore(),
                                                transport: MockTransport { request in
-                                                   #expect(request.url?.path == "/api/auth/magic-link/verify")
+                                                   try expect(request.url?.path == "/api/auth/magic-link/verify")
                                                    return try response(for: request,
                                                                        statusCode: 200,
                                                                        data: encodeJSON(SocialSignInTransportResponse(redirect: false,
@@ -250,7 +250,7 @@ struct SessionRestoreAndAuthStoreTests {
             AuthStore(client: BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                                                sessionStore: InMemorySessionStore(),
                                                transport: MockTransport { request in
-                                                   #expect(request.url?.path == "/api/auth/email-otp/verify-email")
+                                                   try expect(request.url?.path == "/api/auth/email-otp/verify-email")
                                                    return try response(for: request,
                                                                        statusCode: 200,
                                                                        data: encodeJSON(SocialSignInTransportResponse(redirect: false,

@@ -8,11 +8,11 @@ struct EmailOtpMagicLinkAndRequestClientTests {
     @Test
     func emailOTPRequestUsesConfiguredEndpoint() async throws {
         let transport = MockTransport { request in
-            #expect(request.url?.path == "/api/auth/email-otp/send-verification-otp")
-            #expect(request.httpMethod == "POST")
-            let payload = try JSONDecoder().decode(EmailOTPRequest.self, from: try #require(request.httpBody))
-            #expect(payload.email == "otp@example.com")
-            #expect(payload.type == .signIn)
+            try expect(request.url?.path == "/api/auth/email-otp/send-verification-otp")
+            try expect(request.httpMethod == "POST")
+            let payload = try JSONDecoder().decode(EmailOTPRequest.self, from: try requireValue(request.httpBody))
+            try expect(payload.email == "otp@example.com")
+            try expect(payload.type == .signIn)
 
             return try response(for: request, statusCode: 200, data: encodeJSON(EmailOTPRequestResponse(success: true)))
         }
@@ -225,10 +225,10 @@ struct EmailOtpMagicLinkAndRequestClientTests {
     @Test
     func phoneOTPRequestUsesConfiguredEndpoint() async throws {
         let transport = MockTransport { request in
-            #expect(request.url?.path == "/api/auth/phone-number/send-otp")
-            #expect(request.httpMethod == "POST")
-            let payload = try JSONDecoder().decode(PhoneOTPRequest.self, from: try #require(request.httpBody))
-            #expect(payload.phoneNumber == "+15555550123")
+            try expect(request.url?.path == "/api/auth/phone-number/send-otp")
+            try expect(request.httpMethod == "POST")
+            let payload = try JSONDecoder().decode(PhoneOTPRequest.self, from: try requireValue(request.httpBody))
+            try expect(payload.phoneNumber == "+15555550123")
 
             return try response(for: request, statusCode: 200,
                                 data: encodeJSON(PhoneOTPRequestResponse(message: "otp queued", success: true)))
@@ -253,14 +253,14 @@ struct EmailOtpMagicLinkAndRequestClientTests {
                                                             name: "Phone User"))
 
         let transport = MockTransport { request in
-            #expect(request.url?.path == "/api/auth/phone-number/verify")
-            #expect(request.httpMethod == "POST")
-            #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer phone-token")
-            let payload = try JSONDecoder().decode(PhoneOTPVerifyRequest.self, from: try #require(request.httpBody))
-            #expect(payload.phoneNumber == "+15555550123")
-            #expect(payload.code == "123456")
-            #expect(payload.disableSession == true)
-            #expect(payload.updatePhoneNumber == true)
+            try expect(request.url?.path == "/api/auth/phone-number/verify")
+            try expect(request.httpMethod == "POST")
+            try expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer phone-token")
+            let payload = try JSONDecoder().decode(PhoneOTPVerifyRequest.self, from: try requireValue(request.httpBody))
+            try expect(payload.phoneNumber == "+15555550123")
+            try expect(payload.code == "123456")
+            try expect(payload.disableSession == true)
+            try expect(payload.updatePhoneNumber == true)
 
             return try response(for: request,
                                 statusCode: 200,
@@ -348,7 +348,7 @@ struct EmailOtpMagicLinkAndRequestClientTests {
                                     data: encodeJSON(ServerErrorResponse(message: "forbidden", code: "FORBIDDEN")))
 
             case "/api/auth/get-session":
-                #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer current-token")
+                try expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer current-token")
                 let refreshed = BetterAuthSession(session: .init(id: "session-2",
                                                                  userId: "user-1",
                                                                  accessToken: "refreshed-token",

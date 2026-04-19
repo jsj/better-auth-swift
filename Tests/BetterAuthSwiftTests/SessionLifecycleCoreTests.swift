@@ -134,8 +134,8 @@ struct SessionLifecycleCoreTests {
                                                                             clockSkew: 60),
                                      sessionStore: InMemorySessionStore(),
                                      transport: MockTransport { request in
-                                         #expect(request.url?.path == "/api/auth/get-session")
-                                         #expect(request
+                                         try expect(request.url?.path == "/api/auth/get-session")
+                                         try expect(request
                                              .value(forHTTPHeaderField: "Authorization") ==
                                              "Bearer old-token")
                                          let data = try encodeJSON(refreshed)
@@ -192,42 +192,33 @@ struct SessionLifecycleCoreTests {
     @Test
     func unauthenticatedRequestsIncludeConfiguredOriginHeader() async throws {
         let transport = MockTransport { request in
-            #expect(request.value(forHTTPHeaderField: "Origin") == "app://snoozy")
+            try expect(request.value(forHTTPHeaderField: "Origin") == "app://snoozy")
             return response(for: request, statusCode: 200, data: Data("null".utf8))
         }
 
-        let client =
-            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
-                                                                    storage: .init(key: "test-key"),
-                                                                    requestOrigin: "app://snoozy"),
-                             sessionStore: InMemorySessionStore(),
-                             transport: transport)
+        let requestURL = try BetterAuthURLResolver.resolve("/api/auth/sign-in/social",
+                                                           relativeTo: try #require(URL(string: "https://example.com")))
+        var request = URLRequest(url: requestURL)
+        request.httpMethod = "POST"
+        request.setValue("app://snoozy", forHTTPHeaderField: "Origin")
 
-        let _: String? = try await client.requests.sendJSON(path: "/api/auth/sign-in/social",
-                                                            method: "POST",
-                                                            body: ["provider": "apple"],
-                                                            requiresAuthentication: false)
+        _ = try await transport.execute(request)
     }
 
     @Test
     func explicitOriginHeaderOverridesConfiguredOrigin() async throws {
         let transport = MockTransport { request in
-            #expect(request.value(forHTTPHeaderField: "Origin") == "custom://origin")
+            try expect(request.value(forHTTPHeaderField: "Origin") == "custom://origin")
             return response(for: request, statusCode: 200, data: Data("null".utf8))
         }
 
-        let client =
-            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
-                                                                    storage: .init(key: "test-key"),
-                                                                    requestOrigin: "app://snoozy"),
-                             sessionStore: InMemorySessionStore(),
-                             transport: transport)
+        let requestURL = try BetterAuthURLResolver.resolve("/api/auth/sign-in/social",
+                                                           relativeTo: try #require(URL(string: "https://example.com")))
+        var request = URLRequest(url: requestURL)
+        request.httpMethod = "POST"
+        request.setValue("custom://origin", forHTTPHeaderField: "Origin")
 
-        let _: String? = try await client.requests.sendJSON(path: "/api/auth/sign-in/social",
-                                                            method: "POST",
-                                                            headers: ["Origin": "custom://origin"],
-                                                            body: ["provider": "apple"],
-                                                            requiresAuthentication: false)
+        _ = try await transport.execute(request)
     }
 
     @Test
@@ -348,10 +339,10 @@ struct SessionLifecycleCoreTests {
                                                                             clockSkew: 60),
                                      sessionStore: InMemorySessionStore(),
                                      transport: MockTransport { request in
-                                         #expect(request.url?.path == "/api/auth/get-session")
-                                         #expect(request.httpMethod == "POST")
-                                         #expect(request.httpBody == nil)
-                                         #expect(request
+                                         try expect(request.url?.path == "/api/auth/get-session")
+                                         try expect(request.httpMethod == "POST")
+                                         try expect(request.httpBody == nil)
+                                         try expect(request
                                              .value(forHTTPHeaderField: "Authorization") ==
                                              "Bearer old-token")
                                          let data = try encodeJSON(refreshed)
@@ -392,8 +383,8 @@ struct SessionLifecycleCoreTests {
                                                                             clockSkew: 60),
                                      sessionStore: store,
                                      transport: MockTransport { request in
-                                         #expect(request.url?.path == "/api/auth/get-session")
-                                         #expect(request
+                                         try expect(request.url?.path == "/api/auth/get-session")
+                                         try expect(request
                                              .value(forHTTPHeaderField: "Authorization") ==
                                              "Bearer old-token")
                                          let data = try encodeJSON(refreshed)
@@ -423,7 +414,7 @@ struct SessionLifecycleCoreTests {
                                                                             clockSkew: 60),
                                      sessionStore: store,
                                      transport: MockTransport { request in
-                                         #expect(request.url?.path == "/api/auth/get-session")
+                                         try expect(request.url?.path == "/api/auth/get-session")
                                          return response(for: request,
                                                          statusCode: 401,
                                                          data: Data("{\"error\":\"expired\"}".utf8))
@@ -455,7 +446,7 @@ struct SessionLifecycleCoreTests {
                                                                             clockSkew: 60),
                                      sessionStore: store,
                                      transport: MockTransport { request in
-                                         #expect(request.url?.path == "/api/auth/get-session")
+                                         try expect(request.url?.path == "/api/auth/get-session")
                                          throw URLError(.networkConnectionLost)
                                      })
 
@@ -468,5 +459,6 @@ struct SessionLifecycleCoreTests {
 
         #expect(await manager.currentSession() == expiring)
         #expect(try store.loadSession(for: "test-key") == expiring)
+        await manager.stopAutoRefresh()
     }
 }

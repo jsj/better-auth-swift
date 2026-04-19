@@ -11,13 +11,13 @@ struct SocialAndUsernameAuthTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
                              transport: MockTransport { request in
-                                 #expect(request.url?.path == "/api/auth/link-social")
-                                 #expect(request
+                                 try expect(request.url?.path == "/api/auth/link-social")
+                                 try expect(request
                                      .value(forHTTPHeaderField: "Authorization") == "Bearer current-token")
                                  let payload = try JSONDecoder().decode(LinkSocialAccountRequest.self,
-                                                                        from: try #require(request.httpBody))
-                                 #expect(payload.provider == "google")
-                                 #expect(payload.idToken?.token == "valid-google-token")
+                                                                        from: try requireValue(request.httpBody))
+                                 try expect(payload.provider == "google")
+                                 try expect(payload.idToken?.token == "valid-google-token")
                                  return try response(for: request,
                                                      statusCode: 200,
                                                      data: encodeJSON(LinkSocialAccountResponse(url: "",
@@ -132,11 +132,11 @@ struct SocialAndUsernameAuthTests {
     @Test
     func requestPasswordResetUsesConfiguredEndpoint() async throws {
         let transport = MockTransport { request in
-            #expect(request.url?.path == "/api/auth/forget-password")
-            #expect(request.httpMethod == "POST")
-            let payload = try JSONDecoder().decode(ForgotPasswordRequest.self, from: try #require(request.httpBody))
-            #expect(payload.email == "reset@example.com")
-            #expect(payload.redirectTo == "https://app.example.com/reset")
+            try expect(request.url?.path == "/api/auth/forget-password")
+            try expect(request.httpMethod == "POST")
+            let payload = try JSONDecoder().decode(ForgotPasswordRequest.self, from: try requireValue(request.httpBody))
+            try expect(payload.email == "reset@example.com")
+            try expect(payload.redirectTo == "https://app.example.com/reset")
 
             return try response(for: request, statusCode: 200, data: encodeJSON(BetterAuthStatusResponse(status: true)))
         }
@@ -155,11 +155,11 @@ struct SocialAndUsernameAuthTests {
     @Test
     func resetPasswordUsesConfiguredEndpoint() async throws {
         let transport = MockTransport { request in
-            #expect(request.url?.path == "/api/auth/reset-password")
-            #expect(request.httpMethod == "POST")
-            let payload = try JSONDecoder().decode(ResetPasswordRequest.self, from: try #require(request.httpBody))
-            #expect(payload.token == "reset-token")
-            #expect(payload.newPassword == "new-password-123")
+            try expect(request.url?.path == "/api/auth/reset-password")
+            try expect(request.httpMethod == "POST")
+            let payload = try JSONDecoder().decode(ResetPasswordRequest.self, from: try requireValue(request.httpBody))
+            try expect(payload.token == "reset-token")
+            try expect(payload.newPassword == "new-password-123")
 
             return try response(for: request, statusCode: 200, data: encodeJSON(BetterAuthStatusResponse(status: true)))
         }
@@ -178,13 +178,13 @@ struct SocialAndUsernameAuthTests {
     @Test
     func sendVerificationEmailUsesConfiguredEndpointAndCurrentBearer() async throws {
         let transport = MockTransport { request in
-            #expect(request.url?.path == "/api/auth/send-verification-email")
-            #expect(request.httpMethod == "POST")
-            #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer current-token")
+            try expect(request.url?.path == "/api/auth/send-verification-email")
+            try expect(request.httpMethod == "POST")
+            try expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer current-token")
             let payload = try JSONDecoder().decode(SendVerificationEmailRequest.self,
-                                                   from: try #require(request.httpBody))
-            #expect(payload.email == nil)
-            #expect(payload.callbackURL == "https://app.example.com/verify")
+                                                   from: try requireValue(request.httpBody))
+            try expect(payload.email == nil)
+            try expect(payload.callbackURL == "https://app.example.com/verify")
 
             return try response(for: request, statusCode: 200, data: encodeJSON(BetterAuthStatusResponse(status: true)))
         }
@@ -207,10 +207,10 @@ struct SocialAndUsernameAuthTests {
     @Test
     func verifyEmailWithoutAutoSignInDoesNotPersistSession() async throws {
         let transport = MockTransport { request in
-            #expect(request.url?.path == "/api/auth/verify-email")
-            #expect(request.httpMethod == "GET")
-            #expect(request.httpBody == nil)
-            #expect(request.url?.query == "token=verify-token")
+            try expect(request.url?.path == "/api/auth/verify-email")
+            try expect(request.httpMethod == "GET")
+            try expect(request.httpBody == nil)
+            try expect(request.url?.query == "token=verify-token")
             let body = """
             {"status":true,"session":null}
             """.data(using: .utf8)!
@@ -240,10 +240,10 @@ struct SocialAndUsernameAuthTests {
                                                 user: .init(id: "user-1", email: "verified@example.com",
                                                             name: "Verified User"))
         let transport = MockTransport { request in
-            #expect(request.url?.path == "/api/auth/verify-email")
-            #expect(request.httpMethod == "GET")
-            #expect(request.httpBody == nil)
-            #expect(request.url?.query == "token=verify-token")
+            try expect(request.url?.path == "/api/auth/verify-email")
+            try expect(request.httpMethod == "GET")
+            try expect(request.httpBody == nil)
+            try expect(request.url?.query == "token=verify-token")
             return try response(for: request,
                                 statusCode: 200,
                                 data: encodeJSON(SocialSignInTransportResponse(redirect: false,
@@ -286,12 +286,12 @@ struct SocialAndUsernameAuthTests {
     @Test
     func changeEmailUsesConfiguredEndpointAndCurrentBearer() async throws {
         let transport = MockTransport { request in
-            #expect(request.url?.path == "/api/auth/change-email")
-            #expect(request.httpMethod == "POST")
-            #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer current-token")
-            let payload = try JSONDecoder().decode(ChangeEmailRequest.self, from: try #require(request.httpBody))
-            #expect(payload.newEmail == "next@example.com")
-            #expect(payload.callbackURL == "https://app.example.com/settings")
+            try expect(request.url?.path == "/api/auth/change-email")
+            try expect(request.httpMethod == "POST")
+            try expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer current-token")
+            let payload = try JSONDecoder().decode(ChangeEmailRequest.self, from: try requireValue(request.httpBody))
+            try expect(payload.newEmail == "next@example.com")
+            try expect(payload.callbackURL == "https://app.example.com/settings")
 
             return try response(for: request, statusCode: 200, data: encodeJSON(BetterAuthStatusResponse(status: true)))
         }
@@ -363,10 +363,11 @@ struct SocialAndUsernameAuthTests {
                                                                displayUsername: "Current User"))
 
         let transport = SequencedMockTransport([.handler { request in
-                #expect(request.url?.path == "/api/auth/change-password")
-                #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer current-token")
-                let payload = try JSONDecoder().decode(ChangePasswordRequest.self, from: try #require(request.httpBody))
-                #expect(payload.revokeOtherSessions == true)
+                try expect(request.url?.path == "/api/auth/change-password")
+                try expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer current-token")
+                let payload = try JSONDecoder().decode(ChangePasswordRequest.self,
+                                                       from: try requireValue(request.httpBody))
+                try expect(payload.revokeOtherSessions == true)
 
                 return try response(for: request, statusCode: 200,
                                     data: encodeJSON(ChangePasswordResponse(token: "rotated-token",
@@ -375,9 +376,9 @@ struct SocialAndUsernameAuthTests {
                                                                                         name: "Updated Name"))))
             },
             .handler { request in
-                #expect(request.url?.path == "/api/auth/get-session")
-                #expect(request.httpMethod == "GET")
-                #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer rotated-token")
+                try expect(request.url?.path == "/api/auth/get-session")
+                try expect(request.httpMethod == "GET")
+                try expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer rotated-token")
                 return try response(for: request, statusCode: 200, data: encodeJSON(replacementSession))
             }])
 

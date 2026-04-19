@@ -216,19 +216,19 @@ struct EmailPasswordAuthTests {
     @Test
     func usernameAvailabilityUsesConfiguredEndpointAndPreservesNormalizationSemantics() async throws {
         let transport = SequencedMockTransport([.handler { request in
-                #expect(request.url?.path == "/api/auth/is-username-available")
-                #expect(request.httpMethod == "POST")
+                try expect(request.url?.path == "/api/auth/is-username-available")
+                try expect(request.httpMethod == "POST")
                 let payload = try JSONDecoder().decode(UsernameAvailabilityRequest.self,
-                                                       from: try #require(request.httpBody))
-                #expect(payload.username == "PRIORITY_USER")
+                                                       from: try requireValue(request.httpBody))
+                try expect(payload.username == "PRIORITY_USER")
                 return try response(for: request, statusCode: 200,
                                     data: encodeJSON(UsernameAvailabilityResponse(available: false)))
             },
             .handler { request in
-                #expect(request.url?.path == "/api/auth/is-username-available")
+                try expect(request.url?.path == "/api/auth/is-username-available")
                 let payload = try JSONDecoder().decode(UsernameAvailabilityRequest.self,
-                                                       from: try #require(request.httpBody))
-                #expect(payload.username == "fresh_user")
+                                                       from: try requireValue(request.httpBody))
+                try expect(payload.username == "fresh_user")
                 return try response(for: request, statusCode: 200,
                                     data: encodeJSON(UsernameAvailabilityResponse(available: true)))
             }])
@@ -321,10 +321,10 @@ struct EmailPasswordAuthTests {
                                                             displayUsername: "Custom_User"))
 
         let transport = SequencedMockTransport([.handler { request in
-            #expect(request.url?.path == "/api/auth/email/sign-up")
-            let payload = try JSONDecoder().decode(EmailSignUpRequest.self, from: try #require(request.httpBody))
-            #expect(payload.username == "Custom_User")
-            #expect(payload.displayUsername == nil)
+            try expect(request.url?.path == "/api/auth/email/sign-up")
+            let payload = try JSONDecoder().decode(EmailSignUpRequest.self, from: try requireValue(request.httpBody))
+            try expect(payload.username == "Custom_User")
+            try expect(payload.displayUsername == nil)
             return try response(for: request, statusCode: 200, data: encodeJSON(signedUpSession))
         }])
 
@@ -370,13 +370,13 @@ struct EmailPasswordAuthTests {
                                                  displayUsername: "Priority Display Name")
 
         let transport = MockTransport { request in
-            #expect(request.url?.path == "/api/auth/update-user")
-            #expect(request.httpMethod == "POST")
-            #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer current-token")
-            let payload = try JSONDecoder().decode(UpdateUserRequest.self, from: try #require(request.httpBody))
-            #expect(payload.username == "Priority_User")
-            #expect(payload.displayUsername == "Priority Display Name")
-            #expect(payload.name == "Updated Name")
+            try expect(request.url?.path == "/api/auth/update-user")
+            try expect(request.httpMethod == "POST")
+            try expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer current-token")
+            let payload = try JSONDecoder().decode(UpdateUserRequest.self, from: try requireValue(request.httpBody))
+            try expect(payload.username == "Priority_User")
+            try expect(payload.displayUsername == "Priority Display Name")
+            try expect(payload.name == "Updated Name")
 
             return try response(for: request, statusCode: 200,
                                 data: encodeJSON(UpdateUserResponse(status: true, user: updatedUser)))
@@ -430,17 +430,17 @@ struct EmailPasswordAuthTests {
     @Test
     func magicLinkRequestEncodesNativeContextFields() async throws {
         let transport = MockTransport { request in
-            #expect(request.url?.path == "/api/auth/sign-in/magic-link")
-            #expect(request.httpMethod == "POST")
-            let payload = try JSONSerialization.jsonObject(with: try #require(request.httpBody)) as? [String: Any]
-            #expect(payload?["email"] as? String == "magic@example.com")
-            #expect(payload?["name"] as? String == "Magic User")
-            #expect(payload?["callbackURL"] as? String == "betterauth://magic/success")
-            #expect(payload?["newUserCallbackURL"] as? String == "betterauth://magic/new")
-            #expect(payload?["errorCallbackURL"] as? String == "betterauth://magic/error")
+            try expect(request.url?.path == "/api/auth/sign-in/magic-link")
+            try expect(request.httpMethod == "POST")
+            let payload = try JSONSerialization.jsonObject(with: try requireValue(request.httpBody)) as? [String: Any]
+            try expect(payload?["email"] as? String == "magic@example.com")
+            try expect(payload?["name"] as? String == "Magic User")
+            try expect(payload?["callbackURL"] as? String == "betterauth://magic/success")
+            try expect(payload?["newUserCallbackURL"] as? String == "betterauth://magic/new")
+            try expect(payload?["errorCallbackURL"] as? String == "betterauth://magic/error")
             let metadata = payload?["metadata"] as? [String: String]
-            #expect(metadata?["source"] == "ios")
-            #expect(metadata?["campaign"] == "spring")
+            try expect(metadata?["source"] == "ios")
+            try expect(metadata?["campaign"] == "spring")
 
             return try response(for: request, statusCode: 200, data: encodeJSON(BetterAuthStatusResponse(status: true)))
         }

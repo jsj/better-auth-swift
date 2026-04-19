@@ -34,12 +34,13 @@ public extension BetterAuthRequestPerforming {
               requiresAuthentication: Bool = true,
               retryOnUnauthorized: Bool = true) async throws -> (Data, HTTPURLResponse)
     {
-        try await send(path: path,
-                       method: method,
-                       headers: headers,
-                       body: body,
-                       requiresAuthentication: requiresAuthentication,
-                       retryOnUnauthorized: retryOnUnauthorized)
+        try await _performSend(self,
+                               path: path,
+                               method: method,
+                               headers: headers,
+                               body: body,
+                               requiresAuthentication: requiresAuthentication,
+                               retryOnUnauthorized: retryOnUnauthorized)
     }
 
     func sendJSON<Response: Decodable>(path: String,
@@ -50,13 +51,14 @@ public extension BetterAuthRequestPerforming {
                                        retryOnUnauthorized: Bool = true,
                                        decoder: JSONDecoder = BetterAuthCoding.makeDecoder()) async throws -> Response
     {
-        try await sendJSON(path: path,
-                           method: method,
-                           headers: headers,
-                           body: body,
-                           requiresAuthentication: requiresAuthentication,
-                           retryOnUnauthorized: retryOnUnauthorized,
-                           decoder: decoder)
+        try await _performSendJSON(self,
+                                   path: path,
+                                   method: method,
+                                   headers: headers,
+                                   body: body,
+                                   requiresAuthentication: requiresAuthentication,
+                                   retryOnUnauthorized: retryOnUnauthorized,
+                                   decoder: decoder)
     }
 
     func sendJSON<Response: Decodable>(path: String,
@@ -68,15 +70,70 @@ public extension BetterAuthRequestPerforming {
                                        encoder: JSONEncoder = JSONEncoder(),
                                        decoder: JSONDecoder = BetterAuthCoding.makeDecoder()) async throws -> Response
     {
-        try await sendJSON(path: path,
-                           method: method,
-                           headers: headers,
-                           body: body,
-                           requiresAuthentication: requiresAuthentication,
-                           retryOnUnauthorized: retryOnUnauthorized,
-                           encoder: encoder,
-                           decoder: decoder)
+        try await _performSendJSON(self,
+                                   path: path,
+                                   method: method,
+                                   headers: headers,
+                                   body: body,
+                                   requiresAuthentication: requiresAuthentication,
+                                   retryOnUnauthorized: retryOnUnauthorized,
+                                   encoder: encoder,
+                                   decoder: decoder)
     }
+}
+
+private func _performSend(_ performer: any BetterAuthRequestPerforming,
+                          path: String,
+                          method: String,
+                          headers: [String: String],
+                          body: Data?,
+                          requiresAuthentication: Bool,
+                          retryOnUnauthorized: Bool) async throws -> (Data, HTTPURLResponse)
+{
+    try await performer.send(path: path,
+                             method: method,
+                             headers: headers,
+                             body: body,
+                             requiresAuthentication: requiresAuthentication,
+                             retryOnUnauthorized: retryOnUnauthorized)
+}
+
+private func _performSendJSON<Response: Decodable>(_ performer: any BetterAuthRequestPerforming,
+                                                   path: String,
+                                                   method: String,
+                                                   headers: [String: String],
+                                                   body: Data?,
+                                                   requiresAuthentication: Bool,
+                                                   retryOnUnauthorized: Bool,
+                                                   decoder: JSONDecoder) async throws -> Response
+{
+    try await performer.sendJSON(path: path,
+                                 method: method,
+                                 headers: headers,
+                                 body: body,
+                                 requiresAuthentication: requiresAuthentication,
+                                 retryOnUnauthorized: retryOnUnauthorized,
+                                 decoder: decoder)
+}
+
+private func _performSendJSON<Response: Decodable>(_ performer: any BetterAuthRequestPerforming,
+                                                   path: String,
+                                                   method: String,
+                                                   headers: [String: String],
+                                                   body: some Encodable,
+                                                   requiresAuthentication: Bool,
+                                                   retryOnUnauthorized: Bool,
+                                                   encoder: JSONEncoder,
+                                                   decoder: JSONDecoder) async throws -> Response
+{
+    try await performer.sendJSON(path: path,
+                                 method: method,
+                                 headers: headers,
+                                 body: body,
+                                 requiresAuthentication: requiresAuthentication,
+                                 retryOnUnauthorized: retryOnUnauthorized,
+                                 encoder: encoder,
+                                 decoder: decoder)
 }
 
 public protocol BetterAuthClientProtocol: Sendable {

@@ -44,10 +44,10 @@ struct PasskeyLifecycleTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
                              transport: MockTransport { request in
-                                 #expect(request.url?
+                                 try expect(request.url?
                                      .path == "/api/auth/passkey/generate-authenticate-options")
-                                 #expect(request.httpMethod == "GET")
-                                 #expect(request.value(forHTTPHeaderField: "Authorization") == nil)
+                                 try expect(request.httpMethod == "GET")
+                                 try expect(request.value(forHTTPHeaderField: "Authorization") == nil)
                                  return try response(for: request, statusCode: 200, data: encodeJSON(expected))
                              })
 
@@ -97,38 +97,40 @@ struct PasskeyLifecycleTests {
                                      aaguid: "aaguid-1")
 
         let transport = SequencedMockTransport([.handler { request in
-                #expect(request.url?.path == "/api/auth/passkey/generate-register-options")
-                #expect(request.url?.query?.contains("name=MacBook") == true)
-                #expect(request.url?.query?.contains("authenticatorAttachment=platform") == true)
-                #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer passkey-token")
+                try expect(request.url?.path == "/api/auth/passkey/generate-register-options")
+                try expect(request.url?.query?.contains("name=MacBook") == true)
+                try expect(request.url?.query?.contains("authenticatorAttachment=platform") == true)
+                try expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer passkey-token")
                 return try response(for: request, statusCode: 200, data: encodeJSON(options))
             },
             .handler { request in
-                #expect(request.url?.path == "/api/auth/passkey/verify-registration")
-                #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer passkey-token")
+                try expect(request.url?.path == "/api/auth/passkey/verify-registration")
+                try expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer passkey-token")
                 let payload = try JSONDecoder().decode(PasskeyRegistrationRequest.self,
-                                                       from: try #require(request.httpBody))
-                #expect(payload.name == "MacBook")
-                #expect(payload.response.id == "credential-id")
+                                                       from: try requireValue(request.httpBody))
+                try expect(payload.name == "MacBook")
+                try expect(payload.response.id == "credential-id")
                 return try response(for: request, statusCode: 200, data: encodeJSON(createdPasskey))
             },
             .handler { request in
-                #expect(request.url?.path == "/api/auth/passkey/list-user-passkeys")
-                #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer passkey-token")
+                try expect(request.url?.path == "/api/auth/passkey/list-user-passkeys")
+                try expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer passkey-token")
                 return try response(for: request, statusCode: 200, data: encodeJSON([createdPasskey]))
             },
             .handler { request in
-                #expect(request.url?.path == "/api/auth/passkey/update-passkey")
-                let payload = try JSONDecoder().decode(UpdatePasskeyRequest.self, from: try #require(request.httpBody))
-                #expect(payload.id == "passkey-1")
-                #expect(payload.name == "Renamed MacBook")
+                try expect(request.url?.path == "/api/auth/passkey/update-passkey")
+                let payload = try JSONDecoder().decode(UpdatePasskeyRequest.self,
+                                                       from: try requireValue(request.httpBody))
+                try expect(payload.id == "passkey-1")
+                try expect(payload.name == "Renamed MacBook")
                 return try response(for: request, statusCode: 200,
                                     data: encodeJSON(UpdatePasskeyResponse(passkey: renamedPasskey)))
             },
             .handler { request in
-                #expect(request.url?.path == "/api/auth/passkey/delete-passkey")
-                let payload = try JSONDecoder().decode(DeletePasskeyRequest.self, from: try #require(request.httpBody))
-                #expect(payload.id == "passkey-1")
+                try expect(request.url?.path == "/api/auth/passkey/delete-passkey")
+                let payload = try JSONDecoder().decode(DeletePasskeyRequest.self,
+                                                       from: try requireValue(request.httpBody))
+                try expect(payload.id == "passkey-1")
                 return try response(for: request, statusCode: 200,
                                     data: encodeJSON(BetterAuthStatusResponse(status: true)))
             }])
@@ -269,12 +271,12 @@ struct PasskeyLifecycleTests {
     @Test
     func socialSignInReturnsAuthorizationURLWithoutPersistingSession() async throws {
         let transport = MockTransport { request in
-            #expect(request.url?.path == "/api/auth/sign-in/social")
-            #expect(request.httpMethod == "POST")
-            #expect(request.value(forHTTPHeaderField: "Origin") == "app://snoozy")
-            let payload = try JSONDecoder().decode(SocialSignInRequest.self, from: try #require(request.httpBody))
-            #expect(payload.provider == "google")
-            #expect(payload.disableRedirect == true)
+            try expect(request.url?.path == "/api/auth/sign-in/social")
+            try expect(request.httpMethod == "POST")
+            try expect(request.value(forHTTPHeaderField: "Origin") == "app://snoozy")
+            let payload = try JSONDecoder().decode(SocialSignInRequest.self, from: try requireValue(request.httpBody))
+            try expect(payload.provider == "google")
+            try expect(payload.disableRedirect == true)
 
             return try response(for: request,
                                 statusCode: 200,

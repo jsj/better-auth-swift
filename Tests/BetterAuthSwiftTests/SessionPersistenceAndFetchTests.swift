@@ -13,7 +13,7 @@ struct SessionPersistenceAndFetchTests {
                                                                             storage: .init(key: "test-key")),
                                      sessionStore: InMemorySessionStore(),
                                      transport: MockTransport { request in
-                                         #expect(request.url?.path == "/api/auth/get-session")
+                                         try expect(request.url?.path == "/api/auth/get-session")
                                          let data = try JSONSerialization
                                              .data(withJSONObject: ["session": ["id": "session-1",
                                                                                 "userId": "user-1",
@@ -56,8 +56,8 @@ struct SessionPersistenceAndFetchTests {
                                                                             storage: .init(key: "test-key")),
                                      sessionStore: store,
                                      transport: MockTransport { request in
-                                         #expect(request.url?.path == "/api/auth/get-session")
-                                         #expect(request
+                                         try expect(request.url?.path == "/api/auth/get-session")
+                                         try expect(request
                                              .value(forHTTPHeaderField: "Authorization") ==
                                              "Bearer old-token")
                                          return try response(for: request, statusCode: 200,
@@ -99,7 +99,7 @@ struct SessionPersistenceAndFetchTests {
                                                                             storage: .init(key: "test-key")),
                                      sessionStore: store,
                                      transport: MockTransport { request in
-                                         #expect(request.url?.path == "/api/auth/get-session")
+                                         try expect(request.url?.path == "/api/auth/get-session")
                                          throw URLError(.notConnectedToInternet)
                                      })
 
@@ -131,7 +131,7 @@ struct SessionPersistenceAndFetchTests {
                                                                             storage: .init(key: "test-key")),
                                      sessionStore: store,
                                      transport: MockTransport { request in
-                                         #expect(request.url?.path == "/api/auth/get-session")
+                                         try expect(request.url?.path == "/api/auth/get-session")
                                          return response(for: request,
                                                          statusCode: 401,
                                                          data: Data("{\"error\":\"unauthorized\"}".utf8))
@@ -165,7 +165,7 @@ struct SessionPersistenceAndFetchTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
                              transport: MockTransport { request in
-                                 #expect(request.url?.path == "/api/auth/email/sign-in")
+                                 try expect(request.url?.path == "/api/auth/email/sign-in")
                                  return try response(for: request, statusCode: 200, data: encodeJSON(signedIn))
                              },
                              eventEmitter: emitter)
@@ -189,7 +189,7 @@ struct SessionPersistenceAndFetchTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
                              transport: MockTransport { request in
-                                 #expect(request.url?.path == "/api/auth/email/sign-in")
+                                 try expect(request.url?.path == "/api/auth/email/sign-in")
                                  return try response(for: request, statusCode: 200, data: encodeJSON(signedIn))
                              },
                              eventEmitter: emitter)
@@ -219,7 +219,7 @@ struct SessionPersistenceAndFetchTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
                              transport: MockTransport { request in
-                                 #expect(request.url?.path == "/api/auth/email/sign-in")
+                                 try expect(request.url?.path == "/api/auth/email/sign-in")
                                  return try response(for: request, statusCode: 200, data: encodeJSON(signedIn))
                              })
         let store = AuthStore(client: client)
@@ -243,7 +243,7 @@ struct SessionPersistenceAndFetchTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
                              transport: MockTransport { request in
-                                 #expect(request.url?.path == "/api/auth/email/sign-in")
+                                 try expect(request.url?.path == "/api/auth/email/sign-in")
                                  return response(for: request,
                                                  statusCode: 401,
                                                  data: Data(#"{"message":"nope","code":"INVALID_CREDENTIALS"}"#.utf8))
