@@ -28,8 +28,14 @@ jobs:
           xcode-select -p
           swift --version
 
-      - name: Run package validation
-        run: ./Scripts/validate.sh
+      - name: Run package tests
+        run: swift test --enable-swift-testing
+
+      - name: Run SwiftFormat lint
+        run: swiftformat . --lint --config .swiftformat
+
+      - name: Run SwiftLint
+        run: swiftlint --config .swiftlint.yml --strict
 
   validate-xcode:
     runs-on: [self-hosted, macOS, ARM64, mac-ci]

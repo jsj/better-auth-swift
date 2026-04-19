@@ -24,8 +24,14 @@ jobs:
       - name: Generate Xcode project
         run: ./Scripts/generate_xcodeproj.sh
 
-      - name: Run package validation
-        run: ./Scripts/validate.sh
+      - name: Run package tests
+        run: swift test --enable-swift-testing
+
+      - name: Run SwiftFormat lint
+        run: swiftformat . --lint --config .swiftformat
+
+      - name: Run SwiftLint
+        run: swiftlint --config .swiftlint.yml --strict
 
       - name: Run Xcode tests
         run: |
