@@ -15,6 +15,7 @@ public extension AuthStore {
         do {
             let result = try await auth.restoreSessionOnLaunch()
             lastError = nil
+            lastUnderlyingError = nil
             lastRestoreResult = result
             applyRestoreResult(result)
         } catch {
@@ -22,6 +23,7 @@ public extension AuthStore {
             session = nil
             launchState = .failed
             lastError = normalizeError(error)
+            lastUnderlyingError = error
             statusMessage = error.localizedDescription
         }
     }

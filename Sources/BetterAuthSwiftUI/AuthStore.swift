@@ -21,9 +21,11 @@ public final class AuthStore {
     public internal(set) var statusMessage: String?
     /// Structured error captured from the last failed operation.
     public internal(set) var lastError: BetterAuthError?
+    /// The original error captured from the last failed operation.
+    public internal(set) var lastUnderlyingError: (any Error)?
 
     let auth: any BetterAuthAuthPerforming
-    private var authStateTask: Task<Void, Never>?
+    private let authStateObservation = AuthStateObservation()
 
     public init(client: some BetterAuthClientProtocol) {
         auth = client.authLifecycle
@@ -33,9 +35,9 @@ public final class AuthStore {
     // MARK: - Helpers
 
     private func startAuthStateObservation() {
-        authStateTask?.cancel()
+        authStateObservation.cancel()
         let auth = auth
-        authStateTask = Task { [weak self, auth] in
+        authStateObservation.task = Task { [weak self, auth] in
             for await change in auth.authStateChanges {
                 guard !Task.isCancelled else { return }
                 guard let self else { return }
@@ -45,8 +47,7 @@ public final class AuthStore {
     }
 
     private func stopAuthStateObservation() {
-        authStateTask?.cancel()
-        authStateTask = nil
+        authStateObservation.cancel()
     }
 
     func applyRestoreResult(_ result: BetterAuthRestoreResult) {
@@ -133,8 +134,10 @@ public final class AuthStore {
             try Task.checkCancellation()
             try await operation()
             lastError = nil
+            lastUnderlyingError = nil
         } catch {
             lastError = normalizeError(error)
+            lastUnderlyingError = error
             statusMessage = error.localizedDescription
         }
     }
@@ -146,9 +149,11 @@ public final class AuthStore {
             try Task.checkCancellation()
             let result = try await operation()
             lastError = nil
+            lastUnderlyingError = nil
             return result
         } catch {
             lastError = normalizeError(error)
+            lastUnderlyingError = error
             statusMessage = error.localizedDescription
             throw error
         }
@@ -163,5 +168,18 @@ public final class AuthStore {
 
     public func shutdown() {
         stopAuthStateObservation()
+    }
+}
+
+private final class AuthStateObservation {
+    var task: Task<Void, Never>?
+
+    func cancel() {
+        task?.cancel()
+        task = nil
+    }
+
+    deinit {
+        task?.cancel()
     }
 }

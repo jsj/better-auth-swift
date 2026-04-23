@@ -50,16 +50,16 @@ public struct OSLogBetterAuthLogger: BetterAuthLogger {
         guard level >= minimumLevel else { return }
         switch level {
         case .debug:
-            logger.debug("\(message, privacy: .public)")
+            logger.debug("\(message, privacy: .private)")
 
         case .info:
-            logger.info("\(message, privacy: .public)")
+            logger.info("\(message, privacy: .private)")
 
         case .warning:
-            logger.warning("\(message, privacy: .public)")
+            logger.warning("\(message, privacy: .private)")
 
         case .error:
-            logger.error("\(message, privacy: .public)")
+            logger.error("\(message, privacy: .private)")
         }
     }
 }

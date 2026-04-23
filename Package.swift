@@ -1,11 +1,11 @@
-// swift-tools-version: 6.2
+// swift-tools-version: 6.0
 import PackageDescription
 
 let package = Package(
     name: "better-auth-swift",
     platforms: [
-        .iOS(.v18),
-        .macOS(.v15)
+        .iOS(.v17),
+        .macOS(.v14)
     ],
     products: [
         .library(name: "BetterAuth", targets: ["BetterAuth"]),

@@ -55,6 +55,7 @@ public final class AuthEventEmitter: @unchecked Sendable {
     private var listeners: [UUID: AuthStateChangeListener] = [:]
     private var continuations: [UUID: AsyncStream<AuthStateChange>.Continuation] = [:]
     private var latestStateChange: AuthStateChange?
+    private var listenerDeliveryTask: Task<Void, Never>?
 
     public init() {}
 
@@ -76,7 +77,6 @@ public final class AuthEventEmitter: @unchecked Sendable {
             lock.unlock()
             if let latestStateChange {
                 continuation.yield(latestStateChange)
-                AuthEventNotifier.post(latestStateChange)
             }
             continuation.onTermination = { [weak self] _ in
                 self?.removeContinuation(id)
@@ -107,6 +107,14 @@ public final class AuthEventEmitter: @unchecked Sendable {
         latestStateChange = stateChange
         let currentListeners = Array(listeners.values)
         let currentContinuations = Array(continuations.values)
+        let previousDeliveryTask = listenerDeliveryTask
+        if !currentListeners.isEmpty {
+            listenerDeliveryTask = Task {
+                await previousDeliveryTask?.value
+                await deliveryQueue.deliver(stateChange: stateChange,
+                                            listeners: currentListeners)
+            }
+        }
         lock.unlock()
 
         for continuation in currentContinuations {
@@ -115,10 +123,6 @@ public final class AuthEventEmitter: @unchecked Sendable {
         AuthEventNotifier.post(stateChange)
 
         guard !currentListeners.isEmpty else { return }
-        Task {
-            await deliveryQueue.deliver(stateChange: stateChange,
-                                        listeners: currentListeners)
-        }
     }
 
     private func removeListener(_ id: UUID) {

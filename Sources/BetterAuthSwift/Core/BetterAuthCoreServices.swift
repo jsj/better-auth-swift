@@ -35,7 +35,7 @@ struct BetterAuthSessionService: BetterAuthSessionStoring {
     }
 }
 
-struct BetterAuthSessionRefreshService: @unchecked Sendable {
+struct BetterAuthSessionRefreshService {
     let configuration: BetterAuthConfiguration
     let network: any BetterAuthTransporting
 
@@ -56,7 +56,7 @@ struct BetterAuthSessionRefreshService: @unchecked Sendable {
     }
 }
 
-struct BetterAuthAuthFlowService: @unchecked Sendable {
+struct BetterAuthAuthFlowService {
     let configuration: BetterAuthConfiguration
     let network: any BetterAuthTransporting
 
@@ -74,7 +74,7 @@ struct BetterAuthAuthFlowService: @unchecked Sendable {
     }
 }
 
-struct BetterAuthUserAccountService: @unchecked Sendable {
+struct BetterAuthUserAccountService {
     let configuration: BetterAuthConfiguration
     let network: any BetterAuthTransporting
 

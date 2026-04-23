@@ -200,8 +200,8 @@ public actor BetterAuthSessionManager {
         do {
             let result = try await handleIncomingURL(url)
             switch result {
-            case let .genericOAuth(session):
-                logger?.info("OAuth callback handled for session: \(session.session.id)")
+            case .genericOAuth:
+                logger?.info("OAuth callback handled")
 
             case let .magicLink(result):
                 logger?.info("Magic link callback handled: \(result)")
