@@ -51,15 +51,17 @@ func waitUntil(fileID: String = #fileID,
                filePath: String = #filePath,
                line: Int = #line,
                column: Int = #column,
-               maxYields: Int = 200,
+               timeout: TimeInterval = 1,
+               pollInterval: TimeInterval = 0.005,
                condition: @escaping @MainActor () -> Bool) async
 {
     let sourceLocation = SourceLocation(fileID: fileID, filePath: filePath, line: line, column: column)
-    for _ in 0 ..< maxYields {
+    let deadline = Date().addingTimeInterval(timeout)
+    while Date() < deadline {
         if await MainActor.run(body: condition) {
             return
         }
-        await Task.yield()
+        try? await Task.sleep(for: .seconds(pollInterval))
     }
-    Issue.record("Condition not met after \(maxYields) task yields", sourceLocation: sourceLocation)
+    Issue.record("Condition not met within \(timeout) seconds", sourceLocation: sourceLocation)
 }

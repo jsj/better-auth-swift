@@ -119,6 +119,18 @@ public func secondsBetween(_ lhs: Date?, _ rhs: Date?) -> TimeInterval {
     return abs(lhs.timeIntervalSince1970 - rhs.timeIntervalSince1970)
 }
 
+public func waitForCondition(timeout: TimeInterval = 1,
+                             pollInterval: TimeInterval = 0.005,
+                             _ condition: @escaping @Sendable () -> Bool) async throws
+{
+    let deadline = Date().addingTimeInterval(timeout)
+    while Date() < deadline {
+        if condition() { return }
+        try await Task.sleep(for: .seconds(pollInterval))
+    }
+    throw TestFailure("Condition not met within \(timeout) seconds")
+}
+
 public struct SignOutResult: Encodable, Sendable {
     public let success: Bool
 

@@ -238,10 +238,7 @@ struct SessionPersistenceAndFetchTests {
         defer { registration.remove() }
 
         try await client.auth.signInWithEmail(.init(email: "test@example.com", password: "password123"))
-        for _ in 0 ..< 200 {
-            if recorder.withLock({ $0 }) != nil { break }
-            await Task.yield()
-        }
+        try await waitForCondition { recorder.withLock { $0 } != nil }
         let observed = recorder.withLock { $0 }
         #expect(observed?.event == .signedIn)
         #expect(observed?.session == signedIn)
@@ -262,7 +259,6 @@ struct SessionPersistenceAndFetchTests {
         let store = AuthStore(client: client)
 
         _ = store
-        await Task.yield()
         try await client.auth.signInWithEmail(.init(email: "test@example.com", password: "password123"))
         await waitUntil { store.session == signedIn }
         #expect(store.session == signedIn)
