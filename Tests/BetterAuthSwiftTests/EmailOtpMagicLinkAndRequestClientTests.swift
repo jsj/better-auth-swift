@@ -331,6 +331,28 @@ struct EmailOtpMagicLinkAndRequestClientTests {
     }
 
     @Test
+    func requestClientAppliesConfiguredTimeoutToUnauthenticatedRequests() async throws {
+        let requests = Locked<[URLRequest]>([])
+        let transport = MockTransport { request in
+            requests.withLock { $0.append(request) }
+            return emptyResponse(for: request)
+        }
+        let configuration = BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                    networking: .init(timeoutInterval: 7))
+        let client = BetterAuthClient(configuration: configuration,
+                                      sessionStore: InMemorySessionStore(),
+                                      transport: transport)
+
+        _ = try await client.requests.send(path: "/public",
+                                           method: "POST",
+                                           requiresAuthentication: false,
+                                           retryOnUnauthorized: false)
+        let captured = try #require(requests.withLock { $0.first })
+        #expect(captured.timeoutInterval == 7)
+        #expect(captured.value(forHTTPHeaderField: "Authorization") == nil)
+    }
+
+    @Test
     func requestClientThrowsWhenRetriedRawSendStillFails() async throws {
         let requests = Locked<[URLRequest]>([])
         let transport = MockTransport { request in

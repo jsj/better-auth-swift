@@ -372,5 +372,13 @@ struct OrganizationTests {
 
         let restored = try await client.auth.restoreSession()
         #expect(restored?.session.accessToken == "token-1")
+        for _ in 0 ..< 200 {
+            if observedEvents.withLock({ $0.count }) == 4 { break }
+            await Task.yield()
+        }
+        #expect(observedEvents.withLock { $0 } == [.initialSession,
+                                                   .initialSession,
+                                                   .initialSession,
+                                                   .initialSession])
     }
 }

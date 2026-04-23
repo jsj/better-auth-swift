@@ -32,16 +32,16 @@ public protocol AuthStateChangeRegistration: Sendable {
 
 private actor AuthEventDeliveryQueue {
     func deliver(stateChange: AuthStateChange,
-                 listeners: [AuthStateChangeListener],
-                 continuations: [AsyncStream<AuthStateChange>.Continuation]) async
+                 listeners: [AuthStateChangeListener]) async
     {
         for listener in listeners {
             await listener(stateChange)
         }
-        for continuation in continuations {
-            continuation.yield(stateChange)
-        }
+    }
+}
 
+private enum AuthEventNotifier {
+    static func post(_ stateChange: AuthStateChange) {
         NotificationCenter.default.post(name: .betterAuthStateDidChange,
                                         object: nil,
                                         userInfo: ["event": stateChange.event.rawValue,
@@ -75,8 +75,8 @@ public final class AuthEventEmitter: @unchecked Sendable {
             continuations[id] = continuation
             lock.unlock()
             if let latestStateChange {
-                Task { await deliveryQueue.deliver(stateChange: latestStateChange, listeners: [],
-                                                   continuations: [continuation]) }
+                continuation.yield(latestStateChange)
+                AuthEventNotifier.post(latestStateChange)
             }
             continuation.onTermination = { [weak self] _ in
                 self?.removeContinuation(id)
@@ -109,10 +109,15 @@ public final class AuthEventEmitter: @unchecked Sendable {
         let currentContinuations = Array(continuations.values)
         lock.unlock()
 
+        for continuation in currentContinuations {
+            continuation.yield(stateChange)
+        }
+        AuthEventNotifier.post(stateChange)
+
+        guard !currentListeners.isEmpty else { return }
         Task {
             await deliveryQueue.deliver(stateChange: stateChange,
-                                        listeners: currentListeners,
-                                        continuations: currentContinuations)
+                                        listeners: currentListeners)
         }
     }
 
@@ -139,6 +144,11 @@ public final class AuthEventEmitter: @unchecked Sendable {
 
         func remove() {
             emitter?.removeListener(id)
+            emitter = nil
+        }
+
+        deinit {
+            remove()
         }
     }
 }

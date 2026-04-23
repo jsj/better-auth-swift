@@ -181,6 +181,43 @@ struct SessionPersistenceAndFetchTests {
     }
 
     @Test
+    func updateSessionPublishesLifecycleEvents() async throws {
+        let emitter = AuthEventEmitter()
+        let initial = BetterAuthSession(session: .init(id: "session-1",
+                                                       userId: "user-1",
+                                                       accessToken: "token-1",
+                                                       refreshToken: "refresh-1",
+                                                       expiresAt: Date().addingTimeInterval(300)),
+                                        user: .init(id: "user-1", email: "test@example.com"))
+        let refreshed = BetterAuthSession(session: .init(id: "session-1",
+                                                         userId: "user-1",
+                                                         accessToken: "token-2",
+                                                         refreshToken: "refresh-2",
+                                                         expiresAt: Date().addingTimeInterval(3600)),
+                                          user: .init(id: "user-1", email: "test@example.com"))
+        let manager =
+            BetterAuthSessionManager(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                            storage: .init(key: "test-key")),
+                                     sessionStore: InMemorySessionStore(),
+                                     transport: MockTransport { request in
+                                         emptyResponse(for: request)
+                                     },
+                                     eventEmitter: emitter)
+
+        var iterator = emitter.stateChanges.makeAsyncIterator()
+
+        try await manager.updateSession(initial)
+        let signedIn = await iterator.next()
+        #expect(signedIn?.event == .signedIn)
+        #expect(signedIn?.session == initial)
+
+        try await manager.updateSession(refreshed)
+        let tokenRefreshed = await iterator.next()
+        #expect(tokenRefreshed?.event == .tokenRefreshed)
+        #expect(tokenRefreshed?.session == refreshed)
+    }
+
+    @Test
     func authStateListenerReceivesStructuredTransition() async throws {
         let emitter = AuthEventEmitter()
         let signedIn = BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "token"),

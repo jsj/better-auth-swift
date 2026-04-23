@@ -191,34 +191,47 @@ struct SessionLifecycleCoreTests {
 
     @Test
     func unauthenticatedRequestsIncludeConfiguredOriginHeader() async throws {
+        let requests = Locked<[URLRequest]>([])
         let transport = MockTransport { request in
-            try expect(request.value(forHTTPHeaderField: "Origin") == "app://snoozy")
-            return response(for: request, statusCode: 200, data: Data("null".utf8))
+            requests.withLock { $0.append(request) }
+            return emptyResponse(for: request)
         }
 
-        let requestURL = try BetterAuthURLResolver.resolve("/api/auth/sign-in/social",
-                                                           relativeTo: try #require(URL(string: "https://example.com")))
-        var request = URLRequest(url: requestURL)
-        request.httpMethod = "POST"
-        request.setValue("app://snoozy", forHTTPHeaderField: "Origin")
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                    requestOrigin: "app://snoozy"),
+                             sessionStore: InMemorySessionStore(),
+                             transport: transport)
 
-        _ = try await transport.execute(request)
+        _ = try await client.requests.send(path: "/api/auth/sign-in/social",
+                                           method: "POST",
+                                           requiresAuthentication: false,
+                                           retryOnUnauthorized: false)
+        let captured = try #require(requests.withLock { $0.first })
+        #expect(captured.value(forHTTPHeaderField: "Origin") == "app://snoozy")
     }
 
     @Test
     func explicitOriginHeaderOverridesConfiguredOrigin() async throws {
+        let requests = Locked<[URLRequest]>([])
         let transport = MockTransport { request in
-            try expect(request.value(forHTTPHeaderField: "Origin") == "custom://origin")
-            return response(for: request, statusCode: 200, data: Data("null".utf8))
+            requests.withLock { $0.append(request) }
+            return emptyResponse(for: request)
         }
 
-        let requestURL = try BetterAuthURLResolver.resolve("/api/auth/sign-in/social",
-                                                           relativeTo: try #require(URL(string: "https://example.com")))
-        var request = URLRequest(url: requestURL)
-        request.httpMethod = "POST"
-        request.setValue("custom://origin", forHTTPHeaderField: "Origin")
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                    requestOrigin: "app://snoozy"),
+                             sessionStore: InMemorySessionStore(),
+                             transport: transport)
 
-        _ = try await transport.execute(request)
+        _ = try await client.requests.send(path: "/api/auth/sign-in/social",
+                                           method: "POST",
+                                           headers: ["Origin": "custom://origin"],
+                                           requiresAuthentication: false,
+                                           retryOnUnauthorized: false)
+        let captured = try #require(requests.withLock { $0.first })
+        #expect(captured.value(forHTTPHeaderField: "Origin") == "custom://origin")
     }
 
     @Test

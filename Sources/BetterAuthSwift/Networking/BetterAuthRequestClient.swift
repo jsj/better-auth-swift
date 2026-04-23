@@ -142,6 +142,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
         let url = try BetterAuthURLResolver.resolve(path, relativeTo: configuration.baseURL)
         var request = URLRequest(url: url)
         request.httpMethod = method
+        request.timeoutInterval = configuration.timeoutInterval
         if let requestOrigin = configuration.requestOrigin, request.value(forHTTPHeaderField: "Origin") == nil {
             request.setValue(requestOrigin, forHTTPHeaderField: "Origin")
         }

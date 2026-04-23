@@ -19,6 +19,7 @@ public struct BetterAuthClient: BetterAuthModuleSupporting, Sendable {
     public let requests: BetterAuthRequestClient
     /// Registered optional modules for this client instance.
     public let modules: BetterAuthModuleRegistry
+    private let authStateListenerRegistrations: [any AuthStateChangeRegistration]
 
     /// Creates a client from a full configuration object.
     ///
@@ -56,9 +57,10 @@ public struct BetterAuthClient: BetterAuthModuleSupporting, Sendable {
                                                 sessionManager: auth,
                                                 transport: transport,
                                                 requestHooks: resolvedModules.registeredRequestHooks)
-        let authStateListeners = resolvedModules.registeredAuthStateListeners
-        Task {
-            await auth.installAuthStateListeners(authStateListeners)
+        self.authStateListenerRegistrations = resolvedModules.registeredAuthStateListeners.map { listener in
+            auth.onAuthStateChange.on { change in
+                await listener.authStateDidChange(change)
+            }
         }
     }
 }

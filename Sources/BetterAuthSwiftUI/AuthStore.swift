@@ -46,6 +46,7 @@ public final class AuthStore {
             lastRestoreResult = result
             applyRestoreResult(result)
         } catch {
+            lastRestoreResult = nil
             session = nil
             launchState = .failed
             lastError = normalizeError(error)

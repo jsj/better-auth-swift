@@ -23,11 +23,23 @@ public actor SequencedMockTransport: BetterAuthTransport {
         case handler(@Sendable (URLRequest) throws -> (Data, URLResponse))
 
         public static func response(statusCode: Int, jsonObject: Any) -> Entry {
-            .raw(try! JSONSerialization.data(withJSONObject: jsonObject), statusCode)
+            do {
+                return .raw(try JSONSerialization.data(withJSONObject: jsonObject), statusCode)
+            } catch {
+                return .handler { _ in
+                    throw TestFailure("Invalid JSON mock response: \(error)")
+                }
+            }
         }
 
         public static func response(statusCode: Int, encodable: some Encodable) -> Entry {
-            .raw(try! encodeJSON(encodable), statusCode)
+            do {
+                return .raw(try encodeJSON(encodable), statusCode)
+            } catch {
+                return .handler { _ in
+                    throw TestFailure("Failed to encode mock response: \(error)")
+                }
+            }
         }
     }
 
@@ -39,7 +51,7 @@ public actor SequencedMockTransport: BetterAuthTransport {
 
     public func execute(_ request: URLRequest) async throws -> (Data, URLResponse) {
         guard !entries.isEmpty else {
-            fatalError("No mock responses left")
+            throw TestFailure("No mock responses left for request: \(request.url?.absoluteString ?? "nil")")
         }
 
         let entry = entries.removeFirst()
