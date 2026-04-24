@@ -5,12 +5,14 @@ public extension BetterAuthSessionManager {
 
     @discardableResult
     func signUpWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult {
-        try await makePrimaryAuthService().signUpWithEmail(payload)
+        try await throttleAuthOperation("signUpWithEmail")
+        return try await makePrimaryAuthService().signUpWithEmail(payload)
     }
 
     @discardableResult
     func signInWithEmail(_ payload: EmailSignInRequest) async throws -> BetterAuthSession {
-        try await makePrimaryAuthService().signInWithEmail(payload)
+        try await throttleAuthOperation("signInWithEmail")
+        return try await makePrimaryAuthService().signInWithEmail(payload)
     }
 
     // MARK: - Username
@@ -21,28 +23,32 @@ public extension BetterAuthSessionManager {
 
     @discardableResult
     func signInWithUsername(_ payload: UsernameSignInRequest) async throws -> BetterAuthSession {
-        try await makePrimaryAuthService().signInWithUsername(payload)
+        try await throttleAuthOperation("signInWithUsername")
+        return try await makePrimaryAuthService().signInWithUsername(payload)
     }
 
     // MARK: - Apple
 
     @discardableResult
     func signInWithApple(_ payload: AppleNativeSignInPayload) async throws -> BetterAuthSession {
-        try await makePrimaryAuthService().signInWithApple(payload)
+        try await throttleAuthOperation("signInWithApple")
+        return try await makePrimaryAuthService().signInWithApple(payload)
     }
 
     // MARK: - Social
 
     @discardableResult
     func signInWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult {
-        try await makePrimaryAuthService().signInWithSocial(payload)
+        try await throttleAuthOperation("signInWithSocial")
+        return try await makePrimaryAuthService().signInWithSocial(payload)
     }
 
     // MARK: - Anonymous
 
     @discardableResult
     func signInAnonymously() async throws -> BetterAuthSession {
-        try await makePrimaryAuthService().signInAnonymously()
+        try await throttleAuthOperation("signInAnonymously")
+        return try await makePrimaryAuthService().signInAnonymously()
     }
 
     @discardableResult
@@ -81,7 +87,9 @@ public extension BetterAuthSessionManager {
 
     @discardableResult
     func reauthenticate(password: String) async throws -> Bool {
-        try await makePrimaryAuthService().reauthenticate(password: password, currentSession: state.currentSession)
+        try await throttleAuthOperation("reauthenticate")
+        return try await makePrimaryAuthService().reauthenticate(password: password,
+                                                                 currentSession: state.currentSession)
     }
 
     // MARK: - Generic OAuth

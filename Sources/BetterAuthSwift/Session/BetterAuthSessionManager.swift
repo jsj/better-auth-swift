@@ -20,6 +20,7 @@ public actor BetterAuthSessionManager {
     let authFlowService: BetterAuthAuthFlowService
     let userAccountService: BetterAuthUserAccountService
     let callbackHandler: BetterAuthCallbackHandler
+    let authThrottle = BetterAuthAuthOperationThrottle()
     var authStateListenerRegistrations: [any AuthStateChangeRegistration] = []
     var inFlightRefreshTask: Task<BetterAuthSession, Error>?
     var autoRefreshTask: Task<Void, Never>?
@@ -87,6 +88,11 @@ public actor BetterAuthSessionManager {
 
     func makeOAuthService() -> BetterAuthOAuthService {
         BetterAuthOAuthService(context: context, relay: makeRelay())
+    }
+
+    func throttleAuthOperation(_ operation: String) async throws {
+        guard let policy = configuration.auth.throttlePolicy else { return }
+        try await authThrottle.check(operation: operation, policy: policy)
     }
 
     public init(configuration: BetterAuthConfiguration,

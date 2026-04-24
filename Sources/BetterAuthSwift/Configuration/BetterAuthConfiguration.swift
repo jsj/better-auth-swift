@@ -15,6 +15,7 @@ public struct BetterAuthConfiguration: Sendable {
                 networking: Networking = .init(),
                 clockSkew: TimeInterval? = nil,
                 autoRefreshToken: Bool? = nil,
+                authThrottlePolicy: AuthThrottlePolicy? = nil,
                 callbackURLSchemes: Set<String>? = nil,
                 retryPolicy: RetryPolicy? = nil,
                 requestOrigin: String? = nil,
@@ -25,6 +26,7 @@ public struct BetterAuthConfiguration: Sendable {
         self.endpoints = endpoints
         let resolvedAuth = Auth(clockSkew: clockSkew ?? auth.clockSkew,
                                 autoRefreshToken: autoRefreshToken ?? auth.autoRefreshToken,
+                                throttlePolicy: authThrottlePolicy ?? auth.throttlePolicy,
                                 callbackURLSchemes: callbackURLSchemes ?? auth.callbackURLSchemes)
         self.auth = resolvedAuth
         self.networking = Networking(retryPolicy: retryPolicy ?? networking.retryPolicy,
@@ -58,15 +60,26 @@ public extension BetterAuthConfiguration {
     struct Auth: Sendable {
         public let clockSkew: TimeInterval
         public let autoRefreshToken: Bool
+        public let throttlePolicy: AuthThrottlePolicy?
         public let callbackURLSchemes: Set<String>
 
         public init(clockSkew: TimeInterval = 60,
                     autoRefreshToken: Bool = true,
+                    throttlePolicy: AuthThrottlePolicy? = nil,
                     callbackURLSchemes: Set<String> = [])
         {
             self.clockSkew = clockSkew
             self.autoRefreshToken = autoRefreshToken
+            self.throttlePolicy = throttlePolicy
             self.callbackURLSchemes = Set(callbackURLSchemes.map { $0.lowercased() })
+        }
+    }
+
+    struct AuthThrottlePolicy: Sendable, Equatable {
+        public let minimumInterval: TimeInterval
+
+        public init(minimumInterval: TimeInterval = 1) {
+            self.minimumInterval = minimumInterval
         }
     }
 

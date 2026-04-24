@@ -6,6 +6,35 @@ import Testing
 
 struct EmailPasswordAuthTests {
     @Test
+    func optionalAuthThrottlePreventsImmediateRepeatedSignIn() async throws {
+        let signedIn = BetterAuthSession(session: .init(id: "session-1",
+                                                        userId: "user-1",
+                                                        accessToken: "token"),
+                                         user: .init(id: "user-1", email: "test@example.com"))
+        let requests = Locked(0)
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                    auth: .init(throttlePolicy: .init(minimumInterval: 60))),
+                             sessionStore: InMemorySessionStore(),
+                             transport: MockTransport { request in
+                                 requests.withLock { $0 += 1 }
+                                 try expect(request.url?.path == "/api/auth/email/sign-in")
+                                 return try response(for: request, statusCode: 200, data: encodeJSON(signedIn))
+                             })
+
+        _ = try await client.auth.signInWithEmail(.init(email: "test@example.com", password: "password123"))
+
+        do {
+            _ = try await client.auth.signInWithEmail(.init(email: "test@example.com", password: "password123"))
+            Issue.record("Expected client-side throttle to reject repeated sign-in")
+        } catch let error as BetterAuthError {
+            #expect(error.isRateLimited)
+            #expect(error.authErrorCode == .tooManyRequests)
+        }
+        #expect(requests.withLock { $0 } == 1)
+    }
+
+    @Test
     func emailSignUpPersistsNativeSessionAndSupportsRestore() async throws {
         let signedUpSession = BetterAuthSession(session: .init(id: "session-sign-up",
                                                                userId: "user-1",

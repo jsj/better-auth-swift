@@ -294,12 +294,15 @@ struct SessionPersistenceAndFetchTests {
     @Test
     func configurationSupportsNestedAuthAndNetworkingOptions() throws {
         let configuration = BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
-                                                    auth: .init(clockSkew: 90, autoRefreshToken: false),
+                                                    auth: .init(clockSkew: 90,
+                                                                autoRefreshToken: false,
+                                                                throttlePolicy: .init(minimumInterval: 2)),
                                                     networking: .init(retryPolicy: .default,
                                                                       requestOrigin: "app://origin"))
 
         #expect(configuration.auth.clockSkew == 90)
         #expect(configuration.auth.autoRefreshToken == false)
+        #expect(configuration.auth.throttlePolicy?.minimumInterval == 2)
         #expect(configuration.clockSkew == 90)
         #expect(configuration.networking.requestOrigin == "app://origin")
         #expect(configuration.requestOrigin == "app://origin")
