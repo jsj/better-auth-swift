@@ -20,74 +20,103 @@ public actor BetterAuthSessionManager {
     let authFlowService: BetterAuthAuthFlowService
     let userAccountService: BetterAuthUserAccountService
     let callbackHandler: BetterAuthCallbackHandler
+    let context: BetterAuthSessionContext
     let authThrottle = BetterAuthAuthOperationThrottle()
     var authStateListenerRegistrations: [any AuthStateChangeRegistration] = []
     var inFlightRefreshTask: Task<BetterAuthSession, Error>?
     var autoRefreshTask: Task<Void, Never>?
-
-    var context: BetterAuthSessionContext {
-        BetterAuthSessionContext(configuration: configuration,
-                                 state: state,
-                                 sessionService: sessionService,
-                                 refreshService: refreshService,
-                                 authFlowService: authFlowService,
-                                 userAccountService: userAccountService,
-                                 callbackHandler: callbackHandler,
-                                 network: network,
-                                 logger: logger)
-    }
+    var cachedRelay: BetterAuthSessionEventRelay?
+    var cachedMaterializer: BetterAuthSessionMaterializer?
+    var cachedPrimaryAuthService: BetterAuthPrimaryAuthService?
+    var cachedProfileService: BetterAuthProfileService?
+    var cachedPasskeyService: BetterAuthPasskeyService?
+    var cachedOneTimeCodeService: BetterAuthOneTimeCodeService?
+    var cachedTwoFactorService: BetterAuthTwoFactorService?
+    var cachedSessionAdministrationService: BetterAuthSessionAdministrationService?
+    var cachedSessionBootstrapService: BetterAuthSessionBootstrapService?
+    var cachedOAuthService: BetterAuthOAuthService?
 
     func makeRelay() -> BetterAuthSessionEventRelay {
-        BetterAuthSessionEventRelay(context: context,
-                                    refreshSession: {
-                                        try await self.refreshSession()
-                                    })
+        if let cachedRelay { return cachedRelay }
+        let relay = BetterAuthSessionEventRelay(context: context,
+                                                refreshSession: {
+                                                    try await self.refreshSession()
+                                                })
+        cachedRelay = relay
+        return relay
     }
 
     func makeMaterializer() -> BetterAuthSessionMaterializer {
-        BetterAuthSessionMaterializer(context: context)
+        if let cachedMaterializer { return cachedMaterializer }
+        let materializer = BetterAuthSessionMaterializer(context: context)
+        cachedMaterializer = materializer
+        return materializer
     }
 
     func makePrimaryAuthService() -> BetterAuthPrimaryAuthService {
-        BetterAuthPrimaryAuthService(context: context,
-                                     relay: makeRelay(),
-                                     materializer: makeMaterializer())
+        if let cachedPrimaryAuthService { return cachedPrimaryAuthService }
+        let service = BetterAuthPrimaryAuthService(context: context,
+                                                   relay: makeRelay(),
+                                                   materializer: makeMaterializer())
+        cachedPrimaryAuthService = service
+        return service
     }
 
     func makeProfileService() -> BetterAuthProfileService {
-        BetterAuthProfileService(context: context,
-                                 relay: makeRelay(),
-                                 materializer: makeMaterializer())
+        if let cachedProfileService { return cachedProfileService }
+        let service = BetterAuthProfileService(context: context,
+                                               relay: makeRelay(),
+                                               materializer: makeMaterializer())
+        cachedProfileService = service
+        return service
     }
 
     func makePasskeyService() -> BetterAuthPasskeyService {
-        BetterAuthPasskeyService(context: context,
-                                 relay: makeRelay(),
-                                 materializer: makeMaterializer())
+        if let cachedPasskeyService { return cachedPasskeyService }
+        let service = BetterAuthPasskeyService(context: context,
+                                               relay: makeRelay(),
+                                               materializer: makeMaterializer())
+        cachedPasskeyService = service
+        return service
     }
 
     func makeOneTimeCodeService() -> BetterAuthOneTimeCodeService {
-        BetterAuthOneTimeCodeService(context: context,
-                                     relay: makeRelay(),
-                                     materializer: makeMaterializer())
+        if let cachedOneTimeCodeService { return cachedOneTimeCodeService }
+        let service = BetterAuthOneTimeCodeService(context: context,
+                                                   relay: makeRelay(),
+                                                   materializer: makeMaterializer())
+        cachedOneTimeCodeService = service
+        return service
     }
 
     func makeTwoFactorService() -> BetterAuthTwoFactorService {
-        BetterAuthTwoFactorService(context: context,
-                                   relay: makeRelay(),
-                                   materializer: makeMaterializer())
+        if let cachedTwoFactorService { return cachedTwoFactorService }
+        let service = BetterAuthTwoFactorService(context: context,
+                                                 relay: makeRelay(),
+                                                 materializer: makeMaterializer())
+        cachedTwoFactorService = service
+        return service
     }
 
     func makeSessionAdministrationService() -> BetterAuthSessionAdministrationService {
-        BetterAuthSessionAdministrationService(context: context, relay: makeRelay())
+        if let cachedSessionAdministrationService { return cachedSessionAdministrationService }
+        let service = BetterAuthSessionAdministrationService(context: context, relay: makeRelay())
+        cachedSessionAdministrationService = service
+        return service
     }
 
     func makeSessionBootstrapService() -> BetterAuthSessionBootstrapService {
-        BetterAuthSessionBootstrapService(context: context, relay: makeRelay())
+        if let cachedSessionBootstrapService { return cachedSessionBootstrapService }
+        let service = BetterAuthSessionBootstrapService(context: context, relay: makeRelay())
+        cachedSessionBootstrapService = service
+        return service
     }
 
     func makeOAuthService() -> BetterAuthOAuthService {
-        BetterAuthOAuthService(context: context, relay: makeRelay())
+        if let cachedOAuthService { return cachedOAuthService }
+        let service = BetterAuthOAuthService(context: context, relay: makeRelay())
+        cachedOAuthService = service
+        return service
     }
 
     func throttleAuthOperation(_ operation: String) async throws {
@@ -118,6 +147,15 @@ public actor BetterAuthSessionManager {
         self.callbackHandler = BetterAuthCallbackHandler(baseURL: configuration.baseURL,
                                                          endpoints: configuration.endpoints,
                                                          callbackURLSchemes: configuration.auth.callbackURLSchemes)
+        self.context = BetterAuthSessionContext(configuration: configuration,
+                                                state: self.state,
+                                                sessionService: self.sessionService,
+                                                refreshService: self.refreshService,
+                                                authFlowService: self.authFlowService,
+                                                userAccountService: self.userAccountService,
+                                                callbackHandler: self.callbackHandler,
+                                                network: self.network,
+                                                logger: logger)
         self.authStateListenerRegistrations = Self.makeAuthStateListenerRegistrations(authStateListeners,
                                                                                       eventEmitter: eventEmitter)
     }
@@ -336,9 +374,6 @@ public actor BetterAuthSessionManager {
             updateAutoRefresh(for: session)
 
         case .noStoredSession, .cleared:
-            updateAutoRefresh(for: nil)
-
-        @unknown default:
             updateAutoRefresh(for: nil)
         }
     }

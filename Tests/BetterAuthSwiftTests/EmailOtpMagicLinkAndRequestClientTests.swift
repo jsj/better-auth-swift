@@ -34,7 +34,7 @@ struct EmailOtpMagicLinkAndRequestClientTests {
         let transport = MockTransport { request in
             try expect(request.url?.path == "/api/auth/email-otp/send-verification-otp")
             try expect(request.httpMethod == "POST")
-            let payload = try JSONDecoder().decode(EmailOTPRequest.self, from: try requireValue(request.httpBody))
+            let payload = try JSONDecoder().decode(EmailOTPRequest.self, from: try #require(request.httpBody))
             try expect(payload.email == "otp@example.com")
             try expect(payload.type == .signIn)
 
@@ -251,7 +251,7 @@ struct EmailOtpMagicLinkAndRequestClientTests {
         let transport = MockTransport { request in
             try expect(request.url?.path == "/api/auth/phone-number/send-otp")
             try expect(request.httpMethod == "POST")
-            let payload = try JSONDecoder().decode(PhoneOTPRequest.self, from: try requireValue(request.httpBody))
+            let payload = try JSONDecoder().decode(PhoneOTPRequest.self, from: try #require(request.httpBody))
             try expect(payload.phoneNumber == "+15555550123")
 
             return try response(for: request, statusCode: 200,
@@ -280,7 +280,7 @@ struct EmailOtpMagicLinkAndRequestClientTests {
             try expect(request.url?.path == "/api/auth/phone-number/verify")
             try expect(request.httpMethod == "POST")
             try expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer phone-token")
-            let payload = try JSONDecoder().decode(PhoneOTPVerifyRequest.self, from: try requireValue(request.httpBody))
+            let payload = try JSONDecoder().decode(PhoneOTPVerifyRequest.self, from: try #require(request.httpBody))
             try expect(payload.phoneNumber == "+15555550123")
             try expect(payload.code == "123456")
             try expect(payload.disableSession == true)

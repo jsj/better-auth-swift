@@ -107,7 +107,7 @@ struct PasskeyLifecycleTests {
                 try expect(request.url?.path == "/api/auth/passkey/verify-registration")
                 try expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer passkey-token")
                 let payload = try JSONDecoder().decode(PasskeyRegistrationRequest.self,
-                                                       from: try requireValue(request.httpBody))
+                                                       from: try #require(request.httpBody))
                 try expect(payload.name == "MacBook")
                 try expect(payload.response.id == "credential-id")
                 return try response(for: request, statusCode: 200, data: encodeJSON(createdPasskey))
@@ -120,7 +120,7 @@ struct PasskeyLifecycleTests {
             .handler { request in
                 try expect(request.url?.path == "/api/auth/passkey/update-passkey")
                 let payload = try JSONDecoder().decode(UpdatePasskeyRequest.self,
-                                                       from: try requireValue(request.httpBody))
+                                                       from: try #require(request.httpBody))
                 try expect(payload.id == "passkey-1")
                 try expect(payload.name == "Renamed MacBook")
                 return try response(for: request, statusCode: 200,
@@ -129,7 +129,7 @@ struct PasskeyLifecycleTests {
             .handler { request in
                 try expect(request.url?.path == "/api/auth/passkey/delete-passkey")
                 let payload = try JSONDecoder().decode(DeletePasskeyRequest.self,
-                                                       from: try requireValue(request.httpBody))
+                                                       from: try #require(request.httpBody))
                 try expect(payload.id == "passkey-1")
                 return try response(for: request, statusCode: 200,
                                     data: encodeJSON(BetterAuthStatusResponse(status: true)))
@@ -274,7 +274,7 @@ struct PasskeyLifecycleTests {
             try expect(request.url?.path == "/api/auth/sign-in/social")
             try expect(request.httpMethod == "POST")
             try expect(request.value(forHTTPHeaderField: "Origin") == "app://snoozy")
-            let payload = try JSONDecoder().decode(SocialSignInRequest.self, from: try requireValue(request.httpBody))
+            let payload = try JSONDecoder().decode(SocialSignInRequest.self, from: try #require(request.httpBody))
             try expect(payload.provider == "google")
             try expect(payload.disableRedirect == true)
 

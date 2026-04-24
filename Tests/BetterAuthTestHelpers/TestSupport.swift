@@ -95,13 +95,6 @@ public func expect(_ condition: @autoclosure () -> Bool,
     }
 }
 
-public func requireValue<T>(_ value: T?, _ message: @autoclosure () -> String = "Required value was nil") throws -> T {
-    guard let value else {
-        throw TestFailure(message())
-    }
-    return value
-}
-
 public func response(for request: URLRequest, statusCode: Int, data: Data) -> (Data, URLResponse) {
     let response = HTTPURLResponse(url: request.url ?? URL(string: "https://example.com")!,
                                    statusCode: statusCode,

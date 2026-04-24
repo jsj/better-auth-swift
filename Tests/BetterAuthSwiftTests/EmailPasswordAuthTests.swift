@@ -248,7 +248,7 @@ struct EmailPasswordAuthTests {
                 try expect(request.url?.path == "/api/auth/is-username-available")
                 try expect(request.httpMethod == "POST")
                 let payload = try JSONDecoder().decode(UsernameAvailabilityRequest.self,
-                                                       from: try requireValue(request.httpBody))
+                                                       from: try #require(request.httpBody))
                 try expect(payload.username == "PRIORITY_USER")
                 return try response(for: request, statusCode: 200,
                                     data: encodeJSON(UsernameAvailabilityResponse(available: false)))
@@ -256,7 +256,7 @@ struct EmailPasswordAuthTests {
             .handler { request in
                 try expect(request.url?.path == "/api/auth/is-username-available")
                 let payload = try JSONDecoder().decode(UsernameAvailabilityRequest.self,
-                                                       from: try requireValue(request.httpBody))
+                                                       from: try #require(request.httpBody))
                 try expect(payload.username == "fresh_user")
                 return try response(for: request, statusCode: 200,
                                     data: encodeJSON(UsernameAvailabilityResponse(available: true)))
@@ -351,7 +351,7 @@ struct EmailPasswordAuthTests {
 
         let transport = SequencedMockTransport([.handler { request in
             try expect(request.url?.path == "/api/auth/email/sign-up")
-            let payload = try JSONDecoder().decode(EmailSignUpRequest.self, from: try requireValue(request.httpBody))
+            let payload = try JSONDecoder().decode(EmailSignUpRequest.self, from: try #require(request.httpBody))
             try expect(payload.username == "Custom_User")
             try expect(payload.displayUsername == nil)
             return try response(for: request, statusCode: 200, data: encodeJSON(signedUpSession))
@@ -402,7 +402,7 @@ struct EmailPasswordAuthTests {
             try expect(request.url?.path == "/api/auth/update-user")
             try expect(request.httpMethod == "POST")
             try expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer current-token")
-            let payload = try JSONDecoder().decode(UpdateUserRequest.self, from: try requireValue(request.httpBody))
+            let payload = try JSONDecoder().decode(UpdateUserRequest.self, from: try #require(request.httpBody))
             try expect(payload.username == "Priority_User")
             try expect(payload.displayUsername == "Priority Display Name")
             try expect(payload.name == "Updated Name")
@@ -461,7 +461,7 @@ struct EmailPasswordAuthTests {
         let transport = MockTransport { request in
             try expect(request.url?.path == "/api/auth/sign-in/magic-link")
             try expect(request.httpMethod == "POST")
-            let payload = try JSONSerialization.jsonObject(with: try requireValue(request.httpBody)) as? [String: Any]
+            let payload = try JSONSerialization.jsonObject(with: try #require(request.httpBody)) as? [String: Any]
             try expect(payload?["email"] as? String == "magic@example.com")
             try expect(payload?["name"] as? String == "Magic User")
             try expect(payload?["callbackURL"] as? String == "betterauth://magic/success")

@@ -71,21 +71,12 @@ public final class AuthStore {
             case .deferred:
                 launchState = .recoverableFailure(restoredSession)
                 statusMessage = "Session restored; refresh deferred"
-
-            @unknown default:
-                launchState = .authenticated(restoredSession)
-                statusMessage = "Session restored"
             }
 
         case .cleared:
             session = nil
             launchState = .unauthenticated
             statusMessage = "Stored session cleared"
-
-        @unknown default:
-            session = nil
-            launchState = .unauthenticated
-            statusMessage = "Session state updated"
         }
     }
 
@@ -112,13 +103,6 @@ public final class AuthStore {
             launchState = .failed
 
         case .idle, nil:
-            if let session = change.session {
-                launchState = .authenticated(session)
-            } else if change.event == .signedOut || change.event == .sessionExpired {
-                launchState = .unauthenticated
-            }
-
-        @unknown default:
             if let session = change.session {
                 launchState = .authenticated(session)
             } else if change.event == .signedOut || change.event == .sessionExpired {

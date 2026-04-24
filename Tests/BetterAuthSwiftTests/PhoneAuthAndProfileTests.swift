@@ -11,7 +11,7 @@ struct PhoneAuthAndProfileTests {
             try expect(request.url?.path == "/api/auth/phone-number/verify")
             try expect(request.httpMethod == "POST")
             try expect(request.value(forHTTPHeaderField: "Authorization") == nil)
-            let payload = try JSONDecoder().decode(PhoneOTPVerifyRequest.self, from: try requireValue(request.httpBody))
+            let payload = try JSONDecoder().decode(PhoneOTPVerifyRequest.self, from: try #require(request.httpBody))
             try expect(payload.phoneNumber == "+15555550123")
             try expect(payload.code == "123456")
             try expect(payload.updatePhoneNumber == nil)
@@ -140,7 +140,7 @@ struct PhoneAuthAndProfileTests {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key"),
-                                                                    endpoints: .init(nativeAppleSignInPath: "/api/auth/apple/native"),
+                                                                    endpoints: .init(auth: .init(nativeAppleSignInPath: "/api/auth/apple/native")),
                                                                     requestOrigin: "app://snoozy"),
                              sessionStore: store,
                              transport: MockTransport { request in
@@ -152,7 +152,7 @@ struct PhoneAuthAndProfileTests {
                                  try expect(request.value(forHTTPHeaderField: "Origin") == "app://snoozy")
 
                                  let payload = try JSONDecoder().decode(AppleNativeSignInPayload.self,
-                                                                        from: try requireValue(request.httpBody))
+                                                                        from: try #require(request.httpBody))
                                  try expect(payload.token == "identity-token")
                                  try expect(payload.nonce == "raw-nonce")
                                  try expect(payload.authorizationCode == "auth-code")
@@ -202,14 +202,14 @@ struct PhoneAuthAndProfileTests {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key"),
-                                                                    endpoints: .init(nativeAppleSignInPath: "/api/auth/apple/native"),
+                                                                    endpoints: .init(auth: .init(nativeAppleSignInPath: "/api/auth/apple/native")),
                                                                     requestOrigin: "app://snoozy"),
                              sessionStore: store,
                              transport: MockTransport { request in
                                  try expect(request.url?.path == "/api/auth/apple/native")
                                  try expect(request.value(forHTTPHeaderField: "Origin") == "app://snoozy")
                                  let payload = try JSONDecoder().decode(AppleNativeSignInPayload.self,
-                                                                        from: try requireValue(request.httpBody))
+                                                                        from: try #require(request.httpBody))
                                  try expect(payload.token == "repeat-identity-token")
                                  try expect(payload.nonce == "repeat-raw-nonce")
                                  try expect(payload.email == nil)
@@ -253,14 +253,14 @@ struct PhoneAuthAndProfileTests {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key"),
-                                                                    endpoints: .init(nativeAppleSignInPath: "/api/auth/custom-apple/native",
-                                                                                     socialSignInPath: "/api/auth/sign-in/social"),
+                                                                    endpoints: .init(auth: .init(nativeAppleSignInPath: "/api/auth/custom-apple/native",
+                                                                                                 socialSignInPath: "/api/auth/sign-in/social")),
                                                                     requestOrigin: "app://snoozy"),
                              sessionStore: store,
                              transport: MockTransport { request in
                                  try expect(request.url?.path == "/api/auth/custom-apple/native")
                                  let payload = try JSONDecoder().decode(AppleNativeSignInPayload.self,
-                                                                        from: try requireValue(request.httpBody))
+                                                                        from: try #require(request.httpBody))
                                  try expect(payload.token == "identity-token")
                                  return try response(for: request, statusCode: 200,
                                                      data: encodeJSON(signedInSession))

@@ -279,7 +279,7 @@ struct SessionRefreshAndPasskeyCoreTests {
                 try expect(request.url?.path == "/api/auth/multi-session/set-active")
                 try expect(request.httpMethod == "POST")
                 let payload = try JSONDecoder().decode(BetterAuthSetActiveDeviceSessionRequest.self,
-                                                       from: try requireValue(request.httpBody))
+                                                       from: try #require(request.httpBody))
                 try expect(payload.sessionToken == "device-token-2")
                 return try response(for: request, statusCode: 200, data: encodeJSON(activeSession))
             },
@@ -287,7 +287,7 @@ struct SessionRefreshAndPasskeyCoreTests {
                 try expect(request.url?.path == "/api/auth/multi-session/revoke")
                 try expect(request.httpMethod == "POST")
                 let payload = try JSONDecoder().decode(BetterAuthRevokeDeviceSessionRequest.self,
-                                                       from: try requireValue(request.httpBody))
+                                                       from: try #require(request.httpBody))
                 try expect(payload.sessionToken == "device-token-1")
                 return try response(for: request, statusCode: 200,
                                     data: encodeJSON(BetterAuthStatusResponse(status: true)))
@@ -384,7 +384,7 @@ struct SessionRefreshAndPasskeyCoreTests {
                 try expect(request.url?.path == "/api/auth/two-factor/enable")
                 try expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer primary-token")
                 let payload = try JSONDecoder().decode(TwoFactorEnableRequest.self,
-                                                       from: try requireValue(request.httpBody))
+                                                       from: try #require(request.httpBody))
                 try expect(payload.password == "password123")
                 try expect(payload.issuer == "Better Auth Swift")
                 return try response(for: request,
@@ -395,7 +395,7 @@ struct SessionRefreshAndPasskeyCoreTests {
             .handler { request in
                 try expect(request.url?.path == "/api/auth/two-factor/verify-totp")
                 let payload = try JSONDecoder().decode(TwoFactorVerifyTOTPRequest.self,
-                                                       from: try requireValue(request.httpBody))
+                                                       from: try #require(request.httpBody))
                 try expect(payload.code == "123456")
                 try expect(payload.trustDevice == true)
                 return try response(for: request,
@@ -511,7 +511,7 @@ struct SessionRefreshAndPasskeyCoreTests {
             try expect(request.httpMethod == "POST")
             try expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer token-1")
             let payload = try JSONDecoder().decode(TwoFactorDisableRequest.self,
-                                                   from: try requireValue(request.httpBody))
+                                                   from: try #require(request.httpBody))
             try expect(payload.password == "my-password")
             return try response(for: request, statusCode: 200, data: encodeJSON(["status": true]))
         }])
@@ -595,7 +595,7 @@ struct SessionRefreshAndPasskeyCoreTests {
 
         let transport = SequencedMockTransport([.handler { request in
             try expect(request.url?.path == "/api/auth/revoke-session")
-            let body = try JSONSerialization.jsonObject(with: try requireValue(request.httpBody)) as? [String: Any]
+            let body = try JSONSerialization.jsonObject(with: try #require(request.httpBody)) as? [String: Any]
             try expect(body?["token"] as? String == "other-device-token")
             return try response(for: request, statusCode: 200, data: encodeJSON(["status": true]))
         }])

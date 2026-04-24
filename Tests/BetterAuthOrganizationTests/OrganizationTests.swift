@@ -81,7 +81,7 @@ struct OrganizationTests {
             try expect(request.url?.path == "/api/auth/organization/get-full-organization")
             try expect(request.httpMethod == "GET")
             try expect(request.httpBody == nil)
-            let components = URLComponents(url: try requireValue(request.url), resolvingAgainstBaseURL: true)
+            let components = URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: true)
             try expect(components?.queryItems?.first(where: { $0.name == "organizationId" })?.value == "org-1")
             return try response(for: request, statusCode: 200, data: encodeJSON(full))
         }
@@ -128,7 +128,7 @@ struct OrganizationTests {
 
         let transport = MockTransport { request in
             try expect(request.url?.path == "/api/auth/organization/invite-member")
-            let body = try JSONSerialization.jsonObject(with: try requireValue(request.httpBody)) as? [String: Any]
+            let body = try JSONSerialization.jsonObject(with: try #require(request.httpBody)) as? [String: Any]
             try expect(body?["email"] as? String == "new@example.com")
             try expect(body?["role"] as? String == "member")
             try expect(body?["organizationId"] as? String == "org-1")
@@ -156,7 +156,7 @@ struct OrganizationTests {
             try expect(request.url?.path == "/api/auth/organization/list-members")
             try expect(request.httpMethod == "GET")
             try expect(request.httpBody == nil)
-            let components = URLComponents(url: try requireValue(request.url), resolvingAgainstBaseURL: true)
+            let components = URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: true)
             try expect(components?.queryItems?.first(where: { $0.name == "organizationId" })?.value == "org-1")
             return try response(for: request, statusCode: 200, data: encodeJSON(members))
         }
@@ -181,7 +181,7 @@ struct OrganizationTests {
 
         let transport = MockTransport { request in
             try expect(request.url?.path == "/api/auth/organization/accept-invitation")
-            let body = try JSONSerialization.jsonObject(with: try requireValue(request.httpBody)) as? [String: Any]
+            let body = try JSONSerialization.jsonObject(with: try #require(request.httpBody)) as? [String: Any]
             try expect(body?["invitationId"] as? String == "inv-1")
             return try response(for: request, statusCode: 200, data: encodeJSON(member))
         }
@@ -227,7 +227,7 @@ struct OrganizationTests {
             try expect(request.url?.path == "/api/auth/organization/list-invitations")
             try expect(request.httpMethod == "GET")
             try expect(request.httpBody == nil)
-            let components = URLComponents(url: try requireValue(request.url), resolvingAgainstBaseURL: true)
+            let components = URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: true)
             try expect(components?.queryItems?.first(where: { $0.name == "organizationId" })?.value == "org-1")
             return try response(for: request, statusCode: 200, data: encodeJSON(invitations))
         }

@@ -136,9 +136,6 @@ public extension AuthStore {
 
             case .ignored:
                 statusMessage = "Ignored URL"
-
-            @unknown default:
-                statusMessage = "Unhandled URL result"
             }
         }
     }

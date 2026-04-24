@@ -36,7 +36,7 @@ struct SocialAndUsernameAuthTests {
                                  try expect(request
                                      .value(forHTTPHeaderField: "Authorization") == "Bearer current-token")
                                  let payload = try JSONDecoder().decode(LinkSocialAccountRequest.self,
-                                                                        from: try requireValue(request.httpBody))
+                                                                        from: try #require(request.httpBody))
                                  try expect(payload.provider == "google")
                                  try expect(payload.idToken?.token == "valid-google-token")
                                  return try response(for: request,
@@ -155,7 +155,7 @@ struct SocialAndUsernameAuthTests {
         let transport = MockTransport { request in
             try expect(request.url?.path == "/api/auth/forget-password")
             try expect(request.httpMethod == "POST")
-            let payload = try JSONDecoder().decode(ForgotPasswordRequest.self, from: try requireValue(request.httpBody))
+            let payload = try JSONDecoder().decode(ForgotPasswordRequest.self, from: try #require(request.httpBody))
             try expect(payload.email == "reset@example.com")
             try expect(payload.redirectTo == "https://app.example.com/reset")
 
@@ -178,7 +178,7 @@ struct SocialAndUsernameAuthTests {
         let transport = MockTransport { request in
             try expect(request.url?.path == "/api/auth/reset-password")
             try expect(request.httpMethod == "POST")
-            let payload = try JSONDecoder().decode(ResetPasswordRequest.self, from: try requireValue(request.httpBody))
+            let payload = try JSONDecoder().decode(ResetPasswordRequest.self, from: try #require(request.httpBody))
             try expect(payload.token == "reset-token")
             try expect(payload.newPassword == "new-password-123")
 
@@ -203,7 +203,7 @@ struct SocialAndUsernameAuthTests {
             try expect(request.httpMethod == "POST")
             try expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer current-token")
             let payload = try JSONDecoder().decode(SendVerificationEmailRequest.self,
-                                                   from: try requireValue(request.httpBody))
+                                                   from: try #require(request.httpBody))
             try expect(payload.email == nil)
             try expect(payload.callbackURL == "https://app.example.com/verify")
 
@@ -310,7 +310,7 @@ struct SocialAndUsernameAuthTests {
             try expect(request.url?.path == "/api/auth/change-email")
             try expect(request.httpMethod == "POST")
             try expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer current-token")
-            let payload = try JSONDecoder().decode(ChangeEmailRequest.self, from: try requireValue(request.httpBody))
+            let payload = try JSONDecoder().decode(ChangeEmailRequest.self, from: try #require(request.httpBody))
             try expect(payload.newEmail == "next@example.com")
             try expect(payload.callbackURL == "https://app.example.com/settings")
 
@@ -387,7 +387,7 @@ struct SocialAndUsernameAuthTests {
                 try expect(request.url?.path == "/api/auth/change-password")
                 try expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer current-token")
                 let payload = try JSONDecoder().decode(ChangePasswordRequest.self,
-                                                       from: try requireValue(request.httpBody))
+                                                       from: try #require(request.httpBody))
                 try expect(payload.revokeOtherSessions == true)
 
                 return try response(for: request, statusCode: 200,
