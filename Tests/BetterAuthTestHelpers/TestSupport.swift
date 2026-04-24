@@ -163,3 +163,17 @@ public final class Locked<Value>: @unchecked Sendable {
         return body(&value)
     }
 }
+
+public final class CapturingLogger: BetterAuthLogger, @unchecked Sendable {
+    private let messages = Locked<[String]>([])
+
+    public init() {}
+
+    public func log(level: BetterAuthLogLevel, message: String, file: String, function: String, line: UInt) {
+        messages.withLock { $0.append(message) }
+    }
+
+    public var capturedMessages: [String] {
+        messages.withLock { $0 }
+    }
+}

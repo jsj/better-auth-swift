@@ -170,7 +170,11 @@ public actor BetterAuthSessionManager {
     public func applicationDidBecomeActive() async {
         guard configuration.autoRefreshToken, state.currentSession != nil else { return }
         startAutoRefresh()
-        _ = try? await refreshSessionIfNeeded()
+        do {
+            _ = try await refreshSessionIfNeeded()
+        } catch {
+            logger?.warning("Session refresh on app activation failed: \(error)")
+        }
     }
 
     public func applicationWillResignActive() {
@@ -195,7 +199,11 @@ public actor BetterAuthSessionManager {
             }
             guard !Task.isCancelled else { return }
             logger?.debug("Auto-refreshing session before expiry")
-            _ = try? await refreshSession()
+            do {
+                _ = try await refreshSession()
+            } catch {
+                logger?.warning("Automatic session refresh failed: \(error)")
+            }
         }
     }
 

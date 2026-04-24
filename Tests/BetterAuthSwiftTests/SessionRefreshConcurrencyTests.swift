@@ -86,6 +86,31 @@ struct SessionRefreshConcurrencyTests {
     }
 
     @Test
+    func applicationDidBecomeActiveLogsRefreshFailure() async throws {
+        let expired = BetterAuthSession(session: .init(id: "session-1",
+                                                       userId: "user-1",
+                                                       accessToken: "old-token",
+                                                       refreshToken: "refresh-token",
+                                                       expiresAt: Date().addingTimeInterval(-30)),
+                                        user: .init(id: "user-1", email: "test@example.com"))
+        let logger = CapturingLogger()
+        let manager =
+            BetterAuthSessionManager(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                            clockSkew: 60),
+                                     sessionStore: InMemorySessionStore(),
+                                     transport: MockTransport { _ in
+                                         throw URLError(.networkConnectionLost)
+                                     },
+                                     logger: logger)
+
+        try await manager.updateSession(expired)
+        await manager.applicationDidBecomeActive()
+
+        #expect(logger.capturedMessages.contains { $0.contains("Session refresh on app activation failed") })
+        await manager.applicationWillResignActive()
+    }
+
+    @Test
     func accessTokenChangesEmitsLatestTokenState() async throws {
         let current = BetterAuthSession(session: .init(id: "session-1",
                                                        userId: "user-1",

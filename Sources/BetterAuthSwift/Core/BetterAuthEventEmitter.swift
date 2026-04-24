@@ -32,8 +32,13 @@ public protocol AuthStateChangeRegistration: Sendable {
 
 private actor AuthEventDeliveryQueue {
     func deliver(stateChange: AuthStateChange,
+                 continuations: [AsyncStream<AuthStateChange>.Continuation],
                  listeners: [AuthStateChangeListener]) async
     {
+        for continuation in continuations {
+            continuation.yield(stateChange)
+        }
+        AuthEventNotifier.post(stateChange)
         for listener in listeners {
             await listener(stateChange)
         }
@@ -108,21 +113,13 @@ public final class AuthEventEmitter: @unchecked Sendable {
         let currentListeners = Array(listeners.values)
         let currentContinuations = Array(continuations.values)
         let previousDeliveryTask = listenerDeliveryTask
-        if !currentListeners.isEmpty {
-            listenerDeliveryTask = Task {
-                await previousDeliveryTask?.value
-                await deliveryQueue.deliver(stateChange: stateChange,
-                                            listeners: currentListeners)
-            }
+        listenerDeliveryTask = Task {
+            await previousDeliveryTask?.value
+            await deliveryQueue.deliver(stateChange: stateChange,
+                                        continuations: currentContinuations,
+                                        listeners: currentListeners)
         }
         lock.unlock()
-
-        for continuation in currentContinuations {
-            continuation.yield(stateChange)
-        }
-        AuthEventNotifier.post(stateChange)
-
-        guard !currentListeners.isEmpty else { return }
     }
 
     private func removeListener(_ id: UUID) {
