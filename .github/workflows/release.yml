@@ -44,6 +44,9 @@ jobs:
       - name: Generate Xcode project
         run: ./Scripts/generate_xcodeproj.sh
 
+      - name: Verify generated Xcode project is committed
+        run: git diff --exit-code -- better-auth-swift.xcodeproj/project.pbxproj
+
       - name: Run Xcode tests
         run: |
           source ./Scripts/bootstrap_runner_env.sh
