@@ -25,7 +25,7 @@ jobs:
       - name: Run SPM tests (all targets)
         run: |
           source ./Scripts/bootstrap_runner_env.sh
-          swift test --enable-swift-testing
+          swift test --disable-xctest --enable-swift-testing
 
   release:
     needs: validate-spm

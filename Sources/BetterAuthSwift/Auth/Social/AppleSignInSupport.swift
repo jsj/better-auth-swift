@@ -12,13 +12,28 @@ public enum AppleSignInSupport {
         }
     }
 
-    public static func randomNonce(length: Int = 32) -> String {
-        let characters = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
-        return String((0 ..< length).compactMap { _ in characters.randomElement() })
+    public static func randomNonce(length: Int = 32) throws -> String {
+        try randomNonce(length: length) { buffer in
+            guard let baseAddress = buffer.baseAddress else { return errSecParam }
+            return SecRandomCopyBytes(kSecRandomDefault, buffer.count, baseAddress)
+        }
     }
 
-    public static func makeContext(length: Int = 32) -> Context {
-        Context(rawNonce: randomNonce(length: length))
+    static func randomNonce(length: Int = 32,
+                            randomBytes: (UnsafeMutableRawBufferPointer) -> OSStatus) throws -> String
+    {
+        guard length > 0 else { return "" }
+        let characters = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._")
+        var bytes = [UInt8](repeating: 0, count: length)
+        let status = bytes.withUnsafeMutableBytes(randomBytes)
+        guard status == errSecSuccess else {
+            throw BetterAuthError.randomBytesUnavailable
+        }
+        return String(bytes.map { characters[Int($0) % characters.count] })
+    }
+
+    public static func makeContext(length: Int = 32) throws -> Context {
+        Context(rawNonce: try randomNonce(length: length))
     }
 
     public static func sha256(_ input: String) -> String {

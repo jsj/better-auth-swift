@@ -34,13 +34,12 @@ public extension BetterAuthRequestPerforming {
               requiresAuthentication: Bool = true,
               retryOnUnauthorized: Bool = true) async throws -> (Data, HTTPURLResponse)
     {
-        try await _performSend(self,
-                               path: path,
-                               method: method,
-                               headers: headers,
-                               body: body,
-                               requiresAuthentication: requiresAuthentication,
-                               retryOnUnauthorized: retryOnUnauthorized)
+        try await send(path: path,
+                       method: method,
+                       headers: headers,
+                       body: body,
+                       requiresAuthentication: requiresAuthentication,
+                       retryOnUnauthorized: retryOnUnauthorized)
     }
 
     func sendJSON<Response: Decodable>(path: String,
@@ -69,7 +68,7 @@ public extension BetterAuthRequestPerforming {
                                        body: some Encodable,
                                        requiresAuthentication: Bool = true,
                                        retryOnUnauthorized: Bool = true,
-                                       encoder: JSONEncoder = JSONEncoder(),
+                                       encoder: JSONEncoder = BetterAuthCoding.makeEncoder(),
                                        decoder: JSONDecoder = BetterAuthCoding.makeDecoder()) async throws -> Response
     {
         var mergedHeaders = headers
@@ -86,22 +85,6 @@ public extension BetterAuthRequestPerforming {
         }
         return try decoder.decode(Response.self, from: data)
     }
-}
-
-private func _performSend(_ performer: any BetterAuthRequestPerforming,
-                          path: String,
-                          method: String,
-                          headers: [String: String],
-                          body: Data?,
-                          requiresAuthentication: Bool,
-                          retryOnUnauthorized: Bool) async throws -> (Data, HTTPURLResponse)
-{
-    try await performer.send(path: path,
-                             method: method,
-                             headers: headers,
-                             body: body,
-                             requiresAuthentication: requiresAuthentication,
-                             retryOnUnauthorized: retryOnUnauthorized)
 }
 
 public protocol BetterAuthClientProtocol: Sendable {

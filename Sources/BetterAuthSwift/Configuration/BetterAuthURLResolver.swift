@@ -17,9 +17,22 @@ enum BetterAuthURLResolver {
     }
 
     private static func sharesOrigin(_ lhs: URL, with rhs: URL) -> Bool {
-        lhs.scheme?.lowercased() == rhs.scheme?.lowercased() &&
+        guard lhs.user == nil, lhs.password == nil else { return false }
+
+        return lhs.scheme?.lowercased() == rhs.scheme?.lowercased() &&
             lhs.host?.lowercased() == rhs.host?.lowercased() &&
-            normalizedPort(for: lhs) == normalizedPort(for: rhs)
+            normalizedPort(for: lhs) == normalizedPort(for: rhs) &&
+            pathIsWithinBase(lhs.path, basePath: rhs.path)
+    }
+
+    private static func pathIsWithinBase(_ path: String, basePath: String) -> Bool {
+        let normalizedBasePath = basePath.hasSuffix("/")
+            ? String(basePath.dropLast())
+            : basePath
+        guard !normalizedBasePath.isEmpty, normalizedBasePath != "/" else {
+            return true
+        }
+        return path == normalizedBasePath || path.hasPrefix("\(normalizedBasePath)/")
     }
 
     private static func normalizedPort(for url: URL) -> Int? {

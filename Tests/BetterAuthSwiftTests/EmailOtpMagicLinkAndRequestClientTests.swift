@@ -6,6 +6,30 @@ import Testing
 
 struct EmailOtpMagicLinkAndRequestClientTests {
     @Test
+    func requestClientEncodesDatesAsISO8601() async throws {
+        struct DatePayload: Encodable {
+            let issuedAt: Date
+        }
+
+        let issuedAt = try #require(ISO8601DateFormatter().date(from: "2026-04-24T12:00:00Z"))
+        let transport = MockTransport { request in
+            let body = try #require(request.httpBody)
+            let json = try #require(JSONSerialization.jsonObject(with: body) as? [String: String])
+            try expect(json["issuedAt"] == "2026-04-24T12:00:00Z")
+            return emptyResponse(for: request)
+        }
+
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
+                             sessionStore: InMemorySessionStore(),
+                             transport: transport)
+
+        try await client.requests.sendWithoutDecoding(path: "/date",
+                                                      body: DatePayload(issuedAt: issuedAt),
+                                                      requiresAuthentication: false)
+    }
+
+    @Test
     func emailOTPRequestUsesConfiguredEndpoint() async throws {
         let transport = MockTransport { request in
             try expect(request.url?.path == "/api/auth/email-otp/send-verification-otp")

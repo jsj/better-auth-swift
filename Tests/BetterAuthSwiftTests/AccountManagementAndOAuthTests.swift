@@ -271,7 +271,10 @@ struct AccountManagementAndOAuthTests {
             // Revoke ephemeral verification session
             .handler { request in
                 try expect(request.url?.path == "/api/auth/revoke-session")
-                return response(for: request, statusCode: 200, data: Data())
+                let payload = try requireValue(JSONSerialization
+                    .jsonObject(with: try requireValue(request.httpBody)) as? [String: String])
+                try expect(payload["token"] == "reauth-token")
+                return try response(for: request, statusCode: 200, data: encodeJSON(["status": true]))
             }])
 
         let client =
@@ -311,6 +314,36 @@ struct AccountManagementAndOAuthTests {
 
         let current = await client.auth.currentSession()
         #expect(current?.session.accessToken == "original-token")
+    }
+
+    @Test
+    func reauthenticateFailsClosedWhenTemporarySessionRevokeFails() async throws {
+        let session = BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "token-1"),
+                                        user: .init(id: "user-1", email: "user@example.com"))
+
+        let transport = SequencedMockTransport([.response(statusCode: 200,
+                                                          encodable: BetterAuthSession(session: .init(id: "session-reauth",
+                                                                                                      userId: "user-1",
+                                                                                                      accessToken: "reauth-token"),
+                                                                                       user: .init(id: "user-1",
+                                                                                                   email: "user@example.com"))),
+                                                .response(statusCode: 500,
+                                                          jsonObject: ["code": "INTERNAL_SERVER_ERROR",
+                                                                       "message": "revoke failed"])])
+
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                    retryPolicy: RetryPolicy.none),
+                             sessionStore: InMemorySessionStore(),
+                             transport: transport)
+        try await client.auth.applyRestoredSession(session)
+
+        do {
+            _ = try await client.auth.reauthenticate(password: "correct-password")
+            Issue.record("Expected revoke failure to fail closed")
+        } catch let BetterAuthError.requestFailed(statusCode, _, _, _) {
+            #expect(statusCode == 500)
+        }
     }
 
     @Test

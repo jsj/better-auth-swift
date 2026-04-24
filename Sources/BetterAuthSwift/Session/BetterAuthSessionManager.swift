@@ -173,6 +173,14 @@ public actor BetterAuthSessionManager {
         autoRefreshTask = nil
     }
 
+    public func shutdown() {
+        stopAutoRefresh()
+        inFlightRefreshTask?.cancel()
+        inFlightRefreshTask = nil
+        authStateListenerRegistrations.forEach { $0.remove() }
+        authStateListenerRegistrations.removeAll()
+    }
+
     public func applicationDidBecomeActive() async {
         guard configuration.autoRefreshToken, state.currentSession != nil else { return }
         startAutoRefresh()

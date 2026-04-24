@@ -23,9 +23,9 @@ public actor OrganizationManager {
     }
 
     public func getFullOrganization(organizationId: String) async throws -> FullOrganization {
-        try await requests.sendJSON(path: path("/api/auth/organization/get-full-organization",
-                                               queryItems: [URLQueryItem(name: "organizationId",
-                                                                         value: organizationId)]),
+        try await requests.sendJSON(path: try path("/api/auth/organization/get-full-organization",
+                                                   queryItems: [URLQueryItem(name: "organizationId",
+                                                                             value: organizationId)]),
                                     method: "GET")
     }
 
@@ -54,9 +54,9 @@ public actor OrganizationManager {
     // MARK: - Members
 
     public func listMembers(organizationId: String) async throws -> [OrganizationMember] {
-        try await requests.sendJSON(path: path("/api/auth/organization/list-members",
-                                               queryItems: [URLQueryItem(name: "organizationId",
-                                                                         value: organizationId)]),
+        try await requests.sendJSON(path: try path("/api/auth/organization/list-members",
+                                                   queryItems: [URLQueryItem(name: "organizationId",
+                                                                             value: organizationId)]),
                                     method: "GET")
     }
 
@@ -108,9 +108,9 @@ public actor OrganizationManager {
     }
 
     public func listInvitations(organizationId: String) async throws -> [OrganizationInvitation] {
-        try await requests.sendJSON(path: path("/api/auth/organization/list-invitations",
-                                               queryItems: [URLQueryItem(name: "organizationId",
-                                                                         value: organizationId)]),
+        try await requests.sendJSON(path: try path("/api/auth/organization/list-invitations",
+                                                   queryItems: [URLQueryItem(name: "organizationId",
+                                                                             value: organizationId)]),
                                     method: "GET")
     }
 
@@ -128,11 +128,14 @@ public actor OrganizationManager {
                                     method: "GET")
     }
 
-    private func path(_ base: String, queryItems: [URLQueryItem]) -> String {
+    private func path(_ base: String, queryItems: [URLQueryItem]) throws -> String {
         var components = URLComponents()
         components.path = base
         components.queryItems = queryItems
-        return components.string ?? base
+        guard let path = components.string else {
+            throw BetterAuthError.invalidURL
+        }
+        return path
     }
 }
 

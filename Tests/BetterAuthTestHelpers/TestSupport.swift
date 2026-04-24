@@ -9,11 +9,7 @@ public struct MockTransport: BetterAuthTransport {
     }
 
     public func execute(_ request: URLRequest) async throws -> (Data, URLResponse) {
-        do {
-            return try await handler(request)
-        } catch {
-            throw error
-        }
+        try await handler(request)
     }
 }
 

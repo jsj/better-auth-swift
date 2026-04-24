@@ -120,10 +120,11 @@ struct BetterAuthPrimaryAuthService {
         do {
             let _: BetterAuthStatusResponse = try await context.network
                 .post(path: context.configuration.endpoints.session.revokeSessionPath,
-                      body: RevokeSessionRequest(token: verificationSession.session.id),
+                      body: RevokeSessionRequest(token: verificationSession.session.accessToken),
                       accessToken: verificationSession.session.accessToken)
         } catch {
             context.logger?.warning("Failed to revoke temporary reauthentication session: \(error)")
+            throw error
         }
         return true
     }

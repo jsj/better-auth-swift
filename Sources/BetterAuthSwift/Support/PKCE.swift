@@ -14,15 +14,28 @@ public enum PKCEFlow {
         }
     }
 
-    public static func generateChallenge() -> Challenge {
-        let verifier = generateCodeVerifier()
+    public static func generateChallenge() throws -> Challenge {
+        let verifier = try generateCodeVerifier()
         let challenge = generateCodeChallenge(verifier)
         return Challenge(codeVerifier: verifier, codeChallenge: challenge)
     }
 
-    public static func generateCodeVerifier(length: Int = 64) -> String {
+    public static func generateCodeVerifier(length: Int = 64) throws -> String {
+        try generateCodeVerifier(length: length) { buffer in
+            guard let baseAddress = buffer.baseAddress else { return errSecParam }
+            return SecRandomCopyBytes(kSecRandomDefault, buffer.count, baseAddress)
+        }
+    }
+
+    static func generateCodeVerifier(length: Int = 64,
+                                     randomBytes: (UnsafeMutableRawBufferPointer) -> OSStatus) throws -> String
+    {
+        guard length > 0 else { return "" }
         var bytes = [UInt8](repeating: 0, count: length)
-        _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        let status = bytes.withUnsafeMutableBytes(randomBytes)
+        guard status == errSecSuccess else {
+            throw BetterAuthError.randomBytesUnavailable
+        }
         return Data(bytes).base64URLEncoded()
     }
 

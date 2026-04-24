@@ -155,12 +155,38 @@ struct SessionLifecycleCoreTests {
     }
 
     @Test
-    func appleNonceHashIsStable() {
-        let context = AppleSignInSupport.makeContext(length: 24)
+    func appleNonceHashIsStable() throws {
+        let context = try AppleSignInSupport.makeContext(length: 24)
         #expect(AppleSignInSupport
             .sha256("nonce") == "78377b525757b494427f89014f97d79928f3938d14eb51e20fb5dec9834eb304")
         #expect(context.rawNonce.count == 24)
         #expect(context.hashedNonce.count == 64)
+    }
+
+    @Test
+    func pkceThrowsWhenSecureRandomFails() throws {
+        do {
+            _ = try PKCEFlow.generateCodeVerifier { _ in OSStatus(-1) }
+            Issue.record("Expected secure random failure")
+        } catch BetterAuthError.randomBytesUnavailable {
+            return
+        }
+    }
+
+    @Test
+    func appleNonceUsesCompleteAlphabetAndThrowsWhenSecureRandomFails() throws {
+        let nonce = try AppleSignInSupport.randomNonce(length: 1) { buffer in
+            buffer[0] = UInt8(35)
+            return errSecSuccess
+        }
+        #expect(nonce == "Z")
+
+        do {
+            _ = try AppleSignInSupport.randomNonce { _ in OSStatus(-1) }
+            Issue.record("Expected secure random failure")
+        } catch BetterAuthError.randomBytesUnavailable {
+            return
+        }
     }
 
     @Test
@@ -261,6 +287,32 @@ struct SessionLifecycleCoreTests {
             guard case .invalidURL = error else {
                 Issue.record("Expected BetterAuthError.invalidURL but got \(error)")
                 return
+            }
+        }
+    }
+
+    @Test
+    func absoluteURLsMustStayWithinConfiguredBasePathAndAvoidUserInfo() async throws {
+        let transport = MockTransport { request in
+            Issue.record("Transport should not be invoked for invalid absolute URL: \(String(describing: request.url))")
+            return emptyResponse(for: request)
+        }
+
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com/api")),
+                                                                    storage: .init(key: "test-key")),
+                             sessionStore: InMemorySessionStore(),
+                             transport: transport)
+
+        for path in ["https://example.com/other", "https://user@example.com/api/me"] {
+            do {
+                let _: String? = try await client.requests.sendJSON(path: path, requiresAuthentication: false)
+                Issue.record("Expected invalid absolute URL to be rejected: \(path)")
+            } catch let error as BetterAuthError {
+                guard case .invalidURL = error else {
+                    Issue.record("Expected BetterAuthError.invalidURL but got \(error)")
+                    return
+                }
             }
         }
     }

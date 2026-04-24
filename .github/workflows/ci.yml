@@ -32,7 +32,7 @@ jobs:
       - name: Run package tests
         run: |
           source ./Scripts/bootstrap_runner_env.sh
-          swift test --enable-swift-testing
+          swift test --disable-xctest --enable-swift-testing
 
       - name: Run SwiftFormat lint
         run: |

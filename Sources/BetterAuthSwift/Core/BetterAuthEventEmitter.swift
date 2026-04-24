@@ -54,32 +54,53 @@ private enum AuthEventNotifier {
     }
 }
 
-public final class AuthEventEmitter: @unchecked Sendable {
+private final class AuthEventEmitterState: @unchecked Sendable {
     private let lock = NSLock()
+    var listeners: [UUID: AuthStateChangeListener] = [:]
+    var continuations: [UUID: AsyncStream<AuthStateChange>.Continuation] = [:]
+    var latestStateChange: AuthStateChange?
+    var listenerDeliveryTask: Task<Void, Never>?
+
+    func withLock<T>(_ body: (AuthEventEmitterState) throws -> T) rethrows -> T {
+        lock.lock()
+        defer { lock.unlock() }
+        return try body(self)
+    }
+}
+
+public final class AuthEventEmitter: Sendable {
     private let deliveryQueue = AuthEventDeliveryQueue()
-    private var listeners: [UUID: AuthStateChangeListener] = [:]
-    private var continuations: [UUID: AsyncStream<AuthStateChange>.Continuation] = [:]
-    private var latestStateChange: AuthStateChange?
-    private var listenerDeliveryTask: Task<Void, Never>?
+    private let state = AuthEventEmitterState()
 
     public init() {}
+
+    deinit {
+        let continuations = state.withLock { state in
+            let continuations = Array(state.continuations.values)
+            state.continuations.removeAll()
+            state.listeners.removeAll()
+            state.listenerDeliveryTask?.cancel()
+            state.listenerDeliveryTask = nil
+            return continuations
+        }
+        continuations.forEach { $0.finish() }
+    }
 
     @discardableResult
     public func on(_ listener: @escaping AuthStateChangeListener) -> AuthStateChangeRegistration {
         let id = UUID()
-        lock.lock()
-        listeners[id] = listener
-        lock.unlock()
+        state.withLock { $0.listeners[id] = listener }
         return Registration(emitter: self, id: id)
     }
 
     public var events: AsyncStream<AuthStateChange> {
         let id = UUID()
         return AsyncStream { continuation in
-            lock.lock()
-            let latestStateChange = latestStateChange
-            continuations[id] = continuation
-            lock.unlock()
+            let latestStateChange = state.withLock { state in
+                let latestStateChange = state.latestStateChange
+                state.continuations[id] = continuation
+                return latestStateChange
+            }
             if let latestStateChange {
                 continuation.yield(latestStateChange)
             }
@@ -94,9 +115,7 @@ public final class AuthEventEmitter: @unchecked Sendable {
     }
 
     public var latest: AuthStateChange? {
-        lock.lock()
-        defer { lock.unlock() }
-        return latestStateChange
+        state.withLock { $0.latestStateChange }
     }
 
     func emit(_ event: AuthChangeEvent,
@@ -108,30 +127,26 @@ public final class AuthEventEmitter: @unchecked Sendable {
     }
 
     func yield(_ stateChange: AuthStateChange) {
-        lock.lock()
-        latestStateChange = stateChange
-        let currentListeners = Array(listeners.values)
-        let currentContinuations = Array(continuations.values)
-        let previousDeliveryTask = listenerDeliveryTask
-        listenerDeliveryTask = Task {
-            await previousDeliveryTask?.value
-            await deliveryQueue.deliver(stateChange: stateChange,
-                                        continuations: currentContinuations,
-                                        listeners: currentListeners)
+        state.withLock { state in
+            state.latestStateChange = stateChange
+            let currentListeners = Array(state.listeners.values)
+            let currentContinuations = Array(state.continuations.values)
+            let previousDeliveryTask = state.listenerDeliveryTask
+            state.listenerDeliveryTask = Task {
+                await previousDeliveryTask?.value
+                await deliveryQueue.deliver(stateChange: stateChange,
+                                            continuations: currentContinuations,
+                                            listeners: currentListeners)
+            }
         }
-        lock.unlock()
     }
 
     private func removeListener(_ id: UUID) {
-        lock.lock()
-        listeners.removeValue(forKey: id)
-        lock.unlock()
+        _ = state.withLock { $0.listeners.removeValue(forKey: id) }
     }
 
     private func removeContinuation(_ id: UUID) {
-        lock.lock()
-        continuations.removeValue(forKey: id)
-        lock.unlock()
+        _ = state.withLock { $0.continuations.removeValue(forKey: id) }
     }
 
     private final class Registration: AuthStateChangeRegistration, @unchecked Sendable {
