@@ -10,23 +10,22 @@ permissions:
 
 jobs:
   validate-spm:
-    runs-on: macos-15
+    runs-on: [self-hosted, macOS, ARM64, mac-ci]
     timeout-minutes: 20
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Select Xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: '26.2'
+        uses: actions/checkout@v4
 
       - name: Show Swift version
-        run: swift --version
+        run: |
+          source ./Scripts/bootstrap_runner_env.sh
+          swift --version
 
       - name: Run SPM tests (all targets)
-        run: ./Scripts/swift_test_wrapper.sh
+        run: |
+          source ./Scripts/bootstrap_runner_env.sh
+          swift test --enable-swift-testing
 
   release:
     needs: validate-spm
@@ -35,21 +34,19 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Select Xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: '26.2'
+        uses: actions/checkout@v4
 
       - name: Show Swift version
-        run: swift --version
+        run: |
+          source ./Scripts/bootstrap_runner_env.sh
+          swift --version
 
       - name: Generate Xcode project
         run: ./Scripts/generate_xcodeproj.sh
 
       - name: Run Xcode tests
         run: |
+          source ./Scripts/bootstrap_runner_env.sh
           xcodebuild test \
             -project better-auth-swift.xcodeproj \
             -scheme BetterAuth-Package \

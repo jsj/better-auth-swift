@@ -11,114 +11,19 @@ permissions:
 
 jobs:
   check-drift:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - name: Checkout SDK
-        uses: actions/checkout@v5
-
-      - name: Clone upstream better-auth
-        run: git clone --depth 1 https://github.com/better-auth/better-auth.git /tmp/better-auth
-
-      - name: Extract endpoints
-        run: |
-          ./Scripts/extract_upstream_endpoints.sh /tmp/better-auth > /tmp/upstream.txt
-          ./Scripts/extract_sdk_endpoints.sh > /tmp/sdk.txt
-
-      - name: Compute diff
-        id: drift
-        run: |
-          DIFF=$(comm -23 /tmp/upstream.txt /tmp/sdk.txt)
-          REMOVED=$(comm -13 /tmp/upstream.txt /tmp/sdk.txt)
-
-          if [ -z "$DIFF" ] && [ -z "$REMOVED" ]; then
-            echo "has_drift=false" >> "$GITHUB_OUTPUT"
-            echo "No contract drift detected."
-          else
-            echo "has_drift=true" >> "$GITHUB_OUTPUT"
-            echo "$DIFF" > /tmp/diff.txt
-            echo "$REMOVED" > /tmp/removed.txt
-
-            # Build the prompt from template
-            UPSTREAM=$(cat /tmp/upstream.txt)
-            SDK=$(cat /tmp/sdk.txt)
-
-            sed \
-              -e "s|{{UPSTREAM}}|$UPSTREAM|" \
-              -e "s|{{SDK}}|$SDK|" \
-              -e "s|{{DIFF}}|$DIFF|" \
-              Scripts/drift-prompt.md > /tmp/drift-prompt.txt || true
-
-            # Fallback: if sed fails with large content, use a simpler approach
-            if [ ! -s /tmp/drift-prompt.txt ]; then
-              cat Scripts/drift-prompt.md > /tmp/drift-prompt.txt
-              printf "\n\n### UPSTREAM\n\`\`\`\n%s\n\`\`\`\n" "$UPSTREAM" >> /tmp/drift-prompt.txt
-              printf "\n### SDK\n\`\`\`\n%s\n\`\`\`\n" "$SDK" >> /tmp/drift-prompt.txt
-              printf "\n### DIFF\n\`\`\`\n%s\n\`\`\`\n" "$DIFF" >> /tmp/drift-prompt.txt
-            fi
-
-            echo "Drift detected: $(wc -l < /tmp/diff.txt) new upstream endpoints"
-          fi
-
-      - name: Install droid
-        if: steps.drift.outputs.has_drift == 'true'
-        run: npm install -g @anthropic-ai/droid
-
-      - name: Analyze drift with AI
-        if: steps.drift.outputs.has_drift == 'true'
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
-          ANTHROPIC_BASE_URL: https://api.minimax.io/anthropic
-        run: |
-          droid exec \
-            -m MiniMax-M2.7-highspeed \
-            -f /tmp/drift-prompt.txt \
-            -o text \
-            > /tmp/analysis.txt 2>&1 || true
-
-          # Fallback if droid fails: use raw diff as the issue body
-          if [ ! -s /tmp/analysis.txt ]; then
-            echo "## Contract Drift Report (raw)" > /tmp/analysis.txt
-            echo "" >> /tmp/analysis.txt
-            echo "Droid analysis unavailable. Raw diff:" >> /tmp/analysis.txt
-            echo "" >> /tmp/analysis.txt
-            echo "### New upstream endpoints not in SDK" >> /tmp/analysis.txt
-            echo '```' >> /tmp/analysis.txt
-            cat /tmp/diff.txt >> /tmp/analysis.txt
-            echo '```' >> /tmp/analysis.txt
-          fi
-
-      - name: Create or update issue
-        if: steps.drift.outputs.has_drift == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Close any existing upstream-sync issues
-          EXISTING=$(gh issue list --label upstream-sync --state open --json number -q '.[].number' 2>/dev/null || true)
-          for num in $EXISTING; do
-            gh issue close "$num" --comment "Superseded by new drift check."
-          done
-
-          gh issue create \
-            --title "Upstream sync: contract drift detected ($(date +%Y-%m-%d))" \
-            --body-file /tmp/analysis.txt \
-            --label upstream-sync
-
-  check-drift-self-hosted:
-    if: github.event_name == 'workflow_dispatch'
     runs-on: [self-hosted, macOS, ARM64, mac-ci]
     timeout-minutes: 10
 
     steps:
       - name: Checkout SDK
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Clone upstream better-auth
         run: git clone --depth 1 https://github.com/better-auth/better-auth.git /tmp/better-auth
 
       - name: Extract endpoints
         run: |
+          source ./Scripts/bootstrap_runner_env.sh
           ./Scripts/extract_upstream_endpoints.sh /tmp/better-auth > /tmp/upstream.txt
           ./Scripts/extract_sdk_endpoints.sh > /tmp/sdk.txt
 
@@ -136,61 +41,31 @@ jobs:
             echo "$DIFF" > /tmp/diff.txt
             echo "$REMOVED" > /tmp/removed.txt
 
-            # Build the prompt from template
-            UPSTREAM=$(cat /tmp/upstream.txt)
-            SDK=$(cat /tmp/sdk.txt)
-
-            sed \
-              -e "s|{{UPSTREAM}}|$UPSTREAM|" \
-              -e "s|{{SDK}}|$SDK|" \
-              -e "s|{{DIFF}}|$DIFF|" \
-              Scripts/drift-prompt.md > /tmp/drift-prompt.txt || true
-
-            # Fallback: if sed fails with large content, use a simpler approach
-            if [ ! -s /tmp/drift-prompt.txt ]; then
-              cat Scripts/drift-prompt.md > /tmp/drift-prompt.txt
-              printf "\n\n### UPSTREAM\n\`\`\`\n%s\n\`\`\`\n" "$UPSTREAM" >> /tmp/drift-prompt.txt
-              printf "\n### SDK\n\`\`\`\n%s\n\`\`\`\n" "$SDK" >> /tmp/drift-prompt.txt
-              printf "\n### DIFF\n\`\`\`\n%s\n\`\`\`\n" "$DIFF" >> /tmp/drift-prompt.txt
-            fi
-
             echo "Drift detected: $(wc -l < /tmp/diff.txt) new upstream endpoints"
           fi
 
-      - name: Install droid
+      - name: Build drift report
         if: steps.drift.outputs.has_drift == 'true'
-        run: npm install -g @anthropic-ai/droid
-
-      - name: Analyze drift with AI
-        if: steps.drift.outputs.has_drift == 'true'
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
-          ANTHROPIC_BASE_URL: https://api.minimax.io/anthropic
         run: |
-          droid exec \
-            -m MiniMax-M2.7-highspeed \
-            -f /tmp/drift-prompt.txt \
-            -o text \
-            > /tmp/analysis.txt 2>&1 || true
-
-          # Fallback if droid fails: use raw diff as the issue body
-          if [ ! -s /tmp/analysis.txt ]; then
-            echo "## Contract Drift Report (raw)" > /tmp/analysis.txt
-            echo "" >> /tmp/analysis.txt
-            echo "Droid analysis unavailable. Raw diff:" >> /tmp/analysis.txt
-            echo "" >> /tmp/analysis.txt
-            echo "### New upstream endpoints not in SDK" >> /tmp/analysis.txt
-            echo '```' >> /tmp/analysis.txt
-            cat /tmp/diff.txt >> /tmp/analysis.txt
-            echo '```' >> /tmp/analysis.txt
-          fi
+          {
+            echo "## Contract Drift Report"
+            echo
+            echo "### New upstream endpoints not in SDK"
+            echo '```'
+            cat /tmp/diff.txt
+            echo '```'
+            echo
+            echo "### SDK endpoints not found upstream"
+            echo '```'
+            cat /tmp/removed.txt
+            echo '```'
+          } > /tmp/analysis.txt
 
       - name: Create or update issue
         if: steps.drift.outputs.has_drift == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Close any existing upstream-sync issues
           EXISTING=$(gh issue list --label upstream-sync --state open --json number -q '.[].number' 2>/dev/null || true)
           for num in $EXISTING; do
             gh issue close "$num" --comment "Superseded by new drift check."

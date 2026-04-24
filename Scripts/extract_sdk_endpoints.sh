@@ -6,7 +6,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-grep 'Path.*=' "$ROOT/Sources/BetterAuthSwift/BetterAuthConfiguration.swift" \
+grep 'Path.*=' "$ROOT/Sources/BetterAuthSwift/Configuration/BetterAuthConfiguration.swift" \
   | grep '"/api/auth' \
   | sed 's/.*"\(\/api\/auth[^"]*\)".*/\1/' \
   | sed 's|/api/auth||' \
