@@ -319,7 +319,7 @@ struct SessionAdminAuthSection: View {
 }
 
 struct PasskeysAuthSection: View {
-    let viewModel: AuthViewModel
+    @Bindable var viewModel: AuthViewModel
 
     var body: some View {
         Section("Passkeys") {

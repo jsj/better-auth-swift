@@ -126,6 +126,19 @@ public actor BetterAuthSessionManager {
         state.stateChanges
     }
 
+    public nonisolated var accessTokenChanges: AsyncStream<String?> {
+        AsyncStream { continuation in
+            let task = Task {
+                for await change in authStateChanges {
+                    continuation.yield(change.session?.session.accessToken)
+                }
+            }
+            continuation.onTermination = { _ in
+                task.cancel()
+            }
+        }
+    }
+
     public nonisolated var currentAuthState: AuthStateChange? {
         state.latest
     }
@@ -152,6 +165,16 @@ public actor BetterAuthSessionManager {
     public func stopAutoRefresh() {
         autoRefreshTask?.cancel()
         autoRefreshTask = nil
+    }
+
+    public func applicationDidBecomeActive() async {
+        guard configuration.autoRefreshToken, state.currentSession != nil else { return }
+        startAutoRefresh()
+        _ = try? await refreshSessionIfNeeded()
+    }
+
+    public func applicationWillResignActive() {
+        stopAutoRefresh()
     }
 
     deinit {

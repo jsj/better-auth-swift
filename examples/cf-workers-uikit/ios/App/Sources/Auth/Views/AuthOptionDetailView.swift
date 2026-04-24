@@ -54,6 +54,12 @@ struct AuthOptionDetailView: View {
         case .linkedAccounts:
             LinkedAccountsAuthSection(viewModel: viewModel)
 
+        case .socialOAuth:
+            SocialOAuthAuthSection(viewModel: viewModel)
+
+        case .sessionAdmin:
+            SessionAdminAuthSection(viewModel: viewModel)
+
         case .authMethod(.passkey):
             PasskeysAuthSection(viewModel: viewModel)
 

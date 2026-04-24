@@ -99,6 +99,27 @@ public struct SocialSignInRequest: Codable, Sendable, Equatable {
         self.additionalData = additionalData
         self.idToken = idToken
     }
+
+    public init(provider: AuthProviderID,
+                callbackURL: String? = nil,
+                errorCallbackURL: String? = nil,
+                disableRedirect: Bool? = nil,
+                requestSignUp: Bool? = nil,
+                scopes: [String]? = nil,
+                loginHint: String? = nil,
+                additionalData: [String: String]? = nil,
+                idToken: SocialIDTokenPayload? = nil)
+    {
+        self.init(provider: provider.rawValue,
+                  callbackURL: callbackURL,
+                  errorCallbackURL: errorCallbackURL,
+                  disableRedirect: disableRedirect,
+                  requestSignUp: requestSignUp,
+                  scopes: scopes,
+                  loginHint: loginHint,
+                  additionalData: additionalData,
+                  idToken: idToken)
+    }
 }
 
 public enum SocialSignInResult: Sendable, Equatable {
@@ -251,6 +272,25 @@ public struct GenericOAuthSignInRequest: Codable, Sendable, Equatable {
         self.scopes = scopes
         self.additionalData = additionalData
     }
+
+    public init(provider: AuthProviderID,
+                callbackURL: String? = nil,
+                errorCallbackURL: String? = nil,
+                newUserCallbackURL: String? = nil,
+                disableRedirect: Bool? = nil,
+                requestSignUp: Bool? = nil,
+                scopes: [String]? = nil,
+                additionalData: [String: String]? = nil)
+    {
+        self.init(providerId: provider.rawValue,
+                  callbackURL: callbackURL,
+                  errorCallbackURL: errorCallbackURL,
+                  newUserCallbackURL: newUserCallbackURL,
+                  disableRedirect: disableRedirect,
+                  requestSignUp: requestSignUp,
+                  scopes: scopes,
+                  additionalData: additionalData)
+    }
 }
 
 public struct GenericOAuthAuthorizationResponse: Codable, Sendable, Equatable {
@@ -274,6 +314,10 @@ public struct GenericOAuthCallbackRequest: Codable, Sendable, Equatable {
         self.code = code
         self.state = state
         self.issuer = issuer
+    }
+
+    public init(provider: AuthProviderID, code: String, state: String, issuer: String? = nil) {
+        self.init(providerId: provider.rawValue, code: code, state: state, issuer: issuer)
     }
 }
 
@@ -331,6 +375,25 @@ public struct LinkSocialAccountRequest: Codable, Sendable, Equatable {
         self.scopes = scopes
         self.additionalData = additionalData
         self.idToken = idToken
+    }
+
+    public init(provider: AuthProviderID,
+                callbackURL: String? = nil,
+                errorCallbackURL: String? = nil,
+                disableRedirect: Bool? = nil,
+                requestSignUp: Bool? = nil,
+                scopes: [String]? = nil,
+                additionalData: [String: String]? = nil,
+                idToken: SocialIDTokenPayload? = nil)
+    {
+        self.init(provider: provider.rawValue,
+                  callbackURL: callbackURL,
+                  errorCallbackURL: errorCallbackURL,
+                  disableRedirect: disableRedirect,
+                  requestSignUp: requestSignUp,
+                  scopes: scopes,
+                  additionalData: additionalData,
+                  idToken: idToken)
     }
 }
 

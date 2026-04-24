@@ -10,10 +10,10 @@ let session = try await client.auth.restoreOrRefreshSession()
 
 This is the best default for app launch. It restores a stored session if possible and refreshes it when needed.
 
-If you need a synchronous read from storage without crossing the session manager actor boundary, use:
+If you need to inspect the stored session separately before applying it to in-memory state, use:
 
 ```swift
-let stored = try client.auth.loadStoredSession()
+let stored = try await client.auth.loadStoredSession()
 ```
 
 If you later want to apply that session to the manager's in-memory state, call:

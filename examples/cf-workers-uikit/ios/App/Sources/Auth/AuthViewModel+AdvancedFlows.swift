@@ -142,13 +142,17 @@ extension AuthViewModel {
             statusMessage = "Load device sessions first"
             return nil
         }
+        guard first.session.token != nil else {
+            statusMessage = "Selected device session has no token"
+            return nil
+        }
         return first
     }
 
     func activateFirstDeviceSession() async {
-        guard let first = requireFirstDeviceSession() else { return }
+        guard let first = requireFirstDeviceSession(), let token = first.session.token else { return }
         await perform {
-            session = try await service.setActiveDeviceSession(sessionToken: first.session.token)
+            session = try await service.setActiveDeviceSession(sessionToken: token)
             if let session {
                 launchState = .authenticated(session)
             }
@@ -157,9 +161,9 @@ extension AuthViewModel {
     }
 
     func revokeFirstDeviceSession() async {
-        guard let first = requireFirstDeviceSession() else { return }
+        guard let first = requireFirstDeviceSession(), let token = first.session.token else { return }
         await perform {
-            try await service.revokeDeviceSession(sessionToken: first.session.token)
+            try await service.revokeDeviceSession(sessionToken: token)
             deviceSessions.removeAll { $0.session.id == first.session.id }
             statusMessage = "Device session revoked"
         }
@@ -170,13 +174,17 @@ extension AuthViewModel {
             statusMessage = "Load sessions first"
             return nil
         }
+        guard first.token != nil else {
+            statusMessage = "Selected session has no token"
+            return nil
+        }
         return first
     }
 
     func revokeFirstSession() async {
-        guard let first = requireFirstSessionEntry() else { return }
+        guard let first = requireFirstSessionEntry(), let token = first.token else { return }
         await perform {
-            try await service.revokeSession(token: first.token)
+            try await service.revokeSession(token: token)
             sessionList.removeAll { $0.id == first.id }
             statusMessage = "Session revoked"
         }

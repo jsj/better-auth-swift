@@ -28,6 +28,12 @@ public extension BetterAuthSessionManager {
         state.currentSession
     }
 
+    /// Returns a session that is safe to use for authenticated requests, refreshing it first if needed.
+    @discardableResult
+    func validSession() async throws -> BetterAuthSession {
+        try await makeRelay().validSession()
+    }
+
     func applyRestoredSession(_ session: BetterAuthSession?) throws {
         try makeSessionBootstrapService().applyRestoredSession(session)
         updateAutoRefresh(for: session)
@@ -153,7 +159,7 @@ public extension BetterAuthSessionManager {
     // MARK: - Authorized Request
 
     func authorizedRequest(path: String, method: String = "GET") async throws -> URLRequest {
-        let session = try await makeRelay().validSession()
+        let session = try await validSession()
         let url = try BetterAuthURLResolver.resolve(path, relativeTo: configuration.baseURL)
         var request = URLRequest(url: url)
         request.httpMethod = method

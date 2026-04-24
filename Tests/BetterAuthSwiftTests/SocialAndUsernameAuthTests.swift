@@ -6,6 +6,27 @@ import Testing
 
 struct SocialAndUsernameAuthTests {
     @Test
+    func typedAuthProviderIDsPreserveWireValues() throws {
+        let social = SocialSignInRequest(provider: .google,
+                                         callbackURL: "betterauth://callback",
+                                         scopes: ["email", "profile"])
+        #expect(social.provider == "google")
+
+        let genericOAuth = GenericOAuthSignInRequest(provider: .github,
+                                                     callbackURL: "betterauth://oauth/callback")
+        #expect(genericOAuth.providerId == "github")
+
+        let custom: AuthProviderID = "enterprise-sso"
+        let link = LinkSocialAccountRequest(provider: custom,
+                                            idToken: SocialIDTokenPayload(token: "id-token"))
+        #expect(link.provider == "enterprise-sso")
+
+        let encoded = try JSONEncoder().encode(AuthProviderID.microsoft)
+        let decoded = try JSONDecoder().decode(AuthProviderID.self, from: encoded)
+        #expect(decoded == .microsoft)
+    }
+
+    @Test
     func linkSocialAccountDecodesSuccessResponse() async throws {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),

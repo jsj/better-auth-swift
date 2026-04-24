@@ -33,6 +33,7 @@ let client = BetterAuthClient(
         ),
         clockSkew: 60,
         autoRefreshToken: true,
+        callbackURLSchemes: ["yourapp"],
         retryPolicy: .default,
         logger: nil
     )
@@ -70,6 +71,10 @@ Controls how aggressively the SDK treats access tokens as nearing expiry.
 ### `autoRefreshToken`
 
 When enabled, restoring a session starts automatic refresh behavior inside the session manager.
+
+### `callbackURLSchemes`
+
+Allowed custom URL schemes for incoming auth callbacks. The SDK always accepts the configured backend `baseURL` scheme; add your app scheme here when you use deep links such as `yourapp://oauth/success`.
 
 ### `retryPolicy`
 

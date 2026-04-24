@@ -36,7 +36,7 @@ struct AuthModelsTests {
 
     @Test
     @MainActor
-    func restorePreservesStoredSessionAndAvoidsUnauthorizedState() async {
+    func restorePreservesStoredSessionAndAvoidsUnauthorizedState() async throws {
         let storedSession = BetterAuthSession(session: .init(id: "stored-session",
                                                              userId: "user-1",
                                                              accessToken: "stored-token",
@@ -66,7 +66,7 @@ struct AuthModelsTests {
 
     @Test
     @MainActor
-    func refreshFailureClearsVisibleSessionState() async {
+    func refreshFailureClearsVisibleSessionState() async throws {
         let staleSession = BetterAuthSession(session: .init(id: "session-stale",
                                                             userId: "user-1",
                                                             accessToken: "stale-token",
@@ -209,8 +209,8 @@ extension AuthModelsTests {
         }
 
         let service =
-            try AuthService(client: BetterAuthClient(baseURL: try #require(URL(string: "https://example.com"))),
-                            session: makeURLSession())
+            AuthService(client: BetterAuthClient(baseURL: try #require(URL(string: "https://example.com"))),
+                        session: makeURLSession())
 
         let reachable = await service.isWorkerReachable()
 
@@ -225,8 +225,8 @@ extension AuthModelsTests {
         }
 
         let service =
-            try AuthService(client: BetterAuthClient(baseURL: try #require(URL(string: "https://example.com"))),
-                            session: makeURLSession())
+            AuthService(client: BetterAuthClient(baseURL: try #require(URL(string: "https://example.com"))),
+                        session: makeURLSession())
 
         let reachable = await service.isWorkerReachable()
 

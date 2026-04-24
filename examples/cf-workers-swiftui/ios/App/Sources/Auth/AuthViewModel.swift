@@ -77,7 +77,7 @@ final class AuthViewModel {
     var lastAuthorizationURL: String?
 
     private let client: BetterAuthClient
-    private let service: AuthService
+    let service: AuthService
     private var currentAppleContext: AppleSignInSupport.Context?
     private var authStateTask: Task<Void, Never>?
 
@@ -85,7 +85,8 @@ final class AuthViewModel {
         self.configuration = configuration
         let resolvedClient = client ?? BetterAuthClient(baseURL: configuration.apiBaseURL,
                                                         storage: .init(key: "better-auth.example.session",
-                                                                       service: "BetterAuthExample"))
+                                                                       service: "BetterAuthExample"),
+                                                        callbackURLSchemes: ["betterauth"])
         self.client = resolvedClient
         service = AuthService(client: resolvedClient)
         statusMessage = configuration.statusMessage
@@ -610,7 +611,7 @@ final class AuthViewModel {
         }
     }
 
-    private func perform(_ operation: () async throws -> Void) async {
+    func perform(_ operation: () async throws -> Void) async {
         isPerformingAuthAction = true
         defer { isPerformingAuthAction = false }
         do {

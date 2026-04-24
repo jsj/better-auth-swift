@@ -2,8 +2,8 @@
 
 ## Requirements
 
-- iOS 18+
-- macOS 15+
+- iOS 17+
+- macOS 14+
 - Xcode 16+
 - Swift 6
 
@@ -51,8 +51,8 @@ Once you have a client, the usual first step is restoring any previously stored 
 let session = try await client.auth.restoreOrRefreshSession()
 ```
 
-If you need to load the stored session synchronously before entering async app flow, you can also read storage directly through the session manager:
+If you need to load the stored session separately before restoring app state, read it through the session manager actor:
 
 ```swift
-let stored = try client.auth.loadStoredSession()
+let stored = try await client.auth.loadStoredSession()
 ```

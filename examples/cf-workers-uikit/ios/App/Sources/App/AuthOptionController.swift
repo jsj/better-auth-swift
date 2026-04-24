@@ -196,6 +196,22 @@ final class AuthOptionController {
                    rows: [.action(model: .init(title: "Load Linked Accounts", detail: "Fetch linked provider accounts.",
                                                symbolName: "person.2.badge.key", action: .loadLinkedAccounts))])]
 
+        case .socialOAuth:
+            [.init(title: "Summary",
+                   rows: [.info(title: "Current Status", detail: currentStatusText(), symbolName: "waveform.path.ecg",
+                                tintColor: statusColor()),
+                          .info(title: "Supports",
+                                detail: "Begin and link generic OAuth flows with the configured callback scheme.",
+                                symbolName: "network")])]
+
+        case .sessionAdmin:
+            [.init(title: "Summary",
+                   rows: [.info(title: "Current Status", detail: currentStatusText(), symbolName: "waveform.path.ecg",
+                                tintColor: statusColor()),
+                          .info(title: "Supports",
+                                detail: "Activate or revoke individual sessions after loading session lists.",
+                                symbolName: "gearshape.2")])]
+
         case .authMethod(.passkey):
             [.init(title: "Summary",
                    rows: [.info(title: "Current Status", detail: currentStatusText(), symbolName: "waveform.path.ecg",
