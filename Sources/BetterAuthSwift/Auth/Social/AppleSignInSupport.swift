@@ -1,5 +1,6 @@
 import CryptoKit
 import Foundation
+import Security
 
 public enum AppleSignInSupport {
     public struct Context: Sendable, Equatable {
@@ -13,8 +14,13 @@ public enum AppleSignInSupport {
     }
 
     public static func randomNonce(length: Int = 32) -> String {
-        let characters = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
-        return String((0 ..< length).compactMap { _ in characters.randomElement() })
+        let characters = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._")
+        var bytes = [UInt8](repeating: 0, count: length)
+        let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        guard status == errSecSuccess else {
+            preconditionFailure(BetterAuthError.randomGenerationFailed.localizedDescription)
+        }
+        return String(bytes.map { characters[Int($0) % characters.count] })
     }
 
     public static func makeContext(length: Int = 32) -> Context {

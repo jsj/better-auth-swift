@@ -271,7 +271,13 @@ struct AccountManagementAndOAuthTests {
             // Revoke ephemeral verification session
             .handler { request in
                 try expect(request.url?.path == "/api/auth/revoke-session")
-                return response(for: request, statusCode: 200, data: Data())
+                let payload = try JSONSerialization
+                    .jsonObject(with: try requireValue(request.httpBody)) as? [String: String]
+                try expect(payload?["token"] == "reauth-token")
+                try expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer reauth-token")
+                return try response(for: request,
+                                    statusCode: 200,
+                                    data: encodeJSON(BetterAuthStatusResponse(status: true)))
             }])
 
         let client =
@@ -335,6 +341,52 @@ struct AccountManagementAndOAuthTests {
         } catch let BetterAuthError.requestFailed(statusCode, _, _, _) {
             #expect(statusCode == 401, sourceLocation: location)
         }
+    }
+
+    @Test
+    func reauthenticateFailsClosedWhenTemporarySessionRevokeFails() async throws {
+        let session = BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "token-1"),
+                                        user: .init(id: "user-1", email: "user@example.com"))
+
+        let revokeCalls = Locked<[String]>([])
+        let transport = MockTransport { request in
+            switch request.url?.path {
+            case "/api/auth/email/sign-in":
+                return try response(for: request,
+                                    statusCode: 200,
+                                    data: encodeJSON(BetterAuthSession(session: .init(id: "session-reauth",
+                                                                                      userId: "user-1",
+                                                                                      accessToken: "reauth-token"),
+                                                                       user: .init(id: "user-1",
+                                                                                   email: "user@example.com"))))
+
+            case "/api/auth/revoke-session":
+                revokeCalls.withLock { $0.append(request.value(forHTTPHeaderField: "Authorization") ?? "nil") }
+                return try response(for: request,
+                                    statusCode: 500,
+                                    data: encodeJSON(ServerErrorResponse(message: "revoke failed",
+                                                                         code: "INTERNAL_SERVER_ERROR")))
+
+            default:
+                Issue.record("Unexpected path: \(request.url?.path ?? "nil")")
+                return emptyResponse(for: request)
+            }
+        }
+
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
+                             sessionStore: InMemorySessionStore(),
+                             transport: transport)
+        try await client.auth.applyRestoredSession(session)
+
+        do {
+            _ = try await client.auth.reauthenticate(password: "correct-password")
+            Issue.record("Expected revoke failure to surface")
+        } catch let BetterAuthError.requestFailed(statusCode, _, _, _) {
+            #expect(statusCode == 500)
+        }
+
+        #expect(revokeCalls.withLock { $0 }.isEmpty == false)
     }
 
     @Test

@@ -79,7 +79,7 @@ struct AuthNetworkClient {
     {
         var request = try buildRequest(path: path, method: method, accessToken: accessToken)
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONEncoder().encode(body)
+        request.httpBody = try BetterAuthCoding.makeEncoder().encode(body)
         return request
     }
 

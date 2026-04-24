@@ -243,6 +243,22 @@ struct OrganizationTests {
     }
 
     @Test
+    func organizationQueryPathsPercentEncodeReservedCharacters() async throws {
+        let transport = MockTransport { request in
+            let components = URLComponents(url: try requireValue(request.url), resolvingAgainstBaseURL: true)
+            try expect(components?.queryItems?.first(where: { $0.name == "organizationId" })?.value == "org&1=two")
+            return try response(for: request, statusCode: 200, data: encodeJSON([OrganizationMember]()))
+        }
+
+        let client = try makeClient(transport: transport)
+        _ = try await client.auth.restoreSession()
+        let manager = OrganizationManager(client: client)
+
+        let result = try await manager.listMembers(organizationId: "org&1=two")
+        #expect(result.isEmpty)
+    }
+
+    @Test
     func pluginUsesOnlyPublicAPIWithoutTestableImport() async throws {
         // This test validates the plugin pattern: OrganizationManager uses
         // only public BetterAuth API (BetterAuthClient, requests.sendJSON).

@@ -3,6 +3,7 @@ import Foundation
 public enum BetterAuthError: LocalizedError, Sendable {
     case invalidURL
     case invalidResponse
+    case randomGenerationFailed
     case requestFailed(statusCode: Int, message: String?, errorCode: AuthErrorCode?, response: ServerErrorResponse?)
     case missingSession
 
@@ -13,6 +14,9 @@ public enum BetterAuthError: LocalizedError, Sendable {
 
         case .invalidResponse:
             return "Invalid Better Auth response."
+
+        case .randomGenerationFailed:
+            return "Secure random value generation failed."
 
         case let .requestFailed(statusCode, message, errorCode, _):
             if let errorCode {

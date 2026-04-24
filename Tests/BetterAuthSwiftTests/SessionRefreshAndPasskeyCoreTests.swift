@@ -77,6 +77,7 @@ struct SessionRefreshAndPasskeyCoreTests {
 
         #expect(await manager.currentSession() == current)
         #expect(try store.loadSession(for: "test-key") == current)
+        await manager.stopAutoRefresh()
     }
 
     @Test

@@ -132,7 +132,10 @@ public actor OrganizationManager {
         var components = URLComponents()
         components.path = base
         components.queryItems = queryItems
-        return components.string ?? base
+        guard let path = components.string else {
+            preconditionFailure("Failed to construct organization endpoint path for \(base)")
+        }
+        return path
     }
 }
 

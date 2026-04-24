@@ -9,11 +9,7 @@ public struct MockTransport: BetterAuthTransport {
     }
 
     public func execute(_ request: URLRequest) async throws -> (Data, URLResponse) {
-        do {
-            return try await handler(request)
-        } catch {
-            throw error
-        }
+        try await handler(request)
     }
 }
 
@@ -39,7 +35,7 @@ public actor SequencedMockTransport: BetterAuthTransport {
 
     public func execute(_ request: URLRequest) async throws -> (Data, URLResponse) {
         guard !entries.isEmpty else {
-            fatalError("No mock responses left")
+            throw TestFailure("No mock responses left for \(request.httpMethod ?? "REQUEST") \(request.url?.absoluteString ?? "unknown URL")")
         }
 
         let entry = entries.removeFirst()

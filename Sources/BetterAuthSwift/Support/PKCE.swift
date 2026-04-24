@@ -1,5 +1,6 @@
 import CryptoKit
 import Foundation
+import Security
 
 public enum PKCEFlow {
     public struct Challenge: Sendable, Equatable {
@@ -14,15 +15,18 @@ public enum PKCEFlow {
         }
     }
 
-    public static func generateChallenge() -> Challenge {
-        let verifier = generateCodeVerifier()
+    public static func generateChallenge() throws -> Challenge {
+        let verifier = try generateCodeVerifier()
         let challenge = generateCodeChallenge(verifier)
         return Challenge(codeVerifier: verifier, codeChallenge: challenge)
     }
 
-    public static func generateCodeVerifier(length: Int = 64) -> String {
+    public static func generateCodeVerifier(length: Int = 64) throws -> String {
         var bytes = [UInt8](repeating: 0, count: length)
-        _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        guard status == errSecSuccess else {
+            throw BetterAuthError.randomGenerationFailed
+        }
         return Data(bytes).base64URLEncoded()
     }
 

@@ -88,7 +88,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                                               body: some Encodable,
                                               requiresAuthentication: Bool = true,
                                               retryOnUnauthorized: Bool = true,
-                                              encoder: JSONEncoder = JSONEncoder(),
+                                              encoder: JSONEncoder = BetterAuthCoding.makeEncoder(),
                                               decoder: JSONDecoder = BetterAuthCoding
                                                   .makeDecoder()) async throws -> Response
     {
@@ -111,7 +111,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                                     body: (some Encodable)? = nil,
                                     requiresAuthentication: Bool = true,
                                     retryOnUnauthorized: Bool = true,
-                                    encoder: JSONEncoder = JSONEncoder()) async throws
+                                    encoder: JSONEncoder = BetterAuthCoding.makeEncoder()) async throws
     {
         let requestBody = try body.map(encoder.encode)
         let (data, response) = try await send(path: path,

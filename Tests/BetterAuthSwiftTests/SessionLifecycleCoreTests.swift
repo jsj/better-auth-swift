@@ -161,6 +161,9 @@ struct SessionLifecycleCoreTests {
             .sha256("nonce") == "78377b525757b494427f89014f97d79928f3938d14eb51e20fb5dec9834eb304")
         #expect(context.rawNonce.count == 24)
         #expect(context.hashedNonce.count == 64)
+        #expect(context.rawNonce.allSatisfy {
+            "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._".contains($0)
+        })
     }
 
     @Test
