@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   validate-spm:
-    runs-on: [self-hosted, macOS, ARM64, mac-ci]
+    runs-on: macos-15
     timeout-minutes: 20
 
     steps:
@@ -45,7 +45,7 @@ jobs:
           swiftlint --config .swiftlint.yml --strict
 
   validate-xcode:
-    runs-on: [self-hosted, macOS, ARM64, mac-ci]
+    runs-on: macos-15
     timeout-minutes: 20
 
     steps:
@@ -69,4 +69,4 @@ jobs:
           xcodebuild test \
             -project better-auth-swift.xcodeproj \
             -scheme BetterAuth-Package \
-            -destination 'platform=macOS,arch=arm64'
+            -destination 'platform=macOS'
