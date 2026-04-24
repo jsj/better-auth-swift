@@ -19,21 +19,39 @@ analyzer_rules:
   - unused_declaration
   - unused_import
 
-disabled_rules:
-  - line_length
-  - trailing_whitespace
-  - opening_brace
-  - trailing_comma
-  - identifier_name
-  - type_name
-  - function_body_length
-  - function_parameter_count
-  - nesting
-  - cyclomatic_complexity
-  - type_body_length
-  - todo
-  - static_over_final_class
-  - non_optional_string_data_conversion
+line_length:
+  warning: 160
+  error: 200
+  ignores_urls: true
+  ignores_function_declarations: true
+  ignores_comments: true
+  ignores_interpolated_strings: true
+  ignores_multiline_strings: true
+
+opening_brace:
+  ignore_multiline_type_headers: true
+  ignore_multiline_statement_conditions: true
+  ignore_multiline_function_signatures: true
+
+identifier_name:
+  min_length:
+    warning: 2
+    error: 1
+  excluded:
+    - x
+    - y
+
+function_body_length:
+  warning: 220
+  error: 300
+
+cyclomatic_complexity:
+  warning: 40
+  error: 60
+
+type_body_length:
+  warning: 600
+  error: 800
 
 file_length:
   warning: 600

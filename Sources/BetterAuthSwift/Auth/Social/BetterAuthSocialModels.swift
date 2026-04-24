@@ -24,26 +24,30 @@ public struct AppleNativeSignInPayload: Codable, Sendable, Equatable {
     }
 }
 
-public struct SocialIDTokenPayload: Codable, Sendable, Equatable {
-    public struct UserProfile: Codable, Sendable, Equatable {
-        public struct Name: Codable, Sendable, Equatable {
-            public let firstName: String?
-            public let lastName: String?
+public struct SocialIDTokenUserProfileName: Codable, Sendable, Equatable {
+    public let firstName: String?
+    public let lastName: String?
 
-            public init(firstName: String? = nil, lastName: String? = nil) {
-                self.firstName = firstName
-                self.lastName = lastName
-            }
-        }
-
-        public let email: String?
-        public let name: Name?
-
-        public init(email: String? = nil, name: Name? = nil) {
-            self.email = email
-            self.name = name
-        }
+    public init(firstName: String? = nil, lastName: String? = nil) {
+        self.firstName = firstName
+        self.lastName = lastName
     }
+}
+
+public struct SocialIDTokenUserProfile: Codable, Sendable, Equatable {
+    public typealias Name = SocialIDTokenUserProfileName
+
+    public let email: String?
+    public let name: Name?
+
+    public init(email: String? = nil, name: Name? = nil) {
+        self.email = email
+        self.name = name
+    }
+}
+
+public struct SocialIDTokenPayload: Codable, Sendable, Equatable {
+    public typealias UserProfile = SocialIDTokenUserProfile
 
     public let token: String
     public let nonce: String?

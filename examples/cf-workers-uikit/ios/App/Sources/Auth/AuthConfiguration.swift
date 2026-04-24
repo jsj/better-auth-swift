@@ -17,7 +17,8 @@ struct AuthConfiguration {
     init(bundle: Bundle = .main, environment: ProcessInfo = .processInfo) throws {
         if let configuredURL = try Self.url(forKey: "API_BASE_URL",
                                             in: bundle,
-                                            missingValueError: AuthConfigurationError.missingValue(key: "API_BASE_URL"))
+                                            missingValueError: AuthConfigurationError
+                                                .missingValue(key: "API_BASE_URL"))
         {
             apiBaseURL = configuredURL
             source = .infoPlist

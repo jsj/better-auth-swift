@@ -114,16 +114,20 @@ struct PhoneAuthAndProfileTests {
                                                                                        "message": "OTP expired"])]))
 
         await assertRequestFailedJSON(statusCode: 400, expectedJSON: ["code": "INVALID_OTP",
-                                                                      "message": "Invalid OTP"])
-        {
-            _ = try await client.auth.signInWithPhoneOTP(.init(phoneNumber: "+15555550123", password: "password111"))
-        }
+                                                                      "message": "Invalid OTP"],
+                                      operation: {
+                                          _ = try await client.auth
+                                              .signInWithPhoneOTP(.init(phoneNumber: "+15555550123",
+                                                                        password: "password111"))
+                                      })
 
         await assertRequestFailedJSON(statusCode: 400, expectedJSON: ["code": "OTP_EXPIRED",
-                                                                      "message": "OTP expired"])
-        {
-            _ = try await client.auth.signInWithPhoneOTP(.init(phoneNumber: "+15555550123", password: "password222"))
-        }
+                                                                      "message": "OTP expired"],
+                                      operation: {
+                                          _ = try await client.auth
+                                              .signInWithPhoneOTP(.init(phoneNumber: "+15555550123",
+                                                                        password: "password222"))
+                                      })
     }
 
     @Test

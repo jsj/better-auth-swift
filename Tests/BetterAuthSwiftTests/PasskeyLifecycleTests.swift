@@ -243,29 +243,32 @@ struct PasskeyLifecycleTests {
                                                                                        "message": "Failed to verify registration"])]))
 
         await assertRequestFailedJSON(statusCode: 400, expectedJSON: ["code": "CHALLENGE_NOT_FOUND",
-                                                                      "message": "Challenge not found"])
-        {
-            _ = try await client.auth.authenticateWithPasskey(.init(response: .init(id: "credential-id",
-                                                                                    rawId: "credential-raw",
-                                                                                    response: .init(clientDataJSON: "missing-challenge"))))
-        }
+                                                                      "message": "Challenge not found"],
+                                      operation: {
+                                          _ = try await client.auth
+                                              .authenticateWithPasskey(.init(response: .init(id: "credential-id",
+                                                                                             rawId: "credential-raw",
+                                                                                             response: .init(clientDataJSON: "missing-challenge"))))
+                                      })
 
         await assertRequestFailedJSON(statusCode: 400, expectedJSON: ["code": "AUTHENTICATION_FAILED",
-                                                                      "message": "Authentication failed"])
-        {
-            _ = try await client.auth.authenticateWithPasskey(.init(response: .init(id: "credential-id",
-                                                                                    rawId: "credential-raw",
-                                                                                    response: .init(clientDataJSON: "wrong-origin"))))
-        }
+                                                                      "message": "Authentication failed"],
+                                      operation: {
+                                          _ = try await client.auth
+                                              .authenticateWithPasskey(.init(response: .init(id: "credential-id",
+                                                                                             rawId: "credential-raw",
+                                                                                             response: .init(clientDataJSON: "wrong-origin"))))
+                                      })
 
         await assertRequestFailedJSON(statusCode: 400, expectedJSON: ["code": "FAILED_TO_VERIFY_REGISTRATION",
-                                                                      "message": "Failed to verify registration"])
-        {
-            _ = try await client.auth.registerPasskey(.init(response: .init(id: "credential-id",
-                                                                            rawId: "credential-raw",
-                                                                            response: .init(clientDataJSON: "stale-registration",
-                                                                                            attestationObject: "attestation"))))
-        }
+                                                                      "message": "Failed to verify registration"],
+                                      operation: {
+                                          _ = try await client.auth
+                                              .registerPasskey(.init(response: .init(id: "credential-id",
+                                                                                     rawId: "credential-raw",
+                                                                                     response: .init(clientDataJSON: "stale-registration",
+                                                                                                     attestationObject: "attestation"))))
+                                      })
     }
 
     @Test

@@ -232,9 +232,9 @@ struct SocialAndUsernameAuthTests {
             try expect(request.httpMethod == "GET")
             try expect(request.httpBody == nil)
             try expect(request.url?.query == "token=verify-token")
-            let body = """
+            let body = Data("""
             {"status":true,"session":null}
-            """.data(using: .utf8)!
+            """.utf8)
             return response(for: request, statusCode: 200, data: body)
         }
 

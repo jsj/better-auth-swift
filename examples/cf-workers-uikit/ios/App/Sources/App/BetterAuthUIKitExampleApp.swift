@@ -7,7 +7,8 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     private var launchError: String?
 
     func application(_ application: UIApplication,
-                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil)
+        -> Bool
     {
         let resolvedViewModel: AuthViewModel
 
@@ -43,7 +44,8 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         Task {
             await viewModel.handleIncomingURL(url)
             if let navigationController = window?.rootViewController as? UINavigationController,
-               let authOptionsViewController = navigationController.viewControllers.first as? AuthOptionsViewController
+               let authOptionsViewController = navigationController.viewControllers
+               .first as? AuthOptionsViewController
             {
                 authOptionsViewController.reloadState()
             }

@@ -1,5 +1,14 @@
 import Foundation
 
+private enum BetterAuthSessionCodingKeys: String, CodingKey {
+    case id
+    case userId
+    case accessToken
+    case token
+    case refreshToken
+    case expiresAt
+}
+
 public struct BetterAuthSession: Codable, Sendable, Equatable {
     public let session: Session
     public let user: User
@@ -21,15 +30,6 @@ public struct BetterAuthSession: Codable, Sendable, Equatable {
         public let refreshToken: String?
         public let expiresAt: Date?
 
-        enum CodingKeys: String, CodingKey {
-            case id
-            case userId
-            case accessToken
-            case token
-            case refreshToken
-            case expiresAt
-        }
-
         public init(id: String,
                     userId: String,
                     accessToken: String,
@@ -44,7 +44,7 @@ public struct BetterAuthSession: Codable, Sendable, Equatable {
         }
 
         public init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
+            let container = try decoder.container(keyedBy: BetterAuthSessionCodingKeys.self)
             id = try container.decode(String.self, forKey: .id)
             userId = try container.decode(String.self, forKey: .userId)
             accessToken = try container.decodeIfPresent(String.self, forKey: .accessToken)
@@ -54,7 +54,7 @@ public struct BetterAuthSession: Codable, Sendable, Equatable {
         }
 
         public func encode(to encoder: Encoder) throws {
-            var container = encoder.container(keyedBy: CodingKeys.self)
+            var container = encoder.container(keyedBy: BetterAuthSessionCodingKeys.self)
             try container.encode(id, forKey: .id)
             try container.encode(userId, forKey: .userId)
             try container.encode(accessToken, forKey: .accessToken)

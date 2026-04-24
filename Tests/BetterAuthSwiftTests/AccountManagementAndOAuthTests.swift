@@ -427,9 +427,11 @@ struct AccountManagementAndOAuthTests {
 
     @Test
     func genericOAuthCompletionUsesConfiguredCallbackTemplate() async throws {
+        let endpoints = BetterAuthConfiguration
+            .Endpoints(oauth: .init(genericOAuthCallbackPath: "/api/auth/custom-oauth/{providerId}/complete"))
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
-                                                                    endpoints: .init(oauth: .init(genericOAuthCallbackPath: "/api/auth/custom-oauth/{providerId}/complete"))),
+                                                                    endpoints: endpoints),
                              sessionStore: InMemorySessionStore(),
                              transport: MockTransport { request in
                                  try expect(request.url?.path == "/api/auth/custom-oauth/fixture-generic/complete")

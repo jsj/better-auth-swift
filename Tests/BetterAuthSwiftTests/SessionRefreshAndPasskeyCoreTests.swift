@@ -487,16 +487,18 @@ struct SessionRefreshAndPasskeyCoreTests {
         #expect(try store.loadSession(for: "test-key")?.session.accessToken == "recovery-token")
 
         await assertRequestFailedJSON(statusCode: 400, expectedJSON: ["code": "INVALID_BACKUP_CODE",
-                                                                      "message": "Invalid backup code"])
-        {
-            _ = try await client.auth.verifyTwoFactorRecoveryCode(.init(code: "backup-invalid"))
-        }
+                                                                      "message": "Invalid backup code"],
+                                      operation: {
+                                          _ = try await client.auth
+                                              .verifyTwoFactorRecoveryCode(.init(code: "backup-invalid"))
+                                      })
 
         await assertRequestFailedJSON(statusCode: 401, expectedJSON: ["code": "INVALID_BACKUP_CODE",
-                                                                      "message": "Invalid backup code"])
-        {
-            _ = try await client.auth.verifyTwoFactorRecoveryCode(.init(code: "backup-reused"))
-        }
+                                                                      "message": "Invalid backup code"],
+                                      operation: {
+                                          _ = try await client.auth
+                                              .verifyTwoFactorRecoveryCode(.init(code: "backup-reused"))
+                                      })
     }
 
     // MARK: - 2FA Disable

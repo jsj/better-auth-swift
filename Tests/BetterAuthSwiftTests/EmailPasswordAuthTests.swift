@@ -331,10 +331,11 @@ struct EmailPasswordAuthTests {
                                                                                        "message": "Invalid username or password"])]))
 
         await assertRequestFailedJSON(statusCode: 401, expectedJSON: ["code": "INVALID_USERNAME_OR_PASSWORD",
-                                                                      "message": "Invalid username or password"])
-        {
-            _ = try await client.auth.signInWithUsername(.init(username: "missing_user", password: "wrong-password"))
-        }
+                                                                      "message": "Invalid username or password"],
+                                      operation: {
+                                          _ = try await client.auth.signInWithUsername(.init(username: "missing_user",
+                                                                                             password: "wrong-password"))
+                                      })
     }
 
     @Test
@@ -450,10 +451,10 @@ struct EmailPasswordAuthTests {
                                                                           email: "username@example.com")))
 
         await assertRequestFailedJSON(statusCode: 400, expectedJSON: ["code": "USERNAME_IS_ALREADY_TAKEN",
-                                                                      "message": "Username is already taken"])
-        {
-            _ = try await client.auth.updateUser(.init(username: "Duplicate_User"))
-        }
+                                                                      "message": "Username is already taken"],
+                                      operation: {
+                                          _ = try await client.auth.updateUser(.init(username: "Duplicate_User"))
+                                      })
     }
 
     @Test

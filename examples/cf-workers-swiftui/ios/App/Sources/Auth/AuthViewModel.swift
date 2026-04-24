@@ -275,9 +275,9 @@ final class AuthViewModel {
                                                                  password: passwordInput,
                                                                  name: nameInput.isEmpty ? emailInput : nameInput))
             switch result {
-            case let .signedIn(s):
-                session = s
-                launchState = .authenticated(s)
+            case let .signedIn(newSession):
+                session = newSession
+                launchState = .authenticated(newSession)
                 statusMessage = "Signed up and signed in"
 
             case .signedUp:
@@ -355,9 +355,9 @@ final class AuthViewModel {
     func verifyMagicLink() async {
         await perform {
             let result = try await service.verifyMagicLink(.init(token: tokenInput))
-            if case let .signedIn(s) = result {
-                session = s
-                launchState = .authenticated(s)
+            if case let .signedIn(newSession) = result {
+                session = newSession
+                launchState = .authenticated(newSession)
             }
             statusMessage = "Magic link verified"
         }
@@ -387,9 +387,9 @@ final class AuthViewModel {
         await perform {
             let result = try await service.verifyEmailOTP(.init(email: emailInput,
                                                                 otp: otpInput))
-            if case let .signedIn(s) = result {
-                session = s
-                launchState = .authenticated(s)
+            if case let .signedIn(newSession) = result {
+                session = newSession
+                launchState = .authenticated(newSession)
             }
             statusMessage = "Email OTP verified"
         }
@@ -489,9 +489,9 @@ final class AuthViewModel {
     func verifyEmail() async {
         await perform {
             let result = try await service.verifyEmail(.init(token: tokenInput))
-            if case let .signedIn(s) = result {
-                session = s
-                launchState = .authenticated(s)
+            if case let .signedIn(newSession) = result {
+                session = newSession
+                launchState = .authenticated(newSession)
             }
             statusMessage = "Email verified"
         }

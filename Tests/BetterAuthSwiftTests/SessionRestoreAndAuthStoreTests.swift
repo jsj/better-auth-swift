@@ -90,9 +90,11 @@ struct SessionRestoreAndAuthStoreTests {
 
     @Test
     func genericOAuthCallbackPathUsesConfiguredTemplate() async throws {
+        let endpoints = BetterAuthConfiguration
+            .Endpoints(oauth: .init(genericOAuthCallbackPath: "/api/auth/custom-oauth/{providerId}/complete"))
         let manager =
             BetterAuthSessionManager(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
-                                                                            endpoints: .init(oauth: .init(genericOAuthCallbackPath: "/api/auth/custom-oauth/{providerId}/complete")),
+                                                                            endpoints: endpoints,
                                                                             callbackURLSchemes: ["betterauth"]),
                                      sessionStore: InMemorySessionStore(),
                                      transport: MockTransport { request in

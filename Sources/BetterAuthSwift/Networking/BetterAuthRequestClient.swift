@@ -26,6 +26,15 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
     /// The raw client preserves non-2xx responses for callers that need direct HTTP inspection.
     /// After a 401-triggered refresh retry, any non-2xx retried response is surfaced as `BetterAuthError`
     /// to avoid silently masking retry failures.
+    public func send(_ request: BetterAuthDataRequest) async throws -> (Data, HTTPURLResponse) {
+        try await send(path: request.path,
+                       method: request.method,
+                       headers: request.headers,
+                       body: request.body,
+                       requiresAuthentication: request.requiresAuthentication,
+                       retryOnUnauthorized: request.retryOnUnauthorized)
+    }
+
     public func send(path: String,
                      method: String = "GET",
                      headers: [String: String] = [:],
@@ -58,6 +67,19 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
     }
 
     /// Sends a request and decodes the JSON response into the inferred `Response` type.
+    public func sendJSON<Response: Decodable>(_ request: BetterAuthDataRequest,
+                                              decoder: JSONDecoder = BetterAuthCoding
+                                                  .makeDecoder()) async throws -> Response
+    {
+        try await sendJSON(path: request.path,
+                           method: request.method,
+                           headers: request.headers,
+                           body: request.body,
+                           requiresAuthentication: request.requiresAuthentication,
+                           retryOnUnauthorized: request.retryOnUnauthorized,
+                           decoder: decoder)
+    }
+
     public func sendJSON<Response: Decodable>(path: String,
                                               method: String = "GET",
                                               headers: [String: String] = [:],

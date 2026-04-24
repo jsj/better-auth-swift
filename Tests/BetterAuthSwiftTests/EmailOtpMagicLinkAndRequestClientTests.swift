@@ -108,22 +108,25 @@ struct EmailOtpMagicLinkAndRequestClientTests {
                                                                                        "message": "Too many attempts"])]))
 
         await assertRequestFailedJSON(statusCode: 400, expectedJSON: ["code": "INVALID_OTP",
-                                                                      "message": "Invalid OTP"])
-        {
-            _ = try await client.auth.signInWithEmailOTP(.init(email: "otp@example.com", otp: "111111"))
-        }
+                                                                      "message": "Invalid OTP"],
+                                      operation: {
+                                          _ = try await client.auth.signInWithEmailOTP(.init(email: "otp@example.com",
+                                                                                             otp: "111111"))
+                                      })
 
         await assertRequestFailedJSON(statusCode: 400, expectedJSON: ["code": "OTP_EXPIRED",
-                                                                      "message": "OTP expired"])
-        {
-            _ = try await client.auth.signInWithEmailOTP(.init(email: "otp@example.com", otp: "222222"))
-        }
+                                                                      "message": "OTP expired"],
+                                      operation: {
+                                          _ = try await client.auth.signInWithEmailOTP(.init(email: "otp@example.com",
+                                                                                             otp: "222222"))
+                                      })
 
         await assertRequestFailedJSON(statusCode: 403, expectedJSON: ["code": "TOO_MANY_ATTEMPTS",
-                                                                      "message": "Too many attempts"])
-        {
-            _ = try await client.auth.signInWithEmailOTP(.init(email: "otp@example.com", otp: "333333"))
-        }
+                                                                      "message": "Too many attempts"],
+                                      operation: {
+                                          _ = try await client.auth.signInWithEmailOTP(.init(email: "otp@example.com",
+                                                                                             otp: "333333"))
+                                      })
     }
 
     @Test
