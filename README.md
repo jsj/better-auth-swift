@@ -9,7 +9,6 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/jsj/better-auth-swift/actions/workflows/xcode-cloud-status.yml"><img src="https://github.com/jsj/better-auth-swift/actions/workflows/xcode-cloud-status.yml/badge.svg?branch=main" alt="Xcode Cloud Status" /></a>
   <img src="https://img.shields.io/badge/Swift-6-orange.svg" alt="Swift 6" />
   <img src="https://img.shields.io/badge/platforms-iOS%2018%2B%20%7C%20macOS%2015%2B-blue.svg" alt="Platforms" />
   <img src="https://img.shields.io/badge/SwiftPM-supported-brightgreen.svg" alt="SwiftPM" />
