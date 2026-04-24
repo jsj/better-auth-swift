@@ -3,8 +3,8 @@ import Foundation
 public extension BetterAuthSessionManager {
     // MARK: - Session Access
 
-    /// Loads the persisted session from the session store without entering the actor.
-    nonisolated func loadStoredSession() throws -> BetterAuthSession? {
+    /// Loads the persisted session from the session store through the session actor.
+    func loadStoredSession() throws -> BetterAuthSession? {
         try sessionService.loadStoredSession()
     }
 

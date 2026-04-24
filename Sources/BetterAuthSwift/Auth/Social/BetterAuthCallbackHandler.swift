@@ -2,10 +2,15 @@ import Foundation
 
 struct BetterAuthCallbackHandler {
     private static let providerPlaceholder = "{providerId}"
+    let baseURL: URL
     let endpoints: BetterAuthConfiguration.Endpoints
+    let callbackURLSchemes: Set<String>
 
     func parseIncomingURL(_ url: URL) -> BetterAuthIncomingURL {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: true) else {
+            return .unsupported
+        }
+        guard acceptsURLScheme(components.scheme) else {
             return .unsupported
         }
 
@@ -50,6 +55,18 @@ struct BetterAuthCallbackHandler {
             components.queryItems?.append(URLQueryItem(name: "iss", value: issuer))
         }
         return components.string ?? components.path
+    }
+
+    private func acceptsURLScheme(_ scheme: String?) -> Bool {
+        guard let scheme = scheme?.lowercased(), !scheme.isEmpty else {
+            return false
+        }
+
+        var allowedSchemes = callbackURLSchemes
+        if let baseScheme = baseURL.scheme?.lowercased(), !baseScheme.isEmpty {
+            allowedSchemes.insert(baseScheme)
+        }
+        return allowedSchemes.contains(scheme)
     }
 
     private func providerID(from path: String) -> String? {

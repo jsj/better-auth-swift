@@ -15,6 +15,7 @@ public struct BetterAuthConfiguration: Sendable {
                 networking: Networking = .init(),
                 clockSkew: TimeInterval? = nil,
                 autoRefreshToken: Bool? = nil,
+                callbackURLSchemes: Set<String>? = nil,
                 retryPolicy: RetryPolicy? = nil,
                 requestOrigin: String? = nil,
                 logger: BetterAuthLogger? = nil)
@@ -23,7 +24,8 @@ public struct BetterAuthConfiguration: Sendable {
         self.storage = storage
         self.endpoints = endpoints
         let resolvedAuth = Auth(clockSkew: clockSkew ?? auth.clockSkew,
-                                autoRefreshToken: autoRefreshToken ?? auth.autoRefreshToken)
+                                autoRefreshToken: autoRefreshToken ?? auth.autoRefreshToken,
+                                callbackURLSchemes: callbackURLSchemes ?? auth.callbackURLSchemes)
         self.auth = resolvedAuth
         self.networking = Networking(retryPolicy: retryPolicy ?? networking.retryPolicy,
                                      requestOrigin: requestOrigin ?? networking.requestOrigin,
@@ -56,12 +58,15 @@ public extension BetterAuthConfiguration {
     struct Auth: Sendable {
         public let clockSkew: TimeInterval
         public let autoRefreshToken: Bool
+        public let callbackURLSchemes: Set<String>
 
         public init(clockSkew: TimeInterval = 60,
-                    autoRefreshToken: Bool = true)
+                    autoRefreshToken: Bool = true,
+                    callbackURLSchemes: Set<String> = [])
         {
             self.clockSkew = clockSkew
             self.autoRefreshToken = autoRefreshToken
+            self.callbackURLSchemes = Set(callbackURLSchemes.map { $0.lowercased() })
         }
     }
 

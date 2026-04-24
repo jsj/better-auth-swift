@@ -171,13 +171,13 @@ struct SessionPersistenceAndFetchTests {
                              eventEmitter: emitter)
 
         try await client.auth.signInWithEmail(.init(email: "test@example.com", password: "password123"))
-        var iterator = client.authStateChanges.makeAsyncIterator()
+        var iterator = client.auth.authStateChanges.makeAsyncIterator()
         let stateChange = await iterator.next()
 
         #expect(stateChange?.event == .signedIn)
         #expect(stateChange?.session == signedIn)
         #expect(stateChange?.transition?.phase == .authenticated)
-        #expect(client.onAuthStateChange.latest == stateChange)
+        #expect(client.auth.onAuthStateChange.latest == stateChange)
     }
 
     @Test

@@ -91,7 +91,7 @@ final class AuthViewModel {
         statusMessage = configuration.statusMessage
         authStateTask = Task { [weak self] in
             guard let self else { return }
-            for await change in resolvedClient.authStateChanges {
+            for await change in resolvedClient.auth.authStateChanges {
                 await MainActor.run {
                     self.session = change.session
                     if let session = change.session {

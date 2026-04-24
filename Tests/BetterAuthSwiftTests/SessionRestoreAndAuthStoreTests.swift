@@ -61,7 +61,8 @@ struct SessionRestoreAndAuthStoreTests {
     @Test
     func parseIncomingURLRecognizesOAuthMagicLinkAndVerifyEmailRoutes() async throws {
         let manager =
-            BetterAuthSessionManager(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
+            BetterAuthSessionManager(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                            callbackURLSchemes: ["betterauth"]),
                                      sessionStore: InMemorySessionStore(),
                                      transport: MockTransport { request in
                                          emptyResponse(for: request)
@@ -81,13 +82,18 @@ struct SessionRestoreAndAuthStoreTests {
 
         let verifyEmailURL = try #require(URL(string: "https://example.com/api/auth/verify-email?token=verify-token"))
         #expect(await manager.parseIncomingURL(verifyEmailURL) == .verifyEmail(.init(token: "verify-token")))
+
+        let untrustedURL =
+            try #require(URL(string: "evil://host/oauth2/callback/fixture-generic?code=fixture-code&state=fixture-state"))
+        #expect(await manager.parseIncomingURL(untrustedURL) == .unsupported)
     }
 
     @Test
     func genericOAuthCallbackPathUsesConfiguredTemplate() async throws {
         let manager =
             BetterAuthSessionManager(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
-                                                                            endpoints: .init(genericOAuthCallbackPath: "/api/auth/custom-oauth/{providerId}/complete")),
+                                                                            endpoints: .init(genericOAuthCallbackPath: "/api/auth/custom-oauth/{providerId}/complete"),
+                                                                            callbackURLSchemes: ["betterauth"]),
                                      sessionStore: InMemorySessionStore(),
                                      transport: MockTransport { request in
                                          Issue.record("Transport should not be used while parsing incoming URL")

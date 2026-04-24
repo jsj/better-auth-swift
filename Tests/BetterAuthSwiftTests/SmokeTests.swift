@@ -36,7 +36,7 @@ struct SmokeTests {
         let signedIn = try await client.auth.signInWithEmail(.init(email: "user@example.com", password: "password123"))
         #expect(signedIn.session.accessToken == "token-1")
 
-        let restored = try #require(try client.auth.loadStoredSession())
+        let restored = try #require(try await client.auth.loadStoredSession())
         #expect(restored.session.accessToken == "token-1")
 
         let relaunched =

@@ -109,7 +109,9 @@ public actor BetterAuthSessionManager {
         self.refreshService = BetterAuthSessionRefreshService(configuration: configuration, network: self.network)
         self.authFlowService = BetterAuthAuthFlowService(configuration: configuration, network: self.network)
         self.userAccountService = BetterAuthUserAccountService(configuration: configuration, network: self.network)
-        self.callbackHandler = BetterAuthCallbackHandler(endpoints: configuration.endpoints)
+        self.callbackHandler = BetterAuthCallbackHandler(baseURL: configuration.baseURL,
+                                                         endpoints: configuration.endpoints,
+                                                         callbackURLSchemes: configuration.auth.callbackURLSchemes)
         self.authStateListenerRegistrations = Self.makeAuthStateListenerRegistrations(authStateListeners,
                                                                                       eventEmitter: eventEmitter)
     }

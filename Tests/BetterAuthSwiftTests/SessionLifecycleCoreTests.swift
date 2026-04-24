@@ -6,7 +6,7 @@ import Testing
 
 struct SessionLifecycleCoreTests {
     @Test
-    func loadStoredSessionUsesStoreWithoutActorHop() throws {
+    func loadStoredSessionUsesStoreThroughActor() async throws {
         let session = BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "token"),
                                         user: .init(id: "user-1", email: "test@example.com"))
         let store = InMemorySessionStore()
@@ -20,7 +20,7 @@ struct SessionLifecycleCoreTests {
                                          emptyResponse(for: request)
                                      })
 
-        let restored = try manager.loadStoredSession()
+        let restored = try await manager.loadStoredSession()
         #expect(restored == session)
     }
 

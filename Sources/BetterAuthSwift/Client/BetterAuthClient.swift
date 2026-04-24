@@ -46,17 +46,22 @@ public struct BetterAuthClient: BetterAuthModuleSupporting, Sendable {
                                             eventEmitter: eventEmitter,
                                             authStateListeners: [])
         self.auth = auth
+        let baseRequests = BetterAuthRequestClient(configuration: configuration,
+                                                   sessionManager: auth,
+                                                   transport: transport)
         let resolvedModules = BetterAuthModuleRegistry.build(configuration: configuration,
                                                              authLifecycle: auth,
-                                                             requestsPerformer: BetterAuthRequestClient(configuration: configuration,
-                                                                                                        sessionManager: auth,
-                                                                                                        transport: transport),
+                                                             requestsPerformer: baseRequests,
                                                              modules: modules)
         self.modules = resolvedModules
-        self.requests = BetterAuthRequestClient(configuration: configuration,
-                                                sessionManager: auth,
-                                                transport: transport,
-                                                requestHooks: resolvedModules.registeredRequestHooks)
+        if resolvedModules.registeredRequestHooks.isEmpty {
+            self.requests = baseRequests
+        } else {
+            self.requests = BetterAuthRequestClient(configuration: configuration,
+                                                    sessionManager: auth,
+                                                    transport: transport,
+                                                    requestHooks: resolvedModules.registeredRequestHooks)
+        }
         self.authStateListenerRegistrations = resolvedModules.registeredAuthStateListeners.map { listener in
             auth.onAuthStateChange.on { change in
                 await listener.authStateDidChange(change)
@@ -104,24 +109,5 @@ public extension BetterAuthClient {
                   transport: transport,
                   eventEmitter: eventEmitter,
                   modules: modules)
-    }
-
-    /// Alias for ``auth``.
-    var sessionManager: BetterAuthSessionManager {
-        auth
-    }
-
-    /// Shortcut to the auth event emitter for observing sign-in/sign-out events.
-    var onAuthStateChange: AuthEventEmitter {
-        auth.onAuthStateChange
-    }
-
-    /// Async stream of auth state changes, yielding the latest event to new subscribers.
-    var authStateChanges: AsyncStream<AuthStateChange> {
-        auth.authStateChanges
-    }
-
-    var currentAuthState: AuthStateChange? {
-        auth.currentAuthState
     }
 }
