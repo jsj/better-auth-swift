@@ -1,5 +1,6 @@
 import BetterAuth
 import Foundation
+import os
 
 public struct MockTransport: BetterAuthTransport {
     public let handler: @Sendable (URLRequest) async throws -> (Data, URLResponse)
@@ -138,22 +139,19 @@ public struct ProtectedResponse: Codable, Equatable, Sendable {
     }
 }
 
-public final class Locked<Value>: @unchecked Sendable {
-    private let lock = NSLock()
-    private var value: Value
+public final class Locked<Value: Sendable>: Sendable {
+    private let lock: OSAllocatedUnfairLock<Value>
 
     public init(_ value: Value) {
-        self.value = value
+        self.lock = OSAllocatedUnfairLock(initialState: value)
     }
 
-    public func withLock<T>(_ body: (inout Value) -> T) -> T {
-        lock.lock()
-        defer { lock.unlock() }
-        return body(&value)
+    public func withLock<T: Sendable>(_ body: @Sendable (inout Value) throws -> T) rethrows -> T {
+        try lock.withLock(body)
     }
 }
 
-public final class CapturingLogger: BetterAuthLogger, @unchecked Sendable {
+public final class CapturingLogger: BetterAuthLogger, Sendable {
     private let messages = Locked<[String]>([])
 
     public init() {}

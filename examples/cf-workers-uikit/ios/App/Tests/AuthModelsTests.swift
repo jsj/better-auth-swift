@@ -1,5 +1,6 @@
 import BetterAuth
 import Foundation
+import os
 import Testing
 @testable import BetterAuthUIKitExample
 
@@ -48,7 +49,7 @@ struct AuthModelsTests {
                                                            source: .infoPlist),
                           client: BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                                           storage: .init(key: "test-key")),
-                                                   sessionStore: configuredStore(session: storedSession),
+                                                   sessionStore: try configuredStore(session: storedSession),
                                                    transport: MockTransport { _ in
                                                        Issue
                                                            .record(Comment(rawValue: "Restore should not hit the network for a fresh session"))
@@ -78,7 +79,7 @@ struct AuthModelsTests {
                                                            source: .infoPlist),
                           client: BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                                           storage: .init(key: "test-key")),
-                                                   sessionStore: configuredStore(session: staleSession),
+                                                   sessionStore: try configuredStore(session: staleSession),
                                                    transport: MockTransport { request in
                                                        #expect(request.url?.path == "/api/auth/get-session")
                                                        let body = ["code": "UNAUTHORIZED",
@@ -106,7 +107,7 @@ struct AuthModelsTests {
                                                              expiresAt: Date().addingTimeInterval(3600)),
                                               user: .init(id: "user-1", email: "jane@example.com", name: "Jane"))
 
-        let store = configuredStore(session: activeSession)
+        let store = try configuredStore(session: activeSession)
         let model =
             AuthViewModel(configuration: AuthConfiguration(apiBaseURL: try #require(URL(string: "https://example.com")),
                                                            source: .infoPlist),
@@ -146,8 +147,13 @@ private struct MockTransport: BetterAuthTransport {
     }
 }
 
-private final class MockURLProtocol: URLProtocol, @unchecked Sendable {
-    nonisolated(unsafe) static var requestHandler: (@Sendable (URLRequest) throws -> (HTTPURLResponse, Data))?
+private final class MockURLProtocol: URLProtocol {
+    private typealias RequestHandler = @Sendable (URLRequest) throws -> (HTTPURLResponse, Data)
+    private static let requestHandler = OSAllocatedUnfairLock<RequestHandler?>(initialState: nil)
+
+    static func setRequestHandler(_ handler: RequestHandler?) {
+        requestHandler.withLock { $0 = handler }
+    }
 
     override class func canInit(with request: URLRequest) -> Bool {
         true
@@ -158,7 +164,7 @@ private final class MockURLProtocol: URLProtocol, @unchecked Sendable {
     }
 
     override func startLoading() {
-        guard let handler = Self.requestHandler else {
+        guard let handler = Self.requestHandler.withLock({ $0 }) else {
             client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
             return
         }
@@ -176,9 +182,9 @@ private final class MockURLProtocol: URLProtocol, @unchecked Sendable {
     override func stopLoading() {}
 }
 
-private func configuredStore(session: BetterAuthSession) -> InMemorySessionStore {
+private func configuredStore(session: BetterAuthSession) throws -> InMemorySessionStore {
     let store = InMemorySessionStore()
-    try! store.saveSession(session, for: "test-key")
+    try store.saveSession(session, for: "test-key")
     return store
 }
 
@@ -199,7 +205,7 @@ private func makeURLSession() -> URLSession {
 extension AuthModelsTests {
     @Test
     func workerReachabilityTreatsSuccessfulHeadResponseAsReachable() async throws {
-        MockURLProtocol.requestHandler = { request in
+        MockURLProtocol.setRequestHandler { request in
             #expect(request.httpMethod == "HEAD")
             let response = HTTPURLResponse(url: request.url ?? URL(string: "https://example.com")!,
                                            statusCode: 200,
@@ -215,12 +221,12 @@ extension AuthModelsTests {
         let reachable = await service.isWorkerReachable()
 
         #expect(reachable == true)
-        MockURLProtocol.requestHandler = nil
+        MockURLProtocol.setRequestHandler(nil)
     }
 
     @Test
     func workerReachabilityTreatsTransportFailureAsUnreachable() async throws {
-        MockURLProtocol.requestHandler = { _ in
+        MockURLProtocol.setRequestHandler { _ in
             throw URLError(.cannotConnectToHost)
         }
 
@@ -231,6 +237,6 @@ extension AuthModelsTests {
         let reachable = await service.isWorkerReachable()
 
         #expect(reachable == false)
-        MockURLProtocol.requestHandler = nil
+        MockURLProtocol.setRequestHandler(nil)
     }
 }

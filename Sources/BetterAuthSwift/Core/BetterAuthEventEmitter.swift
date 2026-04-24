@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 public enum AuthChangeEvent: String, Sendable {
     case initialSession
@@ -54,17 +55,18 @@ private enum AuthEventNotifier {
     }
 }
 
-private final class AuthEventEmitterState: @unchecked Sendable {
-    private let lock = NSLock()
+private struct AuthEventEmitterStateStorage {
     var listeners: [UUID: AuthStateChangeListener] = [:]
     var continuations: [UUID: AsyncStream<AuthStateChange>.Continuation] = [:]
     var latestStateChange: AuthStateChange?
     var listenerDeliveryTask: Task<Void, Never>?
+}
 
-    func withLock<T>(_ body: (AuthEventEmitterState) throws -> T) rethrows -> T {
-        lock.lock()
-        defer { lock.unlock() }
-        return try body(self)
+private final class AuthEventEmitterState: Sendable {
+    private let lock = OSAllocatedUnfairLock(initialState: AuthEventEmitterStateStorage())
+
+    func withLock<T: Sendable>(_ body: @Sendable (inout AuthEventEmitterStateStorage) throws -> T) rethrows -> T {
+        try lock.withLock(body)
     }
 }
 
@@ -149,18 +151,20 @@ public final class AuthEventEmitter: Sendable {
         _ = state.withLock { $0.continuations.removeValue(forKey: id) }
     }
 
-    private final class Registration: AuthStateChangeRegistration, @unchecked Sendable {
-        private weak var emitter: AuthEventEmitter?
+    private final class Registration: AuthStateChangeRegistration, Sendable {
+        private let emitter = OSAllocatedUnfairLock<AuthEventEmitter?>(initialState: nil)
         private let id: UUID
 
         init(emitter: AuthEventEmitter, id: UUID) {
-            self.emitter = emitter
             self.id = id
+            self.emitter.withLock { $0 = emitter }
         }
 
         func remove() {
-            emitter?.removeListener(id)
-            emitter = nil
+            emitter.withLock { emitter in
+                emitter?.removeListener(id)
+                emitter = nil
+            }
         }
 
         deinit {

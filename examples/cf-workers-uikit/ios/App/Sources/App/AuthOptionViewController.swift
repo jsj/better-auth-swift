@@ -44,8 +44,11 @@ final class AuthOptionViewController: UITableViewController, ASAuthorizationCont
     {
         switch sections[indexPath.section].rows[indexPath.row] {
         case let .field(field):
-            let cell = tableView.dequeueReusableCell(withIdentifier: AuthTextFieldCell.reuseIdentifier,
-                                                     for: indexPath) as! AuthTextFieldCell
+            guard let cell = tableView.dequeueReusableCell(withIdentifier: AuthTextFieldCell.reuseIdentifier,
+                                                           for: indexPath) as? AuthTextFieldCell
+            else {
+                return UITableViewCell()
+            }
             cell.configure(field: field, viewModel: controller.viewModel)
             return cell
 

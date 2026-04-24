@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 public protocol BetterAuthStateObserving: Sendable {
     var authStateChanges: AsyncStream<AuthStateChange> { get }
@@ -79,12 +80,9 @@ public protocol BetterAuthAuthPerforming: BetterAuthSessionLifecycle {
     func getJWKS() async throws -> BetterAuthJWKS
 }
 
-/// Safety invariant: all mutable session storage is guarded by `lock`, while event delivery is delegated to
-/// `AuthEventEmitter`.
-final class BetterAuthSessionState: @unchecked Sendable {
+final class BetterAuthSessionState: Sendable {
     let eventEmitter: AuthEventEmitter
-    private let lock = NSLock()
-    private var storage: BetterAuthSession?
+    private let storage = OSAllocatedUnfairLock<BetterAuthSession?>(initialState: nil)
 
     init(eventEmitter: AuthEventEmitter) {
         self.eventEmitter = eventEmitter
@@ -99,18 +97,16 @@ final class BetterAuthSessionState: @unchecked Sendable {
     }
 
     var currentSession: BetterAuthSession? {
-        lock.lock()
-        defer { lock.unlock() }
-        return storage
+        storage.withLock { $0 }
     }
 
     @discardableResult
     func replaceCurrentSession(_ session: BetterAuthSession?) -> BetterAuthSession? {
-        lock.lock()
-        defer { lock.unlock() }
-        let previous = storage
-        storage = session
-        return previous
+        storage.withLock { storage in
+            let previous = storage
+            storage = session
+            return previous
+        }
     }
 
     func emit(_ event: AuthChangeEvent,
