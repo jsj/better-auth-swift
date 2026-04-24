@@ -1,6 +1,6 @@
 import Foundation
 
-public enum BetterAuthSessionPhase: Sendable, Equatable {
+@frozen public enum BetterAuthSessionPhase: Sendable, Equatable {
     case idle
     case restoring
     case authenticated
@@ -9,18 +9,18 @@ public enum BetterAuthSessionPhase: Sendable, Equatable {
     case failed
 }
 
-public enum BetterAuthRestoreSource: Sendable, Equatable {
+@frozen public enum BetterAuthRestoreSource: Sendable, Equatable {
     case memory
     case keychain
 }
 
-public enum BetterAuthRefreshDisposition: Sendable, Equatable {
+@frozen public enum BetterAuthRefreshDisposition: Sendable, Equatable {
     case notNeeded
     case refreshed
     case deferred
 }
 
-public enum BetterAuthRestoreClearReason: Sendable, Equatable {
+@frozen public enum BetterAuthRestoreClearReason: Sendable, Equatable {
     case invalidSession
     case sessionExpired
     case refreshTokenExpired
@@ -29,7 +29,7 @@ public enum BetterAuthRestoreClearReason: Sendable, Equatable {
     case storageFailure
 }
 
-public enum BetterAuthRestoreResult: Sendable, Equatable {
+@frozen public enum BetterAuthRestoreResult: Sendable, Equatable {
     case noStoredSession
     case restored(BetterAuthSession,
                   source: BetterAuthRestoreSource,
@@ -37,14 +37,14 @@ public enum BetterAuthRestoreResult: Sendable, Equatable {
     case cleared(BetterAuthRestoreClearReason)
 }
 
-public enum BetterAuthIncomingURL: Sendable, Equatable {
+@frozen public enum BetterAuthIncomingURL: Sendable, Equatable {
     case genericOAuth(GenericOAuthCallbackRequest)
     case magicLink(MagicLinkVerifyRequest)
     case verifyEmail(VerifyEmailRequest)
     case unsupported
 }
 
-public enum BetterAuthHandledURLResult: Sendable, Equatable {
+@frozen public enum BetterAuthHandledURLResult: Sendable, Equatable {
     case genericOAuth(BetterAuthSession)
     case magicLink(MagicLinkVerificationResult)
     case verifyEmail(VerifyEmailResult)
