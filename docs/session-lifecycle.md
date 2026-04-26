@@ -2,23 +2,33 @@
 
 The core session API lives on `client.auth`.
 
-## Restore existing state
+## Restore at app launch
+
+Prefer `restoreSessionOnLaunch()` when bootstrapping an app because it returns a typed `BetterAuthRestoreResult`.
+
+```swift
+let result = try await client.auth.restoreSessionOnLaunch()
+
+switch result {
+case .noStoredSession:
+    // Show signed-out UI.
+case .restored(let session, _, let refresh):
+    // Show signed-in UI. `refresh` tells whether refresh was skipped, completed, or deferred.
+case .cleared:
+    // Stored session was invalid and local state was cleared.
+}
+```
+
+For a session-only compatibility path, use:
 
 ```swift
 let session = try await client.auth.restoreOrRefreshSession()
 ```
 
-This is the best default for app launch. It restores a stored session if possible and refreshes it when needed.
-
 If you need to inspect the stored session separately before applying it to in-memory state, use:
 
 ```swift
 let stored = try await client.auth.loadStoredSession()
-```
-
-If you later want to apply that session to the manager's in-memory state, call:
-
-```swift
 try await client.auth.applyRestoredSession(stored)
 ```
 
@@ -28,21 +38,30 @@ try await client.auth.applyRestoredSession(stored)
 let session = await client.auth.currentSession()
 ```
 
-## Refresh explicitly
+## Observe auth state
 
 ```swift
-let session = try await client.auth.refreshSession()
+for await change in client.auth.authStateChanges {
+    print(change.event, change.session as Any)
+}
 ```
 
-Use this when you know you want a refresh now.
-
-## Refresh only if needed
+For callback-style observation:
 
 ```swift
-let session = try await client.auth.refreshSessionIfNeeded()
+let registration = client.auth.onAuthStateChange.on { change in
+    print(change.event)
+}
 ```
 
-Use this if you want the SDK to check whether the current session is still fresh before refreshing.
+Keep the returned registration alive for as long as you want to receive events.
+
+## Refresh
+
+```swift
+let refreshed = try await client.auth.refreshSession()
+let freshIfNeeded = try await client.auth.refreshSessionIfNeeded()
+```
 
 ## Fetch the latest server state
 
@@ -58,14 +77,34 @@ This asks the backend for the current session payload and synchronizes local sta
 try await client.auth.signOut()
 ```
 
-By default this signs out remotely and clears local state.
-
-If you only want to clear local state:
+By default this signs out remotely and clears local state. To clear local state only:
 
 ```swift
 try await client.auth.signOut(remotely: false)
 ```
 
-## What is persisted
+## Session management
 
-The SDK persists the active session using the configured session store, which defaults to a keychain-backed store.
+```swift
+let sessions = try await client.auth.listSessions()
+let devices = try await client.auth.listDeviceSessions()
+let jwt = try await client.auth.getSessionJWT()
+let jwks = try await client.auth.getJWKS()
+try await client.auth.revokeOtherSessions()
+try await client.auth.revokeSessions()
+```
+
+Use `revokeSession(token:)`, `setActiveDeviceSession(_:)`, and `revokeDeviceSession(_:)` for targeted device/session control.
+
+## Incoming URLs
+
+```swift
+let parsed = client.auth.parseIncomingURL(url)
+let handled = try await client.auth.handleIncomingURL(url)
+```
+
+The URL helpers cover OAuth callbacks, generic OAuth callbacks, magic links, and email/OTP verification callbacks configured through the SDK.
+
+## Persistence
+
+The SDK persists the active session using the configured session store, which defaults to `KeychainSessionStore`. You can provide a custom `BetterAuthSessionStore` or use `InMemorySessionStore` for tests.

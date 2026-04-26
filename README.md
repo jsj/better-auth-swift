@@ -10,7 +10,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Swift-6-orange.svg" alt="Swift 6" />
-  <img src="https://img.shields.io/badge/platforms-iOS%2018%2B%20%7C%20macOS%2015%2B-blue.svg" alt="Platforms" />
+  <img src="https://img.shields.io/badge/platforms-iOS%2017%2B%20%7C%20macOS%2014%2B-blue.svg" alt="Platforms" />
   <img src="https://img.shields.io/badge/SwiftPM-supported-brightgreen.svg" alt="SwiftPM" />
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
 </p>
@@ -48,8 +48,8 @@ Native Swift SDK for [Better Auth](https://github.com/better-auth/better-auth) w
 
 ### Requirements
 
-- iOS 18+
-- macOS 15+
+- iOS 17+
+- macOS 14+
 - Xcode 16+
 - Swift 6
 
@@ -102,6 +102,15 @@ let client = BetterAuthClient(
 
 ```swift
 let result = try await client.auth.restoreSessionOnLaunch()
+
+switch result {
+case .noStoredSession:
+    // Show signed-out UI.
+case .restored(let session, _, _):
+    // Show signed-in UI.
+case .cleared:
+    // Stored session was invalid and local state was cleared.
+}
 ```
 
 ### Sign in
@@ -140,10 +149,14 @@ await store.bootstrap()
 
 // Drive UI from typed launch state
 switch store.launchState {
-case .authenticated(let session): // show app
-case .unauthenticated:            // show sign in
-case .restoring:                  // show loading
-default: break
+case .authenticated(let session):
+    print("Show app", session.user.id)
+case .unauthenticated:
+    print("Show sign in")
+case .restoring:
+    print("Show loading")
+default:
+    break
 }
 ```
 
@@ -152,7 +165,14 @@ default: break
 ```swift
 import BetterAuthOrganization
 
-let orgs = OrganizationManager(client: client)
+let client = BetterAuthClient(
+    baseURL: URL(string: "https://your-api.example.com")!,
+    modules: [BetterAuthOrganizationModule()]
+)
+
+guard let orgs = client.organizationModule?.manager else {
+    throw BetterAuthError.invalidResponse
+}
 
 let org = try await orgs.createOrganization(
     CreateOrganizationRequest(name: "Acme", slug: "acme")

@@ -13,23 +13,24 @@ Add the package to your app target:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/jsj/better-auth-swift.git", from: "0.0.1")
+    .package(url: "https://github.com/jsj/better-auth-swift.git")
 ]
 ```
 
-Then choose the product you need:
+Then choose the products you need:
 
 ```swift
 .target(
     name: "YourApp",
     dependencies: [
         .product(name: "BetterAuth", package: "better-auth-swift"),
-        .product(name: "BetterAuthSwiftUI", package: "better-auth-swift")
+        .product(name: "BetterAuthSwiftUI", package: "better-auth-swift"),
+        .product(name: "BetterAuthOrganization", package: "better-auth-swift")
     ]
 )
 ```
 
-Use only `BetterAuth` if you want the core SDK. Add `BetterAuthSwiftUI` when you want the optional `AuthStore` wrapper for SwiftUI state.
+Use `BetterAuth` for the core SDK, add `BetterAuthSwiftUI` for the observable `AuthStore`, and add `BetterAuthOrganization` when using the organization plugin module.
 
 ## Xcode
 
@@ -45,14 +46,14 @@ let client = BetterAuthClient(
 )
 ```
 
-Once you have a client, the usual first step is restoring any previously stored session:
+Restore app-launch state with the typed restore result:
+
+```swift
+let result = try await client.auth.restoreSessionOnLaunch()
+```
+
+For the older session-only path, use:
 
 ```swift
 let session = try await client.auth.restoreOrRefreshSession()
-```
-
-If you need to load the stored session separately before restoring app state, read it through the session manager actor:
-
-```swift
-let stored = try await client.auth.loadStoredSession()
 ```

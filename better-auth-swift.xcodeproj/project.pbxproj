@@ -219,7 +219,6 @@
 		010C2C530A41622AA0556927 /* TestAssertions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestAssertions.swift; sourceTree = "<group>"; };
 		01826A9486C0B3729B256B81 /* BetterAuthTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthTransport.swift; sourceTree = "<group>"; };
 		022F5AE8EC0943DFF262FB5F /* TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestSupport.swift; sourceTree = "<group>"; };
-		031BF800FE533C1EF1B1EE36 /* extract_sdk_endpoints.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = extract_sdk_endpoints.sh; sourceTree = "<group>"; };
 		053EBD03B1AE449E27280F77 /* OrganizationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizationManager.swift; sourceTree = "<group>"; };
 		082D4917EE4B4A4F246C8EC3 /* build_xcframeworks.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = build_xcframeworks.sh; sourceTree = "<group>"; };
 		0973A2C18AF75693B35190CE /* BetterAuthSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthSessionManager.swift; sourceTree = "<group>"; };
@@ -252,7 +251,6 @@
 		62965F148D946A7DAB65C1B7 /* OrganizationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizationModels.swift; sourceTree = "<group>"; };
 		641C3FE968AA44649A8C6E4D /* EmailPasswordAuthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailPasswordAuthTests.swift; sourceTree = "<group>"; };
 		650DC2262C94AA73663BE211 /* BetterAuthRequestClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthRequestClient.swift; sourceTree = "<group>"; };
-		65F78D987C1ABAE96B18515E /* extract_upstream_endpoints.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = extract_upstream_endpoints.sh; sourceTree = "<group>"; };
 		6C17DF6AE4E0C167829F5743 /* BetterAuthCoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthCoding.swift; sourceTree = "<group>"; };
 		6E3E4E08084F9DF483F35D95 /* BetterAuthSessionServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthSessionServices.swift; sourceTree = "<group>"; };
 		7071732D7777F820CEC4651A /* BetterAuthOrganizationTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BetterAuthOrganizationTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -280,7 +278,6 @@
 		AC9BD05E7D92EADF5197D10A /* BetterAuthLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthLogger.swift; sourceTree = "<group>"; };
 		AD6411B911513B497B1DFC51 /* SessionLifecycleCoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionLifecycleCoreTests.swift; sourceTree = "<group>"; };
 		AE316AFCDF7B624FF026EF89 /* SocialAndUsernameAuthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialAndUsernameAuthTests.swift; sourceTree = "<group>"; };
-		AEED91AA410D65BFF9CF538F /* drift-prompt.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "drift-prompt.md"; sourceTree = "<group>"; };
 		AF68F67C89F44DA544678B42 /* BetterAuthPrimaryAuthServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetterAuthPrimaryAuthServices.swift; sourceTree = "<group>"; };
 		B29DFEF75CFCB78AC769E854 /* AppleSignInSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInSupport.swift; sourceTree = "<group>"; };
 		B485B1057B52337938DBB4F2 /* bootstrap_runner_env.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = bootstrap_runner_env.sh; sourceTree = "<group>"; };
@@ -603,9 +600,6 @@
 			children = (
 				B485B1057B52337938DBB4F2 /* bootstrap_runner_env.sh */,
 				082D4917EE4B4A4F246C8EC3 /* build_xcframeworks.sh */,
-				AEED91AA410D65BFF9CF538F /* drift-prompt.md */,
-				031BF800FE533C1EF1B1EE36 /* extract_sdk_endpoints.sh */,
-				65F78D987C1ABAE96B18515E /* extract_upstream_endpoints.sh */,
 				2DE3601C850A3AD88651492A /* generate_xcodeproj.sh */,
 			);
 			path = Scripts;
@@ -1083,7 +1077,7 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				INFOPLIST_FILE = "Derived/InfoPlists/BetterAuth-Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1094,7 +1088,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
@@ -1140,7 +1134,7 @@
 					"@loader_path/../Frameworks",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
@@ -1166,7 +1160,7 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				INFOPLIST_FILE = "Derived/InfoPlists/BetterAuthSwiftUI-Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1177,7 +1171,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
@@ -1212,7 +1206,7 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				INFOPLIST_FILE = "Derived/InfoPlists/BetterAuth-Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1223,7 +1217,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
@@ -1389,7 +1383,7 @@
 					"@loader_path/../Frameworks",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
@@ -1422,7 +1416,7 @@
 					"@loader_path/../Frameworks",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
@@ -1449,7 +1443,7 @@
 					"@loader_path/../Frameworks",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
@@ -1477,7 +1471,7 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				INFOPLIST_FILE = "Derived/InfoPlists/BetterAuthOrganization-Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1488,7 +1482,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
@@ -1526,7 +1520,7 @@
 					"@loader_path/../Frameworks",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
@@ -1554,7 +1548,7 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				INFOPLIST_FILE = "Derived/InfoPlists/BetterAuthOrganization-Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1565,7 +1559,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
@@ -1596,7 +1590,7 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				INFOPLIST_FILE = "Derived/InfoPlists/BetterAuthSwiftUI-Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1607,7 +1601,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
@@ -1641,7 +1635,7 @@
 					"@loader_path/../Frameworks",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-L$(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",

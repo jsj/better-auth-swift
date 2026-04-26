@@ -17,26 +17,46 @@ let client = BetterAuthClient(
 ```swift
 import BetterAuth
 
-let client = BetterAuthClient(
-    configuration: BetterAuthConfiguration(
-        baseURL: URL(string: "https://your-api.example.com")!,
-        storage: .init(
-            key: "better-auth.session",
-            service: "com.example.myapp.auth"
-        ),
-        endpoints: .init(
+let configuration = BetterAuthConfiguration(
+    baseURL: URL(string: "https://your-api.example.com")!,
+    storage: .shared(
+        service: "com.example.myapp.auth",
+        accessGroup: "ABCDE12345.com.example.shared"
+    ),
+    endpoints: .init(
+        auth: .init(
             socialSignInPath: "/api/auth/sign-in/social",
-            nativeAppleSignInPath: "/api/auth/apple/native",
+            nativeAppleSignInPath: "/api/auth/apple/native"
+        ),
+        session: .init(
             sessionRefreshPath: "/api/auth/get-session",
             currentSessionPath: "/api/auth/get-session",
             signOutPath: "/api/auth/sign-out"
-        ),
+        )
+    ),
+    auth: .init(
         clockSkew: 60,
         autoRefreshToken: true,
-        callbackURLSchemes: ["yourapp"],
+        callbackURLSchemes: ["yourapp"]
+    ),
+    networking: .init(
         retryPolicy: .default,
-        logger: nil
-    )
+        requestOrigin: "https://your-api.example.com",
+        timeoutInterval: 15
+    ),
+    logger: nil
+)
+
+let client = BetterAuthClient(configuration: configuration)
+```
+
+The convenience initializer accepts the same configuration pieces directly:
+
+```swift
+let client = BetterAuthClient(
+    baseURL: URL(string: "https://your-api.example.com")!,
+    callbackURLSchemes: ["yourapp"],
+    requestOrigin: "https://your-api.example.com"
 )
 ```
 
@@ -51,35 +71,34 @@ The root URL for your Better Auth backend.
 Controls how sessions are stored locally.
 
 - `key`: storage key used for the session payload
-- `service`: keychain service name
-- `accessGroup`: optional shared keychain group
-- `accessibility`: keychain accessibility level
-- `synchronizable`: whether the keychain item is synchronizable
+- `service`: Keychain service name
+- `accessGroup`: optional shared Keychain group
+- `accessibility`: Keychain accessibility level
+- `synchronizable`: whether the Keychain item is synchronizable
 
 Use `BetterAuthConfiguration.SessionStorage.shared(...)` when sharing credentials across app targets with an access group.
 
 ### `endpoints`
 
-Override endpoint paths if your Better Auth deployment uses custom routing. The default configuration covers the routes expected by this SDK's current contract surface.
+Override endpoint paths if your Better Auth deployment uses custom routing. Endpoints are grouped by feature: `auth`, `user`, `session`, `oauth`, `passkey`, `magicLink`, `emailOTP`, `phoneOTP`, and `twoFactor`.
 
-For Apple sign-in, `nativeAppleSignInPath` is the SDK's native Apple bridge endpoint, while `socialSignInPath` is the general social sign-in route used by broader OAuth-style flows.
+### `auth`
 
-### `clockSkew`
+Controls auth-specific behavior:
 
-Controls how aggressively the SDK treats access tokens as nearing expiry.
+- `clockSkew`: how aggressively the SDK treats access tokens as nearing expiry
+- `autoRefreshToken`: whether restored sessions start automatic refresh behavior
+- `throttlePolicy`: optional minimum interval between repeated auth operations
+- `callbackURLSchemes`: allowed custom URL schemes for incoming auth callbacks
 
-### `autoRefreshToken`
+### `networking`
 
-When enabled, restoring a session starts automatic refresh behavior inside the session manager.
+Controls request behavior:
 
-### `callbackURLSchemes`
-
-Allowed custom URL schemes for incoming auth callbacks. The SDK always accepts the configured backend `baseURL` scheme; add your app scheme here when you use deep links such as `yourapp://oauth/success`.
-
-### `retryPolicy`
-
-Used by the internal network layer for retry behavior.
+- `retryPolicy`: retry behavior for transient networking failures
+- `requestOrigin`: optional `Origin` header override
+- `timeoutInterval`: URL request timeout
 
 ### `logger`
 
-Optional logger for debugging SDK behavior.
+Optional logger for SDK diagnostics. The SDK includes `OSLogBetterAuthLogger` and `PrintBetterAuthLogger`.
