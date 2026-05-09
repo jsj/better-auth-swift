@@ -35,6 +35,36 @@ struct BetterAuthSessionMaterializer {
     }
 }
 
+struct BetterAuthSessionResultHandler {
+    let relay: BetterAuthSessionEventRelay
+    let materializer: BetterAuthSessionMaterializer
+
+    @discardableResult
+    func applySignedInSession(_ session: BetterAuthSession) throws -> BetterAuthSession {
+        _ = try relay.setSession(session, event: .signedIn)
+        return session
+    }
+
+    func materializeSignedInSession(token: String,
+                                    fallbackUser: BetterAuthSession.User) async throws -> BetterAuthSession
+    {
+        let session = try await materializer.materializeSession(token: token, fallbackUser: fallbackUser)
+        return try applySignedInSession(session)
+    }
+
+    func materializeSignedInSession(token: String, fallbackUser: TwoFactorUser) async throws -> BetterAuthSession {
+        let session = try await materializer.materializeSession(token: token, fallbackUser: fallbackUser)
+        return try applySignedInSession(session)
+    }
+
+    func applyMergedUser(_ user: BetterAuthSession.User, to currentSession: BetterAuthSession?) throws {
+        guard let currentSession, currentSession.user.id == user.id else { return }
+        _ = try relay.setSession(BetterAuthSession(session: currentSession.session,
+                                                   user: currentSession.user.merged(with: user)),
+                                 event: .userUpdated)
+    }
+}
+
 struct BetterAuthSessionBootstrapService {
     let context: BetterAuthSessionContext
     let relay: BetterAuthSessionEventRelay
@@ -211,6 +241,9 @@ struct BetterAuthPasskeyService {
     let context: BetterAuthSessionContext
     let relay: BetterAuthSessionEventRelay
     let materializer: BetterAuthSessionMaterializer
+    private var sessionResults: BetterAuthSessionResultHandler {
+        BetterAuthSessionResultHandler(relay: relay, materializer: materializer)
+    }
 
     func passkeyRegistrationOptions(_ request: PasskeyRegistrationOptionsRequest = .init(),
                                     accessToken: String?) async throws -> PasskeyRegistrationOptions
@@ -239,13 +272,11 @@ struct BetterAuthPasskeyService {
                   body: payload,
                   accessToken: nil)
         if let session = response.materializedSession {
-            _ = try relay.setSession(session, event: .signedIn)
-            return session
+            return try sessionResults.applySignedInSession(session)
         }
         if let signedIn = response.signedIn {
-            let session = try await materializer.materializeSession(token: signedIn.token, fallbackUser: signedIn.user)
-            _ = try relay.setSession(session, event: .signedIn)
-            return session
+            return try await sessionResults.materializeSignedInSession(token: signedIn.token,
+                                                                       fallbackUser: signedIn.user)
         }
         throw BetterAuthError.invalidResponse
     }

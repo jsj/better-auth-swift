@@ -4,6 +4,9 @@ struct BetterAuthOneTimeCodeService {
     let context: BetterAuthSessionContext
     let relay: BetterAuthSessionEventRelay
     let materializer: BetterAuthSessionMaterializer
+    private var sessionResults: BetterAuthSessionResultHandler {
+        BetterAuthSessionResultHandler(relay: relay, materializer: materializer)
+    }
 
     func requestMagicLink(_ payload: MagicLinkRequest) async throws -> Bool {
         let response: BetterAuthStatusResponse = try await context.network
@@ -22,7 +25,7 @@ struct BetterAuthOneTimeCodeService {
                               URLQueryItem(name: "errorCallbackURL", value: payload.errorCallbackURL)],
                  accessToken: nil)
         if case let .signedIn(session) = result {
-            _ = try relay.setSession(session, event: .signedIn)
+            try sessionResults.applySignedInSession(session)
         }
         return result
     }
@@ -41,13 +44,11 @@ struct BetterAuthOneTimeCodeService {
                   body: payload,
                   accessToken: nil)
         if let session = response.materializedSession {
-            _ = try relay.setSession(session, event: .signedIn)
-            return session
+            return try sessionResults.applySignedInSession(session)
         }
         if let signedIn = response.signedIn {
-            let session = try await materializer.materializeSession(token: signedIn.token, fallbackUser: signedIn.user)
-            _ = try relay.setSession(session, event: .signedIn)
-            return session
+            return try await sessionResults.materializeSignedInSession(token: signedIn.token,
+                                                                       fallbackUser: signedIn.user)
         }
         throw BetterAuthError.invalidResponse
     }
@@ -60,11 +61,9 @@ struct BetterAuthOneTimeCodeService {
                   body: payload,
                   accessToken: nil)
         if case let .signedIn(session) = result {
-            _ = try relay.setSession(session, event: .signedIn)
+            try sessionResults.applySignedInSession(session)
         } else if case let .verified(user) = result, let currentSession, currentSession.user.id == user.id {
-            _ = try relay.setSession(BetterAuthSession(session: currentSession.session,
-                                                       user: currentSession.user.merged(with: user)),
-                                     event: .userUpdated)
+            try sessionResults.applyMergedUser(user, to: currentSession)
         }
         return result
     }
@@ -94,12 +93,9 @@ struct BetterAuthOneTimeCodeService {
                                               username: user.username,
                                               displayUsername: user.displayUsername,
                                               twoFactorEnabled: false)
-            let session = try await materializer.materializeSession(token: token, fallbackUser: twoFactorUser)
-            _ = try relay.setSession(session, event: .signedIn)
+            _ = try await sessionResults.materializeSignedInSession(token: token, fallbackUser: twoFactorUser)
         } else if let user = response.user, let currentSession, currentSession.user.id == user.id {
-            _ = try relay.setSession(BetterAuthSession(session: currentSession.session,
-                                                       user: currentSession.user.merged(with: user)),
-                                     event: .userUpdated)
+            try sessionResults.applyMergedUser(user, to: currentSession)
         }
         return response
     }
@@ -109,9 +105,7 @@ struct BetterAuthOneTimeCodeService {
             .post(path: context.configuration.endpoints.phoneOTP.signInPath,
                   body: payload,
                   accessToken: nil)
-        let session = try await materializer.materializeSession(token: response.token, fallbackUser: response.user)
-        _ = try relay.setSession(session, event: .signedIn)
-        return session
+        return try await sessionResults.materializeSignedInSession(token: response.token, fallbackUser: response.user)
     }
 }
 
@@ -119,6 +113,9 @@ struct BetterAuthTwoFactorService {
     let context: BetterAuthSessionContext
     let relay: BetterAuthSessionEventRelay
     let materializer: BetterAuthSessionMaterializer
+    private var sessionResults: BetterAuthSessionResultHandler {
+        BetterAuthSessionResultHandler(relay: relay, materializer: materializer)
+    }
 
     func enableTwoFactor(_ payload: TwoFactorEnableRequest,
                          accessToken: String?) async throws -> TwoFactorEnableResponse
@@ -133,9 +130,7 @@ struct BetterAuthTwoFactorService {
             .post(path: context.configuration.endpoints.twoFactor.verifyTOTPPath,
                   body: payload,
                   accessToken: nil)
-        let session = try await materializer.materializeSession(token: response.token, fallbackUser: response.user)
-        _ = try relay.setSession(session, event: .signedIn)
-        return session
+        return try await sessionResults.materializeSignedInSession(token: response.token, fallbackUser: response.user)
     }
 
     func sendTwoFactorOTP(_ payload: TwoFactorSendOTPRequest = .init()) async throws -> Bool {
@@ -151,9 +146,7 @@ struct BetterAuthTwoFactorService {
             .post(path: context.configuration.endpoints.twoFactor.verifyOTPPath,
                   body: payload,
                   accessToken: nil)
-        let session = try await materializer.materializeSession(token: response.token, fallbackUser: response.user)
-        _ = try relay.setSession(session, event: .signedIn)
-        return session
+        return try await sessionResults.materializeSignedInSession(token: response.token, fallbackUser: response.user)
     }
 
     func verifyTwoFactorRecoveryCode(_ payload: TwoFactorVerifyBackupCodeRequest) async throws -> BetterAuthSession {
@@ -161,9 +154,7 @@ struct BetterAuthTwoFactorService {
             .post(path: context.configuration.endpoints.twoFactor.verifyBackupCodePath,
                   body: payload,
                   accessToken: nil)
-        let session = try await materializer.materializeSession(token: response.token, fallbackUser: response.user)
-        _ = try relay.setSession(session, event: .signedIn)
-        return session
+        return try await sessionResults.materializeSignedInSession(token: response.token, fallbackUser: response.user)
     }
 
     func disableTwoFactor(_ payload: TwoFactorDisableRequest,

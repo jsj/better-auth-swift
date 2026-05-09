@@ -160,11 +160,7 @@ public extension BetterAuthSessionManager {
 
     func authorizedRequest(path: String, method: String = "GET") async throws -> URLRequest {
         let session = try await validSession()
-        let url = try BetterAuthURLResolver.resolve(path, relativeTo: configuration.baseURL)
-        var request = URLRequest(url: url)
-        request.httpMethod = method
-        request.timeoutInterval = configuration.timeoutInterval
-        request.setValue("Bearer \(session.session.accessToken)", forHTTPHeaderField: "Authorization")
-        return request
+        return try BetterAuthHTTPRequestBuilder(configuration: configuration)
+            .makeRequest(path: path, method: method, accessToken: session.session.accessToken)
     }
 }

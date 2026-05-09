@@ -7,6 +7,16 @@ public protocol BetterAuthModule: Sendable {
     func makeAuthStateListeners(context: BetterAuthModuleContext) -> [any BetterAuthAuthStateListener]
 }
 
+public extension BetterAuthModule {
+    func makeRequestHooks(context _: BetterAuthModuleContext) -> [any BetterAuthRequestHook] {
+        []
+    }
+
+    func makeAuthStateListeners(context _: BetterAuthModuleContext) -> [any BetterAuthAuthStateListener] {
+        []
+    }
+}
+
 public protocol BetterAuthModuleRuntime: Sendable {
     var moduleIdentifier: String { get }
 }

@@ -33,14 +33,6 @@ struct ModuleSystemTests {
                 ProbeRuntime(moduleIdentifier: moduleIdentifier,
                              featureClient: ProbeFeatureClient(moduleIdentifier: moduleIdentifier))
             }
-
-            func makeRequestHooks(context _: BetterAuthModuleContext) -> [any BetterAuthRequestHook] {
-                []
-            }
-
-            func makeAuthStateListeners(context _: BetterAuthModuleContext) -> [any BetterAuthAuthStateListener] {
-                []
-            }
         }
 
         let client =

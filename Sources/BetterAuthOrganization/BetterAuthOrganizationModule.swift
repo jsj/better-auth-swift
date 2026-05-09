@@ -18,14 +18,6 @@ public struct BetterAuthOrganizationModule: BetterAuthModule {
     public func configure(context: BetterAuthModuleContext) -> BetterAuthModuleRuntime {
         BetterAuthOrganizationModuleRuntime(manager: OrganizationManager(client: context))
     }
-
-    public func makeRequestHooks(context _: BetterAuthModuleContext) -> [any BetterAuthRequestHook] {
-        []
-    }
-
-    public func makeAuthStateListeners(context _: BetterAuthModuleContext) -> [any BetterAuthAuthStateListener] {
-        []
-    }
 }
 
 public extension BetterAuthModuleSupporting {

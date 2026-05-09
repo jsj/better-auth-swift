@@ -18,21 +18,19 @@ public protocol BetterAuthSessionLifecycle: BetterAuthStateObserving, BetterAuth
     func signOut(remotely: Bool) async throws
 }
 
-public protocol BetterAuthAuthPerforming: BetterAuthSessionLifecycle {
+public protocol BetterAuthSessionFetching: Sendable {
     func fetchCurrentSession() async throws -> BetterAuthSession
+}
+
+public protocol BetterAuthPrimaryAuthPerforming: Sendable {
     func signUpWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult
     func signInWithEmail(_ payload: EmailSignInRequest) async throws -> BetterAuthSession
     func requestPasswordReset(_ payload: ForgotPasswordRequest) async throws -> Bool
     func resetPassword(_ payload: ResetPasswordRequest) async throws -> Bool
-    func changePassword(_ payload: ChangePasswordRequest) async throws -> ChangePasswordResponse
     func isUsernameAvailable(_ payload: UsernameAvailabilityRequest) async throws -> Bool
     func signInWithUsername(_ payload: UsernameSignInRequest) async throws -> BetterAuthSession
     func signInWithApple(_ payload: AppleNativeSignInPayload) async throws -> BetterAuthSession
     func signInWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult
-    func beginGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws -> GenericOAuthAuthorizationResponse
-    func linkGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws -> GenericOAuthAuthorizationResponse
-    func completeGenericOAuth(_ payload: GenericOAuthCallbackRequest) async throws -> BetterAuthSession
-    func handleIncomingURL(_ url: URL) async throws -> BetterAuthHandledURLResult
     func signInAnonymously() async throws -> BetterAuthSession
     func deleteAnonymousUser() async throws -> Bool
     func deleteUser(_ payload: DeleteUserRequest) async throws -> Bool
@@ -40,6 +38,16 @@ public protocol BetterAuthAuthPerforming: BetterAuthSessionLifecycle {
     func upgradeAnonymousWithApple(_ payload: AppleNativeSignInPayload) async throws -> BetterAuthSession
     func upgradeAnonymousWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult
     func reauthenticate(password: String) async throws -> Bool
+}
+
+public protocol BetterAuthOAuthPerforming: Sendable {
+    func beginGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws -> GenericOAuthAuthorizationResponse
+    func linkGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws -> GenericOAuthAuthorizationResponse
+    func completeGenericOAuth(_ payload: GenericOAuthCallbackRequest) async throws -> BetterAuthSession
+    func handleIncomingURL(_ url: URL) async throws -> BetterAuthHandledURLResult
+}
+
+public protocol BetterAuthOneTimeCodePerforming: Sendable {
     func requestMagicLink(_ payload: MagicLinkRequest) async throws -> Bool
     func verifyMagicLink(_ payload: MagicLinkVerifyRequest) async throws -> MagicLinkVerificationResult
     func requestEmailOTP(_ payload: EmailOTPRequest) async throws -> Bool
@@ -48,6 +56,9 @@ public protocol BetterAuthAuthPerforming: BetterAuthSessionLifecycle {
     func requestPhoneOTP(_ payload: PhoneOTPRequest) async throws -> Bool
     func verifyPhoneNumber(_ payload: PhoneOTPVerifyRequest) async throws -> PhoneOTPVerifyResponse
     func signInWithPhoneOTP(_ payload: PhoneOTPSignInRequest) async throws -> BetterAuthSession
+}
+
+public protocol BetterAuthTwoFactorPerforming: Sendable {
     func enableTwoFactor(_ payload: TwoFactorEnableRequest) async throws -> TwoFactorEnableResponse
     func sendTwoFactorOTP(_ payload: TwoFactorSendOTPRequest) async throws -> Bool
     func verifyTwoFactorTOTP(_ payload: TwoFactorVerifyTOTPRequest) async throws -> BetterAuthSession
@@ -55,6 +66,9 @@ public protocol BetterAuthAuthPerforming: BetterAuthSessionLifecycle {
     func verifyTwoFactorRecoveryCode(_ payload: TwoFactorVerifyBackupCodeRequest) async throws -> BetterAuthSession
     func disableTwoFactor(_ payload: TwoFactorDisableRequest) async throws -> Bool
     func generateTwoFactorRecoveryCodes(password: String) async throws -> [String]
+}
+
+public protocol BetterAuthPasskeyPerforming: Sendable {
     func passkeyRegistrationOptions(_ payload: PasskeyRegistrationOptionsRequest) async throws
         -> PasskeyRegistrationOptions
     func passkeyAuthenticateOptions() async throws -> PasskeyAuthenticationOptions
@@ -63,12 +77,19 @@ public protocol BetterAuthAuthPerforming: BetterAuthSessionLifecycle {
     func listPasskeys() async throws -> [Passkey]
     func updatePasskey(_ payload: UpdatePasskeyRequest) async throws -> Passkey
     func deletePasskey(_ payload: DeletePasskeyRequest) async throws -> Bool
+}
+
+public protocol BetterAuthAccountPerforming: Sendable {
     func sendVerificationEmail(_ payload: SendVerificationEmailRequest) async throws -> Bool
     func verifyEmail(_ payload: VerifyEmailRequest) async throws -> VerifyEmailResult
     func changeEmail(_ payload: ChangeEmailRequest) async throws -> Bool
     func updateUser(_ payload: UpdateUserRequest) async throws -> UpdateUserResponse
+    func changePassword(_ payload: ChangePasswordRequest) async throws -> ChangePasswordResponse
     func listLinkedAccounts() async throws -> [LinkedAccount]
     func linkSocialAccount(_ payload: LinkSocialAccountRequest) async throws -> LinkSocialAccountResponse
+}
+
+public protocol BetterAuthSessionAdministrating: Sendable {
     func listSessions() async throws -> [BetterAuthSessionListEntry]
     func listDeviceSessions() async throws -> [BetterAuthDeviceSession]
     func setActiveDeviceSession(_ payload: BetterAuthSetActiveDeviceSessionRequest) async throws -> BetterAuthSession
@@ -79,6 +100,16 @@ public protocol BetterAuthAuthPerforming: BetterAuthSessionLifecycle {
     func getSessionJWT() async throws -> BetterAuthJWT
     func getJWKS() async throws -> BetterAuthJWKS
 }
+
+public protocol BetterAuthAuthPerforming: BetterAuthSessionLifecycle,
+    BetterAuthSessionFetching,
+    BetterAuthPrimaryAuthPerforming,
+    BetterAuthOAuthPerforming,
+    BetterAuthOneTimeCodePerforming,
+    BetterAuthTwoFactorPerforming,
+    BetterAuthPasskeyPerforming,
+    BetterAuthAccountPerforming,
+    BetterAuthSessionAdministrating {}
 
 final class BetterAuthSessionState: Sendable {
     let eventEmitter: AuthEventEmitter

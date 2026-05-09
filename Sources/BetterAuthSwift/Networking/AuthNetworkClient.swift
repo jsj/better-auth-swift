@@ -7,6 +7,12 @@ struct AuthNetworkClient {
     let requestOrigin: String?
     let timeoutInterval: TimeInterval
 
+    private var requestBuilder: BetterAuthHTTPRequestBuilder {
+        BetterAuthHTTPRequestBuilder(baseURL: baseURL,
+                                     requestOrigin: requestOrigin,
+                                     timeoutInterval: timeoutInterval)
+    }
+
     func post<Response: Decodable>(path: String,
                                    body: some Encodable & Sendable,
                                    accessToken: String?) async throws -> Response
@@ -41,20 +47,10 @@ struct AuthNetworkClient {
                                   queryItems: [URLQueryItem],
                                   accessToken: String?) async throws -> Response
     {
-        let base = try BetterAuthURLResolver.resolve(path, relativeTo: baseURL)
-        guard
-            var components = URLComponents(url: base, resolvingAgainstBaseURL: true)
-        else {
-            throw BetterAuthError.invalidURL
-        }
-        let items = queryItems.filter { $0.value != nil }
-        if !items.isEmpty { components.queryItems = items }
-        guard let url = components.url else { throw BetterAuthError.invalidURL }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        applyDefaultHeaders(to: &request, accessToken: accessToken)
-        applyTimeout(to: &request)
+        let request = try requestBuilder.makeRequest(path: path,
+                                                     method: "GET",
+                                                     accessToken: accessToken,
+                                                     queryItems: queryItems)
         return try await execute(request)
     }
 
@@ -64,12 +60,7 @@ struct AuthNetworkClient {
                               method: String,
                               accessToken: String?) throws -> URLRequest
     {
-        let url = try BetterAuthURLResolver.resolve(path, relativeTo: baseURL)
-        var request = URLRequest(url: url)
-        request.httpMethod = method
-        applyDefaultHeaders(to: &request, accessToken: accessToken)
-        applyTimeout(to: &request)
-        return request
+        try requestBuilder.makeRequest(path: path, method: method, accessToken: accessToken)
     }
 
     private func buildRequest(path: String,
@@ -81,18 +72,6 @@ struct AuthNetworkClient {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try BetterAuthCoding.makeEncoder().encode(body)
         return request
-    }
-
-    private func applyDefaultHeaders(to request: inout URLRequest, accessToken: String?) {
-        if let accessToken {
-            request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-        } else if let requestOrigin, request.value(forHTTPHeaderField: "Origin") == nil {
-            request.setValue(requestOrigin, forHTTPHeaderField: "Origin")
-        }
-    }
-
-    private func applyTimeout(to request: inout URLRequest) {
-        request.timeoutInterval = timeoutInterval
     }
 
     private func execute<Response: Decodable>(_ request: URLRequest) async throws -> Response {

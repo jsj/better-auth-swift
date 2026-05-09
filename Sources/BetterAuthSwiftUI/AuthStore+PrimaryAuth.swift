@@ -6,38 +6,30 @@ public extension AuthStore {
 
     @discardableResult
     func signUpWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult {
-        try await performThrowing {
-            let result = try await auth.signUpWithEmail(payload)
-            statusMessage = "Signed up"
-            return result
-        }
+        try await performThrowing(status: "Signed up") { try await auth.signUpWithEmail(payload) }
     }
 
     func signInWithEmail(_ payload: EmailSignInRequest) async {
-        await perform {
+        await perform(status: "Signed in") {
             _ = try await auth.signInWithEmail(payload)
-            statusMessage = "Signed in"
         }
     }
 
     func requestPasswordReset(_ payload: ForgotPasswordRequest) async {
-        await perform {
+        await perform(status: "Password reset email sent") {
             _ = try await auth.requestPasswordReset(payload)
-            statusMessage = "Password reset email sent"
         }
     }
 
     func resetPassword(_ payload: ResetPasswordRequest) async {
-        await perform {
+        await perform(status: "Password reset") {
             _ = try await auth.resetPassword(payload)
-            statusMessage = "Password reset"
         }
     }
 
     func changePassword(_ payload: ChangePasswordRequest) async {
-        await perform {
+        await perform(status: "Password changed") {
             _ = try await auth.changePassword(payload)
-            statusMessage = "Password changed"
         }
     }
 
@@ -45,26 +37,24 @@ public extension AuthStore {
 
     @discardableResult
     func isUsernameAvailable(_ payload: UsernameAvailabilityRequest) async throws -> Bool {
-        try await performThrowing {
-            let available = try await auth.isUsernameAvailable(payload)
-            statusMessage = available ? "Username available" : "Username taken"
-            return available
-        }
+        try await performThrowing(status: { available in
+            available ? "Username available" : "Username taken"
+        }, {
+            try await auth.isUsernameAvailable(payload)
+        })
     }
 
     func signInWithUsername(_ payload: UsernameSignInRequest) async {
-        await perform {
+        await perform(status: "Signed in") {
             _ = try await auth.signInWithUsername(payload)
-            statusMessage = "Signed in"
         }
     }
 
     // MARK: - Apple
 
     func signInWithApple(_ payload: AppleNativeSignInPayload) async {
-        await perform {
+        await perform(status: "Signed in with Apple") {
             _ = try await auth.signInWithApple(payload)
-            statusMessage = "Signed in with Apple"
         }
     }
 
@@ -72,11 +62,7 @@ public extension AuthStore {
 
     @discardableResult
     func signInWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult {
-        try await performThrowing {
-            let result = try await auth.signInWithSocial(payload)
-            statusMessage = "Social sign-in initiated"
-            return result
-        }
+        try await performThrowing(status: "Social sign-in initiated") { try await auth.signInWithSocial(payload) }
     }
 
     @discardableResult

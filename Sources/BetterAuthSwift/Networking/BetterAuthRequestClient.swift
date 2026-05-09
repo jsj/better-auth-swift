@@ -5,20 +5,20 @@ import Foundation
 /// Access via ``BetterAuthClient/requests``. Automatically attaches bearer tokens
 /// and retries once on `401` after refreshing the session.
 public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
-    private let configuration: BetterAuthConfiguration
     private let sessionManager: BetterAuthSessionManager
     private let transport: BetterAuthTransport
     private let requestHooks: [any BetterAuthRequestHook]
+    private let requestBuilder: BetterAuthHTTPRequestBuilder
 
     init(configuration: BetterAuthConfiguration,
          sessionManager: BetterAuthSessionManager,
          transport: BetterAuthTransport,
          requestHooks: [any BetterAuthRequestHook] = [])
     {
-        self.configuration = configuration
         self.sessionManager = sessionManager
         self.transport = transport
         self.requestHooks = requestHooks
+        self.requestBuilder = BetterAuthHTTPRequestBuilder(configuration: configuration)
     }
 
     /// Sends a raw HTTP request, returning `(Data, HTTPURLResponse)`.
@@ -155,22 +155,15 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                              requiresAuthentication: Bool) async throws -> URLRequest
     {
         if requiresAuthentication {
-            var request = try await sessionManager.authorizedRequest(path: path, method: method)
-            headers.forEach { request.setValue($1, forHTTPHeaderField: $0) }
-            request.httpBody = body
-            return request
+            let session = try await sessionManager.validSession()
+            return try requestBuilder.makeRequest(path: path,
+                                                  method: method,
+                                                  headers: headers,
+                                                  body: body,
+                                                  accessToken: session.session.accessToken)
         }
 
-        let url = try BetterAuthURLResolver.resolve(path, relativeTo: configuration.baseURL)
-        var request = URLRequest(url: url)
-        request.httpMethod = method
-        request.timeoutInterval = configuration.timeoutInterval
-        if let requestOrigin = configuration.requestOrigin, request.value(forHTTPHeaderField: "Origin") == nil {
-            request.setValue(requestOrigin, forHTTPHeaderField: "Origin")
-        }
-        headers.forEach { request.setValue($1, forHTTPHeaderField: $0) }
-        request.httpBody = body
-        return request
+        return try requestBuilder.makeRequest(path: path, method: method, headers: headers, body: body)
     }
 
     private func execute(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {

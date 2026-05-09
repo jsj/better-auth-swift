@@ -126,6 +126,13 @@ public final class AuthStore {
         }
     }
 
+    func perform(status successStatus: String, _ operation: () async throws -> Void) async {
+        await perform {
+            try await operation()
+            statusMessage = successStatus
+        }
+    }
+
     func performThrowing<T>(_ operation: () async throws -> T) async throws -> T {
         isLoading = true
         defer { isLoading = false }
@@ -140,6 +147,24 @@ public final class AuthStore {
             lastUnderlyingError = error
             statusMessage = error.localizedDescription
             throw error
+        }
+    }
+
+    func performThrowing<T>(status successStatus: String, _ operation: () async throws -> T) async throws -> T {
+        try await performThrowing {
+            let result = try await operation()
+            statusMessage = successStatus
+            return result
+        }
+    }
+
+    func performThrowing<T>(status successStatus: (T) -> String,
+                            _ operation: () async throws -> T) async throws -> T
+    {
+        try await performThrowing {
+            let result = try await operation()
+            statusMessage = successStatus(result)
+            return result
         }
     }
 

@@ -4,6 +4,9 @@ struct BetterAuthPrimaryAuthService {
     let context: BetterAuthSessionContext
     let relay: BetterAuthSessionEventRelay
     let materializer: BetterAuthSessionMaterializer
+    private var sessionResults: BetterAuthSessionResultHandler {
+        BetterAuthSessionResultHandler(relay: relay, materializer: materializer)
+    }
 
     func signUpWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult {
         let result: EmailSignUpResult = try await context.network
@@ -11,7 +14,7 @@ struct BetterAuthPrimaryAuthService {
                   body: payload,
                   accessToken: nil)
         if case let .signedIn(session) = result {
-            _ = try relay.setSession(session, event: .signedIn)
+            try sessionResults.applySignedInSession(session)
         }
         return result
     }
@@ -21,8 +24,7 @@ struct BetterAuthPrimaryAuthService {
             .post(path: context.configuration.endpoints.auth.emailSignInPath,
                   body: payload,
                   accessToken: nil)
-        _ = try relay.setSession(session, event: .signedIn)
-        return session
+        return try sessionResults.applySignedInSession(session)
     }
 
     func isUsernameAvailable(_ payload: UsernameAvailabilityRequest) async throws -> Bool {
@@ -38,8 +40,7 @@ struct BetterAuthPrimaryAuthService {
             .post(path: context.configuration.endpoints.auth.usernameSignInPath,
                   body: payload,
                   accessToken: nil)
-        _ = try relay.setSession(session, event: .signedIn)
-        return session
+        return try sessionResults.applySignedInSession(session)
     }
 
     func signInWithApple(_ payload: AppleNativeSignInPayload) async throws -> BetterAuthSession {
@@ -47,8 +48,7 @@ struct BetterAuthPrimaryAuthService {
             .post(path: context.configuration.endpoints.auth.nativeAppleSignInPath,
                   body: payload,
                   accessToken: nil)
-        _ = try relay.setSession(session, event: .signedIn)
-        return session
+        return try sessionResults.applySignedInSession(session)
     }
 
     func signInWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult {
@@ -58,7 +58,7 @@ struct BetterAuthPrimaryAuthService {
                   accessToken: nil)
 
         if let session = response.materializedSession {
-            _ = try relay.setSession(session, event: .signedIn)
+            try sessionResults.applySignedInSession(session)
             let signedIn = SocialSignInSuccessResponse(redirect: response.redirect,
                                                        token: session.session.accessToken,
                                                        url: response.url,
@@ -67,8 +67,8 @@ struct BetterAuthPrimaryAuthService {
         }
 
         if let signedIn = response.signedIn {
-            let session = try await materializer.materializeSession(token: signedIn.token, fallbackUser: signedIn.user)
-            _ = try relay.setSession(session, event: .signedIn)
+            _ = try await sessionResults.materializeSignedInSession(token: signedIn.token,
+                                                                    fallbackUser: signedIn.user)
             return .signedIn(signedIn)
         }
 
@@ -85,9 +85,7 @@ struct BetterAuthPrimaryAuthService {
         let response: SignedInTokenResponse = try await context.network
             .post(path: context.configuration.endpoints.auth.anonymousSignInPath,
                   accessToken: nil)
-        let session = try await materializer.materializeSession(token: response.token, fallbackUser: response.user)
-        _ = try relay.setSession(session, event: .signedIn)
-        return session
+        return try await sessionResults.materializeSignedInSession(token: response.token, fallbackUser: response.user)
     }
 
     func deleteAnonymousUser(accessToken: String?) async throws -> Bool {
@@ -150,6 +148,9 @@ struct BetterAuthProfileService {
     let context: BetterAuthSessionContext
     let relay: BetterAuthSessionEventRelay
     let materializer: BetterAuthSessionMaterializer
+    private var sessionResults: BetterAuthSessionResultHandler {
+        BetterAuthSessionResultHandler(relay: relay, materializer: materializer)
+    }
 
     func sendVerificationEmail(_ payload: SendVerificationEmailRequest = .init(),
                                accessToken: String?) async throws -> Bool
@@ -167,7 +168,7 @@ struct BetterAuthProfileService {
                  queryItems: [URLQueryItem(name: "token", value: payload.token)],
                  accessToken: nil)
         if case let .signedIn(session) = result {
-            _ = try relay.setSession(session, event: .signedIn)
+            try sessionResults.applySignedInSession(session)
         }
         return result
     }
