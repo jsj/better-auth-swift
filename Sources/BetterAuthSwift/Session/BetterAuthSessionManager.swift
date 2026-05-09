@@ -387,4 +387,12 @@ struct RevokeSessionRequest: Encodable {
     let token: String
 }
 
-extension BetterAuthSessionManager: BetterAuthAuthPerforming, BetterAuthSessionProviding, BetterAuthStateObserving {}
+extension BetterAuthSessionManager: BetterAuthSessionLifecycle,
+    BetterAuthSessionFetching,
+    BetterAuthPrimaryAuthPerforming,
+    BetterAuthOAuthPerforming,
+    BetterAuthOneTimeCodePerforming,
+    BetterAuthTwoFactorPerforming,
+    BetterAuthPasskeyPerforming,
+    BetterAuthAccountPerforming,
+    BetterAuthSessionAdministrating {}

@@ -14,7 +14,7 @@ struct BetterAuthPrimaryAuthService {
                   body: payload,
                   accessToken: nil)
         if case let .signedIn(session) = result {
-            try sessionResults.applySignedInSession(session)
+            try await sessionResults.apply(.signedIn(session))
         }
         return result
     }
@@ -24,7 +24,7 @@ struct BetterAuthPrimaryAuthService {
             .post(path: context.configuration.endpoints.auth.emailSignInPath,
                   body: payload,
                   accessToken: nil)
-        return try sessionResults.applySignedInSession(session)
+        return try await sessionResults.appliedSession(from: .signedIn(session))
     }
 
     func isUsernameAvailable(_ payload: UsernameAvailabilityRequest) async throws -> Bool {
@@ -40,7 +40,7 @@ struct BetterAuthPrimaryAuthService {
             .post(path: context.configuration.endpoints.auth.usernameSignInPath,
                   body: payload,
                   accessToken: nil)
-        return try sessionResults.applySignedInSession(session)
+        return try await sessionResults.appliedSession(from: .signedIn(session))
     }
 
     func signInWithApple(_ payload: AppleNativeSignInPayload) async throws -> BetterAuthSession {
@@ -48,7 +48,7 @@ struct BetterAuthPrimaryAuthService {
             .post(path: context.configuration.endpoints.auth.nativeAppleSignInPath,
                   body: payload,
                   accessToken: nil)
-        return try sessionResults.applySignedInSession(session)
+        return try await sessionResults.appliedSession(from: .signedIn(session))
     }
 
     func signInWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult {
@@ -58,7 +58,7 @@ struct BetterAuthPrimaryAuthService {
                   accessToken: nil)
 
         if let session = response.materializedSession {
-            try sessionResults.applySignedInSession(session)
+            try await sessionResults.apply(.signedIn(session))
             let signedIn = SocialSignInSuccessResponse(redirect: response.redirect,
                                                        token: session.session.accessToken,
                                                        url: response.url,
@@ -67,8 +67,7 @@ struct BetterAuthPrimaryAuthService {
         }
 
         if let signedIn = response.signedIn {
-            _ = try await sessionResults.materializeSignedInSession(token: signedIn.token,
-                                                                    fallbackUser: signedIn.user)
+            try await sessionResults.apply(.token(token: signedIn.token, fallbackUser: signedIn.user))
             return .signedIn(signedIn)
         }
 
@@ -85,7 +84,7 @@ struct BetterAuthPrimaryAuthService {
         let response: SignedInTokenResponse = try await context.network
             .post(path: context.configuration.endpoints.auth.anonymousSignInPath,
                   accessToken: nil)
-        return try await sessionResults.materializeSignedInSession(token: response.token, fallbackUser: response.user)
+        return try await sessionResults.appliedSession(from: .token(token: response.token, fallbackUser: response.user))
     }
 
     func deleteAnonymousUser(accessToken: String?) async throws -> Bool {
@@ -168,7 +167,7 @@ struct BetterAuthProfileService {
                  queryItems: [URLQueryItem(name: "token", value: payload.token)],
                  accessToken: nil)
         if case let .signedIn(session) = result {
-            try sessionResults.applySignedInSession(session)
+            try await sessionResults.apply(.signedIn(session))
         }
         return result
     }
@@ -186,10 +185,8 @@ struct BetterAuthProfileService {
     {
         let response = try await context.userAccountService.updateUser(payload,
                                                                        accessToken: currentSession?.session.accessToken)
-        if let user = response.user, let currentSession {
-            _ = try relay.setSession(BetterAuthSession(session: currentSession.session,
-                                                       user: currentSession.user.merged(with: user)),
-                                     event: .userUpdated)
+        if let user = response.user {
+            try await sessionResults.apply(.updatedUser(user, currentSession: currentSession))
         }
         return response
     }
@@ -201,16 +198,14 @@ struct BetterAuthProfileService {
                                                                            accessToken: currentSession?.session
                                                                                .accessToken)
         if payload.revokeOtherSessions == true, let session = response.session {
-            _ = try relay.setSession(session, event: .tokenRefreshed)
+            try await sessionResults.apply(.refreshed(session))
         } else if payload.revokeOtherSessions == true, let rotatedToken = response.token {
             let materializedSession: BetterAuthSession = try await context.network
                 .get(path: context.configuration.endpoints.session.currentSessionPath,
                      accessToken: rotatedToken)
-            _ = try relay.setSession(materializedSession, event: .tokenRefreshed)
-        } else if let currentSession {
-            _ = try relay.setSession(BetterAuthSession(session: currentSession.session,
-                                                       user: currentSession.user.merged(with: response.user)),
-                                     event: .userUpdated)
+            try await sessionResults.apply(.refreshed(materializedSession))
+        } else {
+            try await sessionResults.apply(.updatedUser(response.user, currentSession: currentSession))
         }
         return response
     }
@@ -249,7 +244,8 @@ struct BetterAuthOAuthService {
         let session: BetterAuthSession = try await context.network
             .get(path: context.callbackHandler.oauthCallbackPath(for: payload),
                  accessToken: accessToken)
-        _ = try relay.setSession(session, event: .signedIn)
-        return session
+        let sessionResults = BetterAuthSessionResultHandler(relay: relay,
+                                                            materializer: BetterAuthSessionMaterializer(context: context))
+        return try await sessionResults.appliedSession(from: .signedIn(session))
     }
 }

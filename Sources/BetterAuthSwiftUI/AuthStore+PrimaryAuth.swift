@@ -6,30 +6,30 @@ public extension AuthStore {
 
     @discardableResult
     func signUpWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult {
-        try await performThrowing(status: "Signed up") { try await auth.signUpWithEmail(payload) }
+        try await performThrowing(status: "Signed up") { try await primaryAuth.signUpWithEmail(payload) }
     }
 
     func signInWithEmail(_ payload: EmailSignInRequest) async {
         await perform(status: "Signed in") {
-            _ = try await auth.signInWithEmail(payload)
+            _ = try await primaryAuth.signInWithEmail(payload)
         }
     }
 
     func requestPasswordReset(_ payload: ForgotPasswordRequest) async {
         await perform(status: "Password reset email sent") {
-            _ = try await auth.requestPasswordReset(payload)
+            _ = try await primaryAuth.requestPasswordReset(payload)
         }
     }
 
     func resetPassword(_ payload: ResetPasswordRequest) async {
         await perform(status: "Password reset") {
-            _ = try await auth.resetPassword(payload)
+            _ = try await primaryAuth.resetPassword(payload)
         }
     }
 
     func changePassword(_ payload: ChangePasswordRequest) async {
         await perform(status: "Password changed") {
-            _ = try await auth.changePassword(payload)
+            _ = try await accountAuth.changePassword(payload)
         }
     }
 
@@ -40,13 +40,13 @@ public extension AuthStore {
         try await performThrowing(status: { available in
             available ? "Username available" : "Username taken"
         }, {
-            try await auth.isUsernameAvailable(payload)
+            try await primaryAuth.isUsernameAvailable(payload)
         })
     }
 
     func signInWithUsername(_ payload: UsernameSignInRequest) async {
         await perform(status: "Signed in") {
-            _ = try await auth.signInWithUsername(payload)
+            _ = try await primaryAuth.signInWithUsername(payload)
         }
     }
 
@@ -54,7 +54,7 @@ public extension AuthStore {
 
     func signInWithApple(_ payload: AppleNativeSignInPayload) async {
         await perform(status: "Signed in with Apple") {
-            _ = try await auth.signInWithApple(payload)
+            _ = try await primaryAuth.signInWithApple(payload)
         }
     }
 
@@ -62,7 +62,7 @@ public extension AuthStore {
 
     @discardableResult
     func signInWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult {
-        try await performThrowing(status: "Social sign-in initiated") { try await auth.signInWithSocial(payload) }
+        try await performThrowing(status: "Social sign-in initiated") { try await primaryAuth.signInWithSocial(payload) }
     }
 
     @discardableResult
@@ -70,7 +70,7 @@ public extension AuthStore {
         -> GenericOAuthAuthorizationResponse
     {
         try await performThrowing {
-            let response = try await auth.beginGenericOAuth(payload)
+            let response = try await oauthAuth.beginGenericOAuth(payload)
             statusMessage = "OAuth flow started"
             return response
         }
@@ -81,7 +81,7 @@ public extension AuthStore {
         -> GenericOAuthAuthorizationResponse
     {
         try await performThrowing {
-            let response = try await auth.linkGenericOAuth(payload)
+            let response = try await oauthAuth.linkGenericOAuth(payload)
             statusMessage = "OAuth link flow started"
             return response
         }
@@ -89,14 +89,14 @@ public extension AuthStore {
 
     func completeGenericOAuth(_ payload: GenericOAuthCallbackRequest) async {
         await perform {
-            _ = try await auth.completeGenericOAuth(payload)
+            _ = try await oauthAuth.completeGenericOAuth(payload)
             statusMessage = "OAuth completed"
         }
     }
 
     func handleIncomingURL(_ url: URL) async {
         await perform {
-            let result = try await auth.handleIncomingURL(url)
+            let result = try await oauthAuth.handleIncomingURL(url)
             switch result {
             case let .genericOAuth(restoredSession):
                 applyAuthStateChange(AuthStateChange(event: .signedIn,
@@ -130,14 +130,14 @@ public extension AuthStore {
 
     func signInAnonymously() async {
         await perform {
-            _ = try await auth.signInAnonymously()
+            _ = try await primaryAuth.signInAnonymously()
             statusMessage = "Signed in anonymously"
         }
     }
 
     func deleteAnonymousUser() async {
         await perform {
-            _ = try await auth.deleteAnonymousUser()
+            _ = try await primaryAuth.deleteAnonymousUser()
             statusMessage = "Anonymous user deleted"
         }
     }
@@ -146,7 +146,7 @@ public extension AuthStore {
 
     func deleteUser(_ payload: DeleteUserRequest = .init()) async {
         await perform {
-            _ = try await auth.deleteUser(payload)
+            _ = try await primaryAuth.deleteUser(payload)
             statusMessage = "Account deleted"
         }
     }
@@ -156,7 +156,7 @@ public extension AuthStore {
     @discardableResult
     func upgradeAnonymousWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult {
         try await performThrowing {
-            let result = try await auth.upgradeAnonymousWithEmail(payload)
+            let result = try await primaryAuth.upgradeAnonymousWithEmail(payload)
             statusMessage = "Account upgraded"
             return result
         }
@@ -164,7 +164,7 @@ public extension AuthStore {
 
     func upgradeAnonymousWithApple(_ payload: AppleNativeSignInPayload) async {
         await perform {
-            _ = try await auth.upgradeAnonymousWithApple(payload)
+            _ = try await primaryAuth.upgradeAnonymousWithApple(payload)
             statusMessage = "Account upgraded with Apple"
         }
     }
@@ -172,7 +172,7 @@ public extension AuthStore {
     @discardableResult
     func upgradeAnonymousWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult {
         try await performThrowing {
-            let result = try await auth.upgradeAnonymousWithSocial(payload)
+            let result = try await primaryAuth.upgradeAnonymousWithSocial(payload)
             statusMessage = "Account upgraded"
             return result
         }
@@ -183,7 +183,7 @@ public extension AuthStore {
     @discardableResult
     func reauthenticate(password: String) async throws -> Bool {
         try await performThrowing {
-            let result = try await auth.reauthenticate(password: password)
+            let result = try await primaryAuth.reauthenticate(password: password)
             statusMessage = "Re-authenticated"
             return result
         }

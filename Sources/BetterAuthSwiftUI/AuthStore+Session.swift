@@ -13,7 +13,7 @@ public extension AuthStore {
         launchState = .restoring
         defer { isLoading = false }
         do {
-            let result = try await auth.restoreSessionOnLaunch()
+            let result = try await sessionAuth.restoreSessionOnLaunch()
             lastError = nil
             lastUnderlyingError = nil
             lastRestoreResult = result
@@ -30,21 +30,21 @@ public extension AuthStore {
 
     func refresh() async {
         await perform {
-            _ = try await auth.refreshSession()
+            _ = try await sessionAuth.refreshSession()
             statusMessage = "Session refreshed"
         }
     }
 
     func fetchCurrentSession() async {
         await perform {
-            _ = try await auth.fetchCurrentSession()
+            _ = try await sessionAuth.fetchCurrentSession()
             statusMessage = "Session fetched"
         }
     }
 
     func signOut(remotely: Bool = true) async {
         await perform {
-            try await auth.signOut(remotely: remotely)
+            try await sessionAuth.signOut(remotely: remotely)
             statusMessage = "Signed out"
         }
     }

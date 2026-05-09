@@ -6,7 +6,7 @@ import Foundation
 /// and retries once on `401` after refreshing the session.
 public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
     private let sessionManager: BetterAuthSessionManager
-    private let transport: BetterAuthTransport
+    private let pipeline: BetterAuthHTTPPipeline
     private let requestHooks: [any BetterAuthRequestHook]
     private let requestBuilder: BetterAuthHTTPRequestBuilder
 
@@ -16,7 +16,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
          requestHooks: [any BetterAuthRequestHook] = [])
     {
         self.sessionManager = sessionManager
-        self.transport = transport
+        self.pipeline = BetterAuthHTTPPipeline(transport: transport)
         self.requestHooks = requestHooks
         self.requestBuilder = BetterAuthHTTPRequestBuilder(configuration: configuration)
     }
@@ -57,9 +57,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                                             body: body,
                                             requiresAuthentication: requiresAuthentication)
             let retried = try await execute(preparedRequest(from: request))
-            guard (200 ..< 300).contains(retried.1.statusCode) else {
-                throw ErrorParsing.parse(statusCode: retried.1.statusCode, data: retried.0)
-            }
+            try pipeline.validateSuccess(data: retried.0, response: retried.1)
             return retried
         }
 
@@ -96,10 +94,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                                               requiresAuthentication: requiresAuthentication,
                                               retryOnUnauthorized: retryOnUnauthorized)
 
-        guard (200 ..< 300).contains(response.statusCode) else {
-            throw ErrorParsing.parse(statusCode: response.statusCode, data: data)
-        }
-
+        try pipeline.validateSuccess(data: data, response: response)
         return try decoder.decode(Response.self, from: data)
     }
 
@@ -143,9 +138,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                                               requiresAuthentication: requiresAuthentication,
                                               retryOnUnauthorized: retryOnUnauthorized)
 
-        guard (200 ..< 300).contains(response.statusCode) else {
-            throw ErrorParsing.parse(statusCode: response.statusCode, data: data)
-        }
+        try pipeline.validateSuccess(data: data, response: response)
     }
 
     private func makeRequest(path: String,
@@ -167,11 +160,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
     }
 
     private func execute(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
-        let (data, response) = try await transport.execute(request)
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw BetterAuthError.invalidResponse
-        }
-        return (data, httpResponse)
+        try await pipeline.execute(request, statusValidation: .preserve)
     }
 
     private func preparedRequest(from request: URLRequest) async throws -> URLRequest {

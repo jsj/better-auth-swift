@@ -101,16 +101,6 @@ public protocol BetterAuthSessionAdministrating: Sendable {
     func getJWKS() async throws -> BetterAuthJWKS
 }
 
-public protocol BetterAuthAuthPerforming: BetterAuthSessionLifecycle,
-    BetterAuthSessionFetching,
-    BetterAuthPrimaryAuthPerforming,
-    BetterAuthOAuthPerforming,
-    BetterAuthOneTimeCodePerforming,
-    BetterAuthTwoFactorPerforming,
-    BetterAuthPasskeyPerforming,
-    BetterAuthAccountPerforming,
-    BetterAuthSessionAdministrating {}
-
 final class BetterAuthSessionState: Sendable {
     let eventEmitter: AuthEventEmitter
     private let storage = OSAllocatedUnfairLock<BetterAuthSession?>(initialState: nil)

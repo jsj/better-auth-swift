@@ -7,6 +7,10 @@ struct AuthNetworkClient {
     let requestOrigin: String?
     let timeoutInterval: TimeInterval
 
+    private var pipeline: BetterAuthHTTPPipeline {
+        BetterAuthHTTPPipeline(transport: transport)
+    }
+
     private var requestBuilder: BetterAuthHTTPRequestBuilder {
         BetterAuthHTTPRequestBuilder(baseURL: baseURL,
                                      requestOrigin: requestOrigin,
@@ -75,11 +79,42 @@ struct AuthNetworkClient {
     }
 
     private func execute<Response: Decodable>(_ request: URLRequest) async throws -> Response {
-        let (data, _) = try await execute(request)
-        return try BetterAuthCoding.makeDecoder().decode(Response.self, from: data)
+        try await pipeline.executeDecoding(request,
+                                           decoder: BetterAuthCoding.makeDecoder(),
+                                           retryPolicy: retryPolicy)
     }
 
     private func execute(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        try await pipeline.execute(request,
+                                   statusValidation: .validateSuccess,
+                                   retryPolicy: retryPolicy)
+    }
+}
+
+extension AuthNetworkClient: BetterAuthTransporting {}
+
+enum BetterAuthHTTPStatusValidation: Sendable, Equatable {
+    case validateSuccess
+    case preserve
+}
+
+struct BetterAuthHTTPPipeline: Sendable {
+    let transport: BetterAuthTransport
+
+    func executeDecoding<Response: Decodable>(_ request: URLRequest,
+                                              decoder: JSONDecoder = BetterAuthCoding.makeDecoder(),
+                                              retryPolicy: RetryPolicy = .none) async throws -> Response
+    {
+        let (data, _) = try await execute(request,
+                                          statusValidation: .validateSuccess,
+                                          retryPolicy: retryPolicy)
+        return try decoder.decode(Response.self, from: data)
+    }
+
+    func execute(_ request: URLRequest,
+                 statusValidation: BetterAuthHTTPStatusValidation = .validateSuccess,
+                 retryPolicy: RetryPolicy = .none) async throws -> (Data, HTTPURLResponse)
+    {
         var lastError: Error?
         for attempt in 0 ... retryPolicy.maxRetries {
             if attempt > 0 {
@@ -91,8 +126,11 @@ struct AuthNetworkClient {
                 guard let httpResponse = response as? HTTPURLResponse else {
                     throw BetterAuthError.invalidResponse
                 }
-                guard (200 ..< 300).contains(httpResponse.statusCode) else {
-                    let error = ErrorParsing.parse(statusCode: httpResponse.statusCode, data: data)
+                do {
+                    if statusValidation == .validateSuccess {
+                        try validateSuccess(data: data, response: httpResponse)
+                    }
+                } catch {
                     if retryPolicy.isRetryable(statusCode: httpResponse.statusCode), attempt < retryPolicy.maxRetries {
                         lastError = error
                         continue
@@ -112,6 +150,10 @@ struct AuthNetworkClient {
         }
         throw lastError ?? BetterAuthError.invalidResponse
     }
-}
 
-extension AuthNetworkClient: BetterAuthTransporting {}
+    func validateSuccess(data: Data, response: HTTPURLResponse) throws {
+        guard (200 ..< 300).contains(response.statusCode) else {
+            throw ErrorParsing.parse(statusCode: response.statusCode, data: data)
+        }
+    }
+}

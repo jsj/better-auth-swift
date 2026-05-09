@@ -40,28 +40,68 @@ struct BetterAuthSessionResultHandler {
     let materializer: BetterAuthSessionMaterializer
 
     @discardableResult
-    func applySignedInSession(_ session: BetterAuthSession) throws -> BetterAuthSession {
-        _ = try relay.setSession(session, event: .signedIn)
+    func apply(_ outcome: BetterAuthSessionOutcome) async throws -> BetterAuthSessionOutcomeResult {
+        switch outcome {
+        case let .signedIn(session):
+            return .signedIn(try apply(session, event: .signedIn))
+
+        case let .refreshed(session):
+            return .signedIn(try apply(session, event: .tokenRefreshed))
+
+        case let .token(token, fallbackUser):
+            let session = try await materializer.materializeSession(token: token, fallbackUser: fallbackUser)
+            return .signedIn(try apply(session, event: .signedIn))
+
+        case let .twoFactorToken(token, fallbackUser):
+            let session = try await materializer.materializeSession(token: token, fallbackUser: fallbackUser)
+            return .signedIn(try apply(session, event: .signedIn))
+
+        case let .updatedUser(user, currentSession):
+            guard let currentSession, currentSession.user.id == user.id else { return .unchanged }
+            return .updated(try apply(BetterAuthSession(session: currentSession.session,
+                                                        user: currentSession.user.merged(with: user)),
+                                      event: .userUpdated))
+
+        case .none:
+            return .unchanged
+        }
+    }
+
+    func appliedSession(from outcome: BetterAuthSessionOutcome) async throws -> BetterAuthSession {
+        guard let session = try await apply(outcome).session else {
+            throw BetterAuthError.invalidResponse
+        }
         return session
     }
 
-    func materializeSignedInSession(token: String,
-                                    fallbackUser: BetterAuthSession.User) async throws -> BetterAuthSession
-    {
-        let session = try await materializer.materializeSession(token: token, fallbackUser: fallbackUser)
-        return try applySignedInSession(session)
+    private func apply(_ session: BetterAuthSession, event: AuthChangeEvent) throws -> BetterAuthSession {
+        _ = try relay.setSession(session, event: event)
+        return session
     }
+}
 
-    func materializeSignedInSession(token: String, fallbackUser: TwoFactorUser) async throws -> BetterAuthSession {
-        let session = try await materializer.materializeSession(token: token, fallbackUser: fallbackUser)
-        return try applySignedInSession(session)
-    }
+enum BetterAuthSessionOutcome: Sendable {
+    case signedIn(BetterAuthSession)
+    case refreshed(BetterAuthSession)
+    case token(token: String, fallbackUser: BetterAuthSession.User)
+    case twoFactorToken(token: String, fallbackUser: TwoFactorUser)
+    case updatedUser(BetterAuthSession.User, currentSession: BetterAuthSession?)
+    case none
+}
 
-    func applyMergedUser(_ user: BetterAuthSession.User, to currentSession: BetterAuthSession?) throws {
-        guard let currentSession, currentSession.user.id == user.id else { return }
-        _ = try relay.setSession(BetterAuthSession(session: currentSession.session,
-                                                   user: currentSession.user.merged(with: user)),
-                                 event: .userUpdated)
+enum BetterAuthSessionOutcomeResult: Sendable, Equatable {
+    case signedIn(BetterAuthSession)
+    case updated(BetterAuthSession)
+    case unchanged
+
+    var session: BetterAuthSession? {
+        switch self {
+        case let .signedIn(session), let .updated(session):
+            session
+
+        case .unchanged:
+            nil
+        }
     }
 }
 
@@ -144,8 +184,9 @@ struct BetterAuthSessionBootstrapService {
         let existingToken = context.state.currentSession?.session.accessToken
         do {
             let session = try await context.refreshService.fetchCurrentSession(accessToken: existingToken)
-            _ = try relay.setSession(session, event: .tokenRefreshed)
-            return session
+            let sessionResults = BetterAuthSessionResultHandler(relay: relay,
+                                                                materializer: BetterAuthSessionMaterializer(context: context))
+            return try await sessionResults.appliedSession(from: .refreshed(session))
         } catch {
             if relay.shouldClearSession(for: error) { try relay.clearSession(event: .sessionExpired) }
             throw error
@@ -174,8 +215,9 @@ struct BetterAuthSessionAdministrationService {
             .post(path: context.configuration.endpoints.session.setActiveDeviceSessionPath,
                   body: payload,
                   accessToken: accessToken)
-        _ = try relay.setSession(session, event: .signedIn)
-        return session
+        let sessionResults = BetterAuthSessionResultHandler(relay: relay,
+                                                            materializer: BetterAuthSessionMaterializer(context: context))
+        return try await sessionResults.appliedSession(from: .signedIn(session))
     }
 
     func revokeDeviceSession(_ payload: BetterAuthRevokeDeviceSessionRequest,
@@ -272,11 +314,11 @@ struct BetterAuthPasskeyService {
                   body: payload,
                   accessToken: nil)
         if let session = response.materializedSession {
-            return try sessionResults.applySignedInSession(session)
+            return try await sessionResults.appliedSession(from: .signedIn(session))
         }
         if let signedIn = response.signedIn {
-            return try await sessionResults.materializeSignedInSession(token: signedIn.token,
-                                                                       fallbackUser: signedIn.user)
+            return try await sessionResults.appliedSession(from: .token(token: signedIn.token,
+                                                                        fallbackUser: signedIn.user))
         }
         throw BetterAuthError.invalidResponse
     }

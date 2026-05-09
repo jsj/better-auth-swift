@@ -24,11 +24,25 @@ public final class AuthStore {
     /// The original error captured from the last failed operation.
     public internal(set) var lastUnderlyingError: (any Error)?
 
-    let auth: any BetterAuthAuthPerforming
+    let sessionAuth: any BetterAuthSessionLifecycle & BetterAuthSessionFetching
+    let primaryAuth: any BetterAuthPrimaryAuthPerforming
+    let oauthAuth: any BetterAuthOAuthPerforming
+    let oneTimeCodeAuth: any BetterAuthOneTimeCodePerforming
+    let twoFactorAuth: any BetterAuthTwoFactorPerforming
+    let passkeyAuth: any BetterAuthPasskeyPerforming
+    let accountAuth: any BetterAuthAccountPerforming
+    let sessionAdministration: any BetterAuthSessionAdministrating
     private let authStateObservation = AuthStateObservation()
 
     public init(client: some BetterAuthClientProtocol) {
-        auth = client.authLifecycle
+        sessionAuth = client.authSessionLifecycle
+        primaryAuth = client.primaryAuth
+        oauthAuth = client.oauthAuth
+        oneTimeCodeAuth = client.oneTimeCodeAuth
+        twoFactorAuth = client.twoFactorAuth
+        passkeyAuth = client.passkeyAuth
+        accountAuth = client.accountAuth
+        sessionAdministration = client.sessionAdministration
         startAuthStateObservation()
     }
 
@@ -36,9 +50,9 @@ public final class AuthStore {
 
     private func startAuthStateObservation() {
         authStateObservation.cancel()
-        let auth = auth
-        authStateObservation.task = Task { [weak self, auth] in
-            for await change in auth.authStateChanges {
+        let sessionAuth = sessionAuth
+        authStateObservation.task = Task { [weak self, sessionAuth] in
+            for await change in sessionAuth.authStateChanges {
                 guard !Task.isCancelled else { return }
                 guard let self else { return }
                 self.applyAuthStateChange(change)

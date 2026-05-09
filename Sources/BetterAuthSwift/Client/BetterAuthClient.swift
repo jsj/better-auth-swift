@@ -50,8 +50,21 @@ public struct BetterAuthClient: BetterAuthModuleSupporting, Sendable {
                                                    sessionManager: auth,
                                                    transport: transport)
         let resolvedModules = BetterAuthModuleRegistry.build(configuration: configuration,
-                                                             authLifecycle: auth,
+                                                             authFeatures: BetterAuthAuthFeatures(sessionLifecycle: auth,
+                                                                                                  primaryAuth: auth,
+                                                                                                  oauthAuth: auth,
+                                                                                                  oneTimeCodeAuth: auth,
+                                                                                                  twoFactorAuth: auth,
+                                                                                                  passkeyAuth: auth,
+                                                                                                  accountAuth: auth,
+                                                                                                  sessionAdministration: auth),
                                                              requestsPerformer: baseRequests,
+                                                             requestPerformerFactory: { hooks in
+                                                                 BetterAuthRequestClient(configuration: configuration,
+                                                                                         sessionManager: auth,
+                                                                                         transport: transport,
+                                                                                         requestHooks: hooks)
+                                                             },
                                                              modules: modules)
         self.modules = resolvedModules
         if resolvedModules.registeredRequestHooks.isEmpty {
@@ -71,7 +84,35 @@ public struct BetterAuthClient: BetterAuthModuleSupporting, Sendable {
 }
 
 public extension BetterAuthClient {
-    var authLifecycle: any BetterAuthAuthPerforming {
+    var authSessionLifecycle: any BetterAuthSessionLifecycle & BetterAuthSessionFetching {
+        auth
+    }
+
+    var primaryAuth: any BetterAuthPrimaryAuthPerforming {
+        auth
+    }
+
+    var oauthAuth: any BetterAuthOAuthPerforming {
+        auth
+    }
+
+    var oneTimeCodeAuth: any BetterAuthOneTimeCodePerforming {
+        auth
+    }
+
+    var twoFactorAuth: any BetterAuthTwoFactorPerforming {
+        auth
+    }
+
+    var passkeyAuth: any BetterAuthPasskeyPerforming {
+        auth
+    }
+
+    var accountAuth: any BetterAuthAccountPerforming {
+        auth
+    }
+
+    var sessionAdministration: any BetterAuthSessionAdministrating {
         auth
     }
 

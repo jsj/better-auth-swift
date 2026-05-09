@@ -9,7 +9,7 @@ public extension AuthStore {
         -> PasskeyRegistrationOptions
     {
         try await performThrowing {
-            let options = try await auth.passkeyRegistrationOptions(payload)
+            let options = try await passkeyAuth.passkeyRegistrationOptions(payload)
             statusMessage = "Passkey registration options fetched"
             return options
         }
@@ -18,7 +18,7 @@ public extension AuthStore {
     @discardableResult
     func passkeyAuthenticateOptions() async throws -> PasskeyAuthenticationOptions {
         try await performThrowing {
-            let options = try await auth.passkeyAuthenticateOptions()
+            let options = try await passkeyAuth.passkeyAuthenticateOptions()
             statusMessage = "Passkey authentication options fetched"
             return options
         }
@@ -26,14 +26,14 @@ public extension AuthStore {
 
     func registerPasskey(_ payload: PasskeyRegistrationRequest) async {
         await perform {
-            _ = try await auth.registerPasskey(payload)
+            _ = try await passkeyAuth.registerPasskey(payload)
             statusMessage = "Passkey registered"
         }
     }
 
     func authenticateWithPasskey(_ payload: PasskeyAuthenticationRequest) async {
         await perform {
-            _ = try await auth.authenticateWithPasskey(payload)
+            _ = try await passkeyAuth.authenticateWithPasskey(payload)
             statusMessage = "Signed in with passkey"
         }
     }
@@ -41,7 +41,7 @@ public extension AuthStore {
     @discardableResult
     func listPasskeys() async throws -> [Passkey] {
         try await performThrowing {
-            let passkeys = try await auth.listPasskeys()
+            let passkeys = try await passkeyAuth.listPasskeys()
             statusMessage = "Passkeys loaded"
             return passkeys
         }
@@ -49,14 +49,14 @@ public extension AuthStore {
 
     func updatePasskey(_ payload: UpdatePasskeyRequest) async {
         await perform {
-            _ = try await auth.updatePasskey(payload)
+            _ = try await passkeyAuth.updatePasskey(payload)
             statusMessage = "Passkey updated"
         }
     }
 
     func deletePasskey(_ payload: DeletePasskeyRequest) async {
         await perform {
-            _ = try await auth.deletePasskey(payload)
+            _ = try await passkeyAuth.deletePasskey(payload)
             statusMessage = "Passkey deleted"
         }
     }
@@ -65,21 +65,21 @@ public extension AuthStore {
 
     func sendVerificationEmail(_ payload: SendVerificationEmailRequest = .init()) async {
         await perform {
-            _ = try await auth.sendVerificationEmail(payload)
+            _ = try await accountAuth.sendVerificationEmail(payload)
             statusMessage = "Verification email sent"
         }
     }
 
     func verifyEmail(_ payload: VerifyEmailRequest) async {
         await perform {
-            _ = try await auth.verifyEmail(payload)
+            _ = try await accountAuth.verifyEmail(payload)
             statusMessage = "Email verified"
         }
     }
 
     func changeEmail(_ payload: ChangeEmailRequest) async {
         await perform {
-            _ = try await auth.changeEmail(payload)
+            _ = try await accountAuth.changeEmail(payload)
             statusMessage = "Change email requested"
         }
     }
@@ -88,7 +88,7 @@ public extension AuthStore {
 
     func updateUser(_ payload: UpdateUserRequest) async {
         await perform {
-            _ = try await auth.updateUser(payload)
+            _ = try await accountAuth.updateUser(payload)
             statusMessage = "Profile updated"
         }
     }
@@ -98,7 +98,7 @@ public extension AuthStore {
     @discardableResult
     func listLinkedAccounts() async throws -> [LinkedAccount] {
         try await performThrowing {
-            let accounts = try await auth.listLinkedAccounts()
+            let accounts = try await accountAuth.listLinkedAccounts()
             statusMessage = "Linked accounts loaded"
             return accounts
         }
@@ -107,7 +107,7 @@ public extension AuthStore {
     @discardableResult
     func linkSocialAccount(_ payload: LinkSocialAccountRequest) async throws -> LinkSocialAccountResponse {
         try await performThrowing {
-            let response = try await auth.linkSocialAccount(payload)
+            let response = try await accountAuth.linkSocialAccount(payload)
             statusMessage = "Social account linked"
             return response
         }
@@ -118,7 +118,7 @@ public extension AuthStore {
     @discardableResult
     func listSessions() async throws -> [BetterAuthSessionListEntry] {
         try await performThrowing {
-            let sessions = try await auth.listSessions()
+            let sessions = try await sessionAdministration.listSessions()
             statusMessage = "Sessions loaded"
             return sessions
         }
@@ -127,7 +127,7 @@ public extension AuthStore {
     @discardableResult
     func listDeviceSessions() async throws -> [BetterAuthDeviceSession] {
         try await performThrowing {
-            let sessions = try await auth.listDeviceSessions()
+            let sessions = try await sessionAdministration.listDeviceSessions()
             statusMessage = "Device sessions loaded"
             return sessions
         }
@@ -135,35 +135,35 @@ public extension AuthStore {
 
     func setActiveDeviceSession(_ payload: BetterAuthSetActiveDeviceSessionRequest) async {
         await perform {
-            _ = try await auth.setActiveDeviceSession(payload)
+            _ = try await sessionAdministration.setActiveDeviceSession(payload)
             statusMessage = "Active session switched"
         }
     }
 
     func revokeDeviceSession(_ payload: BetterAuthRevokeDeviceSessionRequest) async {
         await perform {
-            _ = try await auth.revokeDeviceSession(payload)
+            _ = try await sessionAdministration.revokeDeviceSession(payload)
             statusMessage = "Device session revoked"
         }
     }
 
     func revokeSession(token: String) async {
         await perform {
-            _ = try await auth.revokeSession(token: token)
+            _ = try await sessionAdministration.revokeSession(token: token)
             statusMessage = "Session revoked"
         }
     }
 
     func revokeSessions() async {
         await perform {
-            _ = try await auth.revokeSessions()
+            _ = try await sessionAdministration.revokeSessions()
             statusMessage = "All sessions revoked"
         }
     }
 
     func revokeOtherSessions() async {
         await perform {
-            _ = try await auth.revokeOtherSessions()
+            _ = try await sessionAdministration.revokeOtherSessions()
             statusMessage = "Other sessions revoked"
         }
     }
@@ -173,7 +173,7 @@ public extension AuthStore {
     @discardableResult
     func getSessionJWT() async throws -> BetterAuthJWT {
         try await performThrowing {
-            let jwt = try await auth.getSessionJWT()
+            let jwt = try await sessionAdministration.getSessionJWT()
             statusMessage = "JWT fetched"
             return jwt
         }
@@ -182,7 +182,7 @@ public extension AuthStore {
     @discardableResult
     func getJWKS() async throws -> BetterAuthJWKS {
         try await performThrowing {
-            let jwks = try await auth.getJWKS()
+            let jwks = try await sessionAdministration.getJWKS()
             statusMessage = "JWKS fetched"
             return jwks
         }

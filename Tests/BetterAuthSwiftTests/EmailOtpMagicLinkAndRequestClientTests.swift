@@ -213,6 +213,7 @@ struct EmailOtpMagicLinkAndRequestClientTests {
         #expect(stored == existingSession)
     }
 
+    @Test
     func emailOTPVerifyWithAutoSignInPersistsNativeSession() async throws {
         let verifiedSession = BetterAuthSession(session: .init(id: "otp-verified-session",
                                                                userId: "user-otp",
@@ -247,6 +248,79 @@ struct EmailOtpMagicLinkAndRequestClientTests {
         #expect(current?.session.accessToken == verifiedSession.session.accessToken)
         let stored = try store.loadSession(for: "test-key")
         #expect(stored?.session.accessToken == verifiedSession.session.accessToken)
+    }
+
+    @Test
+    func sessionOutcomeMaterializesTokenAndPersistsSession() async throws {
+        let materializedSession = BetterAuthSession(session: .init(id: "materialized-session",
+                                                                   userId: "user-1",
+                                                                   accessToken: "materialized-token",
+                                                                   expiresAt: Date().addingTimeInterval(3600)),
+                                                    user: .init(id: "user-1",
+                                                                email: "fresh@example.com",
+                                                                name: "Fresh User"))
+
+        let store = InMemorySessionStore()
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: URL(string: "https://example.com")!,
+                                                                    storage: .init(key: "test-key")),
+                             sessionStore: store,
+                             transport: MockTransport { request in
+                                 try expect(request.url?.path == "/api/auth/get-session")
+                                 try expect(request.value(forHTTPHeaderField: "Authorization") ==
+                                     "Bearer materialized-token")
+                                 return try response(for: request, statusCode: 200, data: encodeJSON(materializedSession))
+                             })
+        let sessionResults = BetterAuthSessionResultHandler(relay: await client.auth.makeRelay(),
+                                                            materializer: await client.auth.makeMaterializer())
+
+        let result = try await sessionResults.apply(.token(token: "materialized-token",
+                                                           fallbackUser: .init(id: "user-1",
+                                                                               email: "fallback@example.com")))
+
+        #expect(result.session?.session.accessToken == materializedSession.session.accessToken)
+        #expect(result.session?.user.email == "fallback@example.com")
+        #expect(await client.auth.currentSession()?.session.accessToken == materializedSession.session.accessToken)
+        #expect(await client.auth.currentSession()?.user.email == "fallback@example.com")
+        let stored = try store.loadSession(for: "test-key")
+        #expect(stored?.session.accessToken == materializedSession.session.accessToken)
+        #expect(stored?.user.email == "fallback@example.com")
+    }
+
+    @Test
+    func sessionOutcomeMergesCurrentUserAndIgnoresMismatches() async throws {
+        let existingSession = BetterAuthSession(session: .init(id: "existing-session",
+                                                               userId: "user-1",
+                                                               accessToken: "existing-token"),
+                                                user: .init(id: "user-1",
+                                                            email: "old@example.com",
+                                                            name: "Old User",
+                                                            username: "old_user"))
+        let store = InMemorySessionStore()
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: URL(string: "https://example.com")!,
+                                                                    storage: .init(key: "test-key")),
+                             sessionStore: store,
+                             transport: MockTransport { request in
+                                 emptyResponse(for: request)
+                             })
+        try await client.auth.updateSession(existingSession)
+        let sessionResults = BetterAuthSessionResultHandler(relay: await client.auth.makeRelay(),
+                                                            materializer: await client.auth.makeMaterializer())
+
+        let updated = try await sessionResults.apply(.updatedUser(.init(id: "user-1",
+                                                                        email: "new@example.com",
+                                                                        name: "New User"),
+                                                                  currentSession: existingSession))
+        let ignored = try await sessionResults.apply(.updatedUser(.init(id: "other-user",
+                                                                        email: "other@example.com"),
+                                                                  currentSession: await client.auth.currentSession()))
+
+        #expect(updated.session?.user.email == "new@example.com")
+        #expect(updated.session?.user.username == "old_user")
+        #expect(ignored == .unchanged)
+        #expect(await client.auth.currentSession()?.user.email == "new@example.com")
+        #expect(try store.loadSession(for: "test-key")?.user.email == "new@example.com")
     }
 
     @Test

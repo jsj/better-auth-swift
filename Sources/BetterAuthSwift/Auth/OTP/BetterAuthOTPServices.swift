@@ -25,7 +25,7 @@ struct BetterAuthOneTimeCodeService {
                               URLQueryItem(name: "errorCallbackURL", value: payload.errorCallbackURL)],
                  accessToken: nil)
         if case let .signedIn(session) = result {
-            try sessionResults.applySignedInSession(session)
+            try await sessionResults.apply(.signedIn(session))
         }
         return result
     }
@@ -44,11 +44,11 @@ struct BetterAuthOneTimeCodeService {
                   body: payload,
                   accessToken: nil)
         if let session = response.materializedSession {
-            return try sessionResults.applySignedInSession(session)
+            return try await sessionResults.appliedSession(from: .signedIn(session))
         }
         if let signedIn = response.signedIn {
-            return try await sessionResults.materializeSignedInSession(token: signedIn.token,
-                                                                       fallbackUser: signedIn.user)
+            return try await sessionResults.appliedSession(from: .token(token: signedIn.token,
+                                                                        fallbackUser: signedIn.user))
         }
         throw BetterAuthError.invalidResponse
     }
@@ -61,9 +61,9 @@ struct BetterAuthOneTimeCodeService {
                   body: payload,
                   accessToken: nil)
         if case let .signedIn(session) = result {
-            try sessionResults.applySignedInSession(session)
-        } else if case let .verified(user) = result, let currentSession, currentSession.user.id == user.id {
-            try sessionResults.applyMergedUser(user, to: currentSession)
+            try await sessionResults.apply(.signedIn(session))
+        } else if case let .verified(user) = result {
+            try await sessionResults.apply(.updatedUser(user, currentSession: currentSession))
         }
         return result
     }
@@ -93,9 +93,9 @@ struct BetterAuthOneTimeCodeService {
                                               username: user.username,
                                               displayUsername: user.displayUsername,
                                               twoFactorEnabled: false)
-            _ = try await sessionResults.materializeSignedInSession(token: token, fallbackUser: twoFactorUser)
-        } else if let user = response.user, let currentSession, currentSession.user.id == user.id {
-            try sessionResults.applyMergedUser(user, to: currentSession)
+            try await sessionResults.apply(.twoFactorToken(token: token, fallbackUser: twoFactorUser))
+        } else if let user = response.user {
+            try await sessionResults.apply(.updatedUser(user, currentSession: currentSession))
         }
         return response
     }
@@ -105,7 +105,8 @@ struct BetterAuthOneTimeCodeService {
             .post(path: context.configuration.endpoints.phoneOTP.signInPath,
                   body: payload,
                   accessToken: nil)
-        return try await sessionResults.materializeSignedInSession(token: response.token, fallbackUser: response.user)
+        return try await sessionResults.appliedSession(from: .twoFactorToken(token: response.token,
+                                                                             fallbackUser: response.user))
     }
 }
 
@@ -130,7 +131,8 @@ struct BetterAuthTwoFactorService {
             .post(path: context.configuration.endpoints.twoFactor.verifyTOTPPath,
                   body: payload,
                   accessToken: nil)
-        return try await sessionResults.materializeSignedInSession(token: response.token, fallbackUser: response.user)
+        return try await sessionResults.appliedSession(from: .twoFactorToken(token: response.token,
+                                                                             fallbackUser: response.user))
     }
 
     func sendTwoFactorOTP(_ payload: TwoFactorSendOTPRequest = .init()) async throws -> Bool {
@@ -146,7 +148,8 @@ struct BetterAuthTwoFactorService {
             .post(path: context.configuration.endpoints.twoFactor.verifyOTPPath,
                   body: payload,
                   accessToken: nil)
-        return try await sessionResults.materializeSignedInSession(token: response.token, fallbackUser: response.user)
+        return try await sessionResults.appliedSession(from: .twoFactorToken(token: response.token,
+                                                                             fallbackUser: response.user))
     }
 
     func verifyTwoFactorRecoveryCode(_ payload: TwoFactorVerifyBackupCodeRequest) async throws -> BetterAuthSession {
@@ -154,7 +157,8 @@ struct BetterAuthTwoFactorService {
             .post(path: context.configuration.endpoints.twoFactor.verifyBackupCodePath,
                   body: payload,
                   accessToken: nil)
-        return try await sessionResults.materializeSignedInSession(token: response.token, fallbackUser: response.user)
+        return try await sessionResults.appliedSession(from: .twoFactorToken(token: response.token,
+                                                                             fallbackUser: response.user))
     }
 
     func disableTwoFactor(_ payload: TwoFactorDisableRequest,

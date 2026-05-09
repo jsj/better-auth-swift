@@ -31,6 +31,36 @@ public protocol BetterAuthAuthStateListener: Sendable {
     func authStateDidChange(_ change: AuthStateChange) async
 }
 
+public struct BetterAuthAuthFeatures: Sendable {
+    public let sessionLifecycle: any BetterAuthSessionLifecycle & BetterAuthSessionFetching
+    public let primaryAuth: any BetterAuthPrimaryAuthPerforming
+    public let oauthAuth: any BetterAuthOAuthPerforming
+    public let oneTimeCodeAuth: any BetterAuthOneTimeCodePerforming
+    public let twoFactorAuth: any BetterAuthTwoFactorPerforming
+    public let passkeyAuth: any BetterAuthPasskeyPerforming
+    public let accountAuth: any BetterAuthAccountPerforming
+    public let sessionAdministration: any BetterAuthSessionAdministrating
+
+    public init(sessionLifecycle: any BetterAuthSessionLifecycle & BetterAuthSessionFetching,
+                primaryAuth: any BetterAuthPrimaryAuthPerforming,
+                oauthAuth: any BetterAuthOAuthPerforming,
+                oneTimeCodeAuth: any BetterAuthOneTimeCodePerforming,
+                twoFactorAuth: any BetterAuthTwoFactorPerforming,
+                passkeyAuth: any BetterAuthPasskeyPerforming,
+                accountAuth: any BetterAuthAccountPerforming,
+                sessionAdministration: any BetterAuthSessionAdministrating)
+    {
+        self.sessionLifecycle = sessionLifecycle
+        self.primaryAuth = primaryAuth
+        self.oauthAuth = oauthAuth
+        self.oneTimeCodeAuth = oneTimeCodeAuth
+        self.twoFactorAuth = twoFactorAuth
+        self.passkeyAuth = passkeyAuth
+        self.accountAuth = accountAuth
+        self.sessionAdministration = sessionAdministration
+    }
+}
+
 public struct BetterAuthAnyModuleRuntime: BetterAuthModuleRuntime {
     public let moduleIdentifier: String
     private let storage: any BetterAuthModuleRuntime
@@ -106,17 +136,31 @@ public struct BetterAuthModuleRegistry: Sendable {
 
 public struct BetterAuthModuleContext: BetterAuthClientProtocol, Sendable {
     public let configuration: BetterAuthConfiguration
-    public let authLifecycle: any BetterAuthAuthPerforming
+    public let authSessionLifecycle: any BetterAuthSessionLifecycle & BetterAuthSessionFetching
+    public let primaryAuth: any BetterAuthPrimaryAuthPerforming
+    public let oauthAuth: any BetterAuthOAuthPerforming
+    public let oneTimeCodeAuth: any BetterAuthOneTimeCodePerforming
+    public let twoFactorAuth: any BetterAuthTwoFactorPerforming
+    public let passkeyAuth: any BetterAuthPasskeyPerforming
+    public let accountAuth: any BetterAuthAccountPerforming
+    public let sessionAdministration: any BetterAuthSessionAdministrating
     public let requestsPerformer: any BetterAuthRequestPerforming
     public let modules: BetterAuthModuleRegistry
 
     public init(configuration: BetterAuthConfiguration,
-                authLifecycle: any BetterAuthAuthPerforming,
+                authFeatures: BetterAuthAuthFeatures,
                 requestsPerformer: any BetterAuthRequestPerforming,
                 modules: BetterAuthModuleRegistry = .init())
     {
         self.configuration = configuration
-        self.authLifecycle = authLifecycle
+        self.authSessionLifecycle = authFeatures.sessionLifecycle
+        self.primaryAuth = authFeatures.primaryAuth
+        self.oauthAuth = authFeatures.oauthAuth
+        self.oneTimeCodeAuth = authFeatures.oneTimeCodeAuth
+        self.twoFactorAuth = authFeatures.twoFactorAuth
+        self.passkeyAuth = authFeatures.passkeyAuth
+        self.accountAuth = authFeatures.accountAuth
+        self.sessionAdministration = authFeatures.sessionAdministration
         self.requestsPerformer = requestsPerformer
         self.modules = modules
     }
@@ -124,8 +168,9 @@ public struct BetterAuthModuleContext: BetterAuthClientProtocol, Sendable {
 
 public extension BetterAuthModuleRegistry {
     static func build(configuration: BetterAuthConfiguration,
-                      authLifecycle: any BetterAuthAuthPerforming,
+                      authFeatures: BetterAuthAuthFeatures,
                       requestsPerformer: any BetterAuthRequestPerforming,
+                      requestPerformerFactory: ([any BetterAuthRequestHook]) -> any BetterAuthRequestPerforming,
                       modules: [any BetterAuthModule]) -> BetterAuthModuleRegistry
     {
         var runtimes: [String: BetterAuthAnyModuleRuntime] = [:]
@@ -134,8 +179,23 @@ public extension BetterAuthModuleRegistry {
         var authStateListeners: [any BetterAuthAuthStateListener] = []
         for module in modules {
             let context = BetterAuthModuleContext(configuration: configuration,
-                                                  authLifecycle: authLifecycle,
+                                                  authFeatures: authFeatures,
                                                   requestsPerformer: requestsPerformer,
+                                                  modules: BetterAuthModuleRegistry(runtimes: [:],
+                                                                                    featureClients: [:],
+                                                                                    requestHooks: requestHooks,
+                                                                                    authStateListeners: authStateListeners))
+            requestHooks.append(contentsOf: module.makeRequestHooks(context: context))
+            authStateListeners.append(contentsOf: module.makeAuthStateListeners(context: context))
+        }
+
+        let hookedRequestsPerformer = requestHooks.isEmpty ? requestsPerformer : requestPerformerFactory(requestHooks)
+        runtimes.removeAll(keepingCapacity: true)
+        featureClients.removeAll(keepingCapacity: true)
+        for module in modules {
+            let context = BetterAuthModuleContext(configuration: configuration,
+                                                  authFeatures: authFeatures,
+                                                  requestsPerformer: hookedRequestsPerformer,
                                                   modules: BetterAuthModuleRegistry(runtimes: runtimes,
                                                                                     featureClients: featureClients,
                                                                                     requestHooks: requestHooks,
@@ -145,12 +205,22 @@ public extension BetterAuthModuleRegistry {
             if let featureClient = runtime as? any BetterAuthFeatureClient {
                 featureClients[module.moduleIdentifier] = featureClient
             }
-            requestHooks.append(contentsOf: module.makeRequestHooks(context: context))
-            authStateListeners.append(contentsOf: module.makeAuthStateListeners(context: context))
         }
         return BetterAuthModuleRegistry(runtimes: runtimes,
                                         featureClients: featureClients,
                                         requestHooks: requestHooks,
                                         authStateListeners: authStateListeners)
+    }
+
+    static func build(configuration: BetterAuthConfiguration,
+                      authFeatures: BetterAuthAuthFeatures,
+                      requestsPerformer: any BetterAuthRequestPerforming,
+                      modules: [any BetterAuthModule]) -> BetterAuthModuleRegistry
+    {
+        build(configuration: configuration,
+              authFeatures: authFeatures,
+              requestsPerformer: requestsPerformer,
+              requestPerformerFactory: { _ in requestsPerformer },
+              modules: modules)
     }
 }

@@ -51,7 +51,7 @@ struct ModuleSystemTests {
     }
 
     @Test
-    func clientAuthLifecycleUsesSessionManagerDirectly() throws {
+    func clientAuthSessionLifecycleUsesSessionManagerDirectly() throws {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
@@ -59,7 +59,58 @@ struct ModuleSystemTests {
                                  emptyResponse(for: request)
                              })
 
-        let lifecycle = client.authLifecycle
+        let lifecycle = client.authSessionLifecycle
         #expect(type(of: lifecycle) == BetterAuthSessionManager.self)
+    }
+
+    @Test
+    func moduleRuntimeRequestsUseRegisteredHooks() async throws {
+        let observedPaths = Locked<[String]>([])
+
+        struct PathHook: BetterAuthRequestHook {
+            let observedPaths: Locked<[String]>
+
+            func prepare(_ request: URLRequest) async throws -> URLRequest {
+                observedPaths.withLock { $0.append(request.url?.path ?? "") }
+                return request
+            }
+        }
+
+        struct ProbeRuntime: BetterAuthModuleRuntime {
+            let moduleIdentifier = "probe"
+            let requests: any BetterAuthRequestPerforming
+
+            func load() async throws {
+                _ = try await requests.send(BetterAuthDataRequest(path: "/probe",
+                                                                  requiresAuthentication: false))
+            }
+        }
+
+        struct ProbeModule: BetterAuthModule {
+            let moduleIdentifier = "probe"
+            let observedPaths: Locked<[String]>
+
+            func configure(context: BetterAuthModuleContext) -> BetterAuthModuleRuntime {
+                ProbeRuntime(requests: context.requestsPerformer)
+            }
+
+            func makeRequestHooks(context _: BetterAuthModuleContext) -> [any BetterAuthRequestHook] {
+                [PathHook(observedPaths: observedPaths)]
+            }
+        }
+
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
+                             sessionStore: InMemorySessionStore(),
+                             transport: MockTransport { request in
+                                 try expect(request.url?.path == "/probe")
+                                 return emptyResponse(for: request)
+                             },
+                             modules: [ProbeModule(observedPaths: observedPaths)])
+
+        let runtime = try #require(client.moduleRuntime(for: "probe", as: ProbeRuntime.self))
+        try await runtime.load()
+
+        #expect(observedPaths.withLock { $0 } == ["/probe"])
     }
 }
