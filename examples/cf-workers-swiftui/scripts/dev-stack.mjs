@@ -16,12 +16,12 @@ const args = new Set(process.argv.slice(2));
 const wantsTunnel = args.has('--cloudflared');
 const statusOnly = args.has('--status');
 
-const emulatorRepo = process.env.APPLE_EMULATOR_REPO;
+const emulatorRepo = process.env.APPLE_API_EMULATOR_REPO ?? process.env.APPLE_EMULATOR_REPO;
 const emulatorRepoEntry = emulatorRepo
   ? path.join(emulatorRepo, 'packages', 'emulate', 'dist', 'index.js')
   : null;
-const localEmulateBin = path.join(exampleDir, 'node_modules', '.bin', 'emulate');
-const canUseInstalledEmulate = existsSync(localEmulateBin);
+const localApiEmulatorBin = path.join(exampleDir, 'node_modules', '.bin', 'api-emulator');
+const canUseInstalledApiEmulator = existsSync(localApiEmulatorBin);
 const canUseRepoEntry = emulatorRepoEntry ? existsSync(emulatorRepoEntry) : false;
 
 function log(message) {
@@ -29,10 +29,10 @@ function log(message) {
 }
 
 function buildEmulatorService() {
-  if (canUseInstalledEmulate) {
+  if (canUseInstalledApiEmulator) {
     return {
       name: 'apple-emulator',
-      command: localEmulateBin,
+      command: localApiEmulatorBin,
       args: ['--service', 'apple', '--port', '4010'],
       healthURL: emulatorURL,
     };
@@ -50,7 +50,7 @@ function buildEmulatorService() {
   const guidance = [
     'Apple emulator dependency is not available.',
     `Install it with: npm --prefix "${exampleDir}" install`,
-    'Or set APPLE_EMULATOR_REPO=/path/to/vercel-labs/emulate',
+    'Or set APPLE_API_EMULATOR_REPO=/path/to/api-emulator',
   ].join('\n');
   throw new Error(guidance);
 }
@@ -95,7 +95,7 @@ async function printStatus() {
   log(`apple-emulator: ${emulatorHealthy ? 'up' : 'down'} (${emulatorURL})`);
   log(`worker: ${workerHealthy ? 'up' : 'down'} (${workerURL})`);
   log(`cloudflared: ${wantsTunnel ? 'managed by this wrapper when started with --cloudflared' : 'not requested'}`);
-  log(`emulate source: ${canUseInstalledEmulate ? 'npm dependency' : canUseRepoEntry ? emulatorRepoEntry : 'missing'}`);
+  log(`api-emulator source: ${canUseInstalledApiEmulator ? 'npm dependency' : canUseRepoEntry ? emulatorRepoEntry : 'missing'}`);
 }
 
 function attachOutput(child, name) {
