@@ -43,6 +43,9 @@ public final class InMemorySessionStore: BetterAuthSessionStore, Sendable {
 }
 
 public struct KeychainSessionStore: BetterAuthSessionStore, Sendable {
+    private static let missingEntitlementStatus = OSStatus(-34018)
+    private static let memoryFallback = InMemorySessionStore()
+
     public enum Accessibility: Sendable {
         case afterFirstUnlock
         case afterFirstUnlockThisDeviceOnly
@@ -100,6 +103,9 @@ public struct KeychainSessionStore: BetterAuthSessionStore, Sendable {
         case errSecItemNotFound:
             return nil
 
+        case let status where Self.shouldUseMemoryFallback(for: status):
+            return try Self.memoryFallback.loadSession(for: fallbackKey(for: key))
+
         default:
             throw BetterAuthSessionStoreError.unexpectedStatus(status)
         }
@@ -120,9 +126,17 @@ public struct KeychainSessionStore: BetterAuthSessionStore, Sendable {
             insertQuery[kSecValueData as String] = data
             insertQuery[kSecAttrAccessible as String] = accessibility.value
             let insertStatus = SecItemAdd(insertQuery as CFDictionary, nil)
+            if Self.shouldUseMemoryFallback(for: insertStatus) {
+                try Self.memoryFallback.saveSession(session, for: fallbackKey(for: key))
+                return
+            }
+
             guard insertStatus == errSecSuccess else {
                 throw BetterAuthSessionStoreError.unexpectedStatus(insertStatus)
             }
+
+        case let status where Self.shouldUseMemoryFallback(for: status):
+            try Self.memoryFallback.saveSession(session, for: fallbackKey(for: key))
 
         default:
             throw BetterAuthSessionStoreError.unexpectedStatus(status)
@@ -131,6 +145,11 @@ public struct KeychainSessionStore: BetterAuthSessionStore, Sendable {
 
     public func clearSession(for key: String) throws {
         let status = SecItemDelete(baseQuery(for: key) as CFDictionary)
+        if Self.shouldUseMemoryFallback(for: status) {
+            try Self.memoryFallback.clearSession(for: fallbackKey(for: key))
+            return
+        }
+
         guard status == errSecSuccess || status == errSecItemNotFound else {
             throw BetterAuthSessionStoreError.unexpectedStatus(status)
         }
@@ -150,5 +169,17 @@ public struct KeychainSessionStore: BetterAuthSessionStore, Sendable {
         }
 
         return query
+    }
+
+    func fallbackKey(for key: String) -> String {
+        [service, accessGroup, key].compactMap(\.self).joined(separator: ":")
+    }
+
+    static func shouldUseMemoryFallback(for status: OSStatus) -> Bool {
+        #if targetEnvironment(simulator)
+            status == missingEntitlementStatus
+        #else
+            false
+        #endif
     }
 }

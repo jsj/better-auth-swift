@@ -1,10 +1,21 @@
 import BetterAuthTestHelpers
 import Foundation
+import Security
 import Testing
 @testable import BetterAuth
 @testable import BetterAuthSwiftUI
 
 struct SessionPersistenceAndFetchTests {
+    @Test
+    func keychainStoreFallsBackOnlyForSimulatorMissingEntitlementStatus() {
+        #if targetEnvironment(simulator)
+            #expect(KeychainSessionStore.shouldUseMemoryFallback(for: OSStatus(-34018)))
+        #else
+            #expect(!KeychainSessionStore.shouldUseMemoryFallback(for: OSStatus(-34018)))
+        #endif
+        #expect(!KeychainSessionStore.shouldUseMemoryFallback(for: errSecAuthFailed))
+    }
+
     @Test
     func fetchCurrentSessionDecodesISO8601Expiry() async throws {
         let expiry = "2026-03-29T16:00:00Z"
