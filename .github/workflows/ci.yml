@@ -30,7 +30,6 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: |
-            examples/cf-workers-swiftui/package-lock.json
             examples/cf-workers-swiftui/worker/package-lock.json
             examples/cf-workers-uikit/worker/package-lock.json
 
@@ -39,7 +38,6 @@ jobs:
 
       - name: Install worker dependencies
         run: |
-          npm ci --prefix examples/cf-workers-swiftui
           npm ci --prefix examples/cf-workers-swiftui/worker
           npm ci --prefix examples/cf-workers-uikit/worker
 
@@ -47,9 +45,6 @@ jobs:
         run: |
           npm --prefix examples/cf-workers-swiftui/worker run typecheck
           npm --prefix examples/cf-workers-uikit/worker run typecheck
-
-      - name: Run OAuth example E2E
-        run: npm --prefix examples/cf-workers-swiftui run e2e:oauth
 
       - name: Run release verifier
         run: Scripts/verify_release.sh

@@ -37,8 +37,12 @@ const emulatorCli = process.env.API_EMULATOR_CLI
   ?? (emulatorRepo ? path.join(emulatorRepo, 'packages', 'api-emulator', 'dist', 'index.js') : null);
 const emulatorRegistry = process.env.API_EMULATOR_REGISTRY
   ?? (existsSync(defaultApiEmulatorRegistry) ? defaultApiEmulatorRegistry : undefined);
-const localApiEmulatorBin = path.join(exampleDir, 'node_modules', '.bin', 'api-emulator');
-const canUseInstalledApiEmulator = existsSync(localApiEmulatorBin);
+const installedApiEmulatorCandidates = [
+  path.join(exampleDir, 'node_modules', '.bin', 'api-emulator'),
+  path.join(exampleDir, 'node_modules', '.bin', 'api'),
+];
+const localApiEmulatorBin = installedApiEmulatorCandidates.find((candidate) => existsSync(candidate));
+const canUseInstalledApiEmulator = Boolean(localApiEmulatorBin);
 const canUseRepoEntry = emulatorRepoEntry ? existsSync(emulatorRepoEntry) : false;
 const canUseEmulatorCli = emulatorCli ? existsSync(emulatorCli) : false;
 const wranglerPersistTo = process.env.WRANGLER_PERSIST_TO;
