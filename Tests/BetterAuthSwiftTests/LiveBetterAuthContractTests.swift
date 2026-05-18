@@ -5,10 +5,10 @@ import Testing
 private enum LiveBetterAuthContract {
     static let environment = ProcessInfo.processInfo.environment
     static let baseURL = environment["BETTER_AUTH_CONTRACT_BASE_URL"].flatMap(URL.init(string:))
-    static let email = environment["BETTER_AUTH_CONTRACT_EMAIL"]
-    static let password = environment["BETTER_AUTH_CONTRACT_PASSWORD"]
-    static let username = environment["BETTER_AUTH_CONTRACT_USERNAME"]
-    static let usernamePassword = environment["BETTER_AUTH_CONTRACT_USERNAME_PASSWORD"]
+    static let email = nonEmptyEnvironmentValue("BETTER_AUTH_CONTRACT_EMAIL")
+    static let password = nonEmptyEnvironmentValue("BETTER_AUTH_CONTRACT_PASSWORD")
+    static let username = nonEmptyEnvironmentValue("BETTER_AUTH_CONTRACT_USERNAME")
+    static let usernamePassword = nonEmptyEnvironmentValue("BETTER_AUTH_CONTRACT_USERNAME_PASSWORD")
     static let expectsJWKS = environment["BETTER_AUTH_CONTRACT_EXPECT_JWKS"] == "true"
     static let supportsAnonymous = environment["BETTER_AUTH_CONTRACT_SUPPORTS_ANONYMOUS"] == "true"
     static let provisionWithFixtures = environment["BETTER_AUTH_CONTRACT_PROVISION_WITH_FIXTURES"] == "true"
@@ -26,6 +26,12 @@ private enum LiveBetterAuthContract {
             return configured
         }
         return baseURL?.appending(path: "api/fixtures/captures")
+    }
+
+    static func nonEmptyEnvironmentValue(_ key: String) -> String? {
+        environment[key].flatMap { value in
+            value.isEmpty ? nil : value
+        }
     }
 
     static func makeClient(storageKey: String = "better-auth.contract-test") throws -> BetterAuthClient {
