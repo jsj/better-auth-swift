@@ -21,6 +21,10 @@
     "APPLE_KEY_ID": "KEYID12345",
     "APPLE_PRIVATE_KEY": "-----BEGIN PRIVATE KEY-----\\nREPLACE_ME\\n-----END PRIVATE KEY-----",
     "APPLE_EMULATOR_BASE_URL": "http://127.0.0.1:4010",
+    "GOOGLE_AUTH_MODE": "emulated",
+    "GOOGLE_CLIENT_ID": "fixture-google-client-id",
+    "GOOGLE_CLIENT_SECRET": "fixture-google-client-secret",
+    "GOOGLE_EMULATOR_BASE_URL": "http://127.0.0.1:4002",
     "TRUSTED_ORIGIN": "http://127.0.0.1:8787",
     "EMAIL_OTP_RUNTIME_MODE": "sign-up-enabled"
   }

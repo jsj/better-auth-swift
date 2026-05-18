@@ -5,11 +5,9 @@ private enum AutoRefreshConstants {
     static let minimumSleepInterval: TimeInterval = 1
 }
 
-/// Actor-isolated session manager that owns the full auth lifecycle.
-///
-/// Access via ``BetterAuthClient/auth``. Handles sign-in, sign-out,
-/// session persistence, automatic token refresh, and event emission.
-public actor BetterAuthSessionManager {
+/// Actor-isolated implementation for auth lifecycle, session persistence,
+/// automatic token refresh, and event emission.
+actor BetterAuthSessionManager {
     let configuration: BetterAuthConfiguration
     let sessionStore: BetterAuthSessionStore
     let network: AuthNetworkClient
@@ -124,12 +122,12 @@ public actor BetterAuthSessionManager {
         try await authThrottle.check(operation: operation, policy: policy)
     }
 
-    public init(configuration: BetterAuthConfiguration,
-                sessionStore: BetterAuthSessionStore,
-                transport: BetterAuthTransport,
-                logger: BetterAuthLogger? = nil,
-                eventEmitter: AuthEventEmitter = AuthEventEmitter(),
-                authStateListeners: [any BetterAuthAuthStateListener] = [])
+    init(configuration: BetterAuthConfiguration,
+         sessionStore: BetterAuthSessionStore,
+         transport: BetterAuthTransport,
+         logger: BetterAuthLogger? = nil,
+         eventEmitter: AuthEventEmitter = AuthEventEmitter(),
+         authStateListeners: [any BetterAuthAuthStateListener] = [])
     {
         self.configuration = configuration
         self.sessionStore = sessionStore
@@ -162,15 +160,15 @@ public actor BetterAuthSessionManager {
 
     // MARK: - Event Stream
 
-    public nonisolated var onAuthStateChange: AuthEventEmitter {
+    nonisolated var onAuthStateChange: AuthEventEmitter {
         state.eventEmitter
     }
 
-    public nonisolated var authStateChanges: AsyncStream<AuthStateChange> {
+    nonisolated var authStateChanges: AsyncStream<AuthStateChange> {
         state.stateChanges
     }
 
-    public nonisolated var accessTokenChanges: AsyncStream<String?> {
+    nonisolated var accessTokenChanges: AsyncStream<String?> {
         AsyncStream { continuation in
             let task = Task {
                 for await change in authStateChanges {
@@ -183,14 +181,14 @@ public actor BetterAuthSessionManager {
         }
     }
 
-    public nonisolated var currentAuthState: AuthStateChange? {
+    nonisolated var currentAuthState: AuthStateChange? {
         state.latest
     }
 
     // MARK: - Sign Out
 
     /// Signs out and clears the local session. Optionally revokes the session on the backend.
-    public func signOut(remotely: Bool = true) async throws {
+    func signOut(remotely: Bool = true) async throws {
         stopAutoRefresh()
         try await makeSessionAdministrationService().signOut(remotely: remotely,
                                                              accessToken: state.currentSession?.session.accessToken)
@@ -198,7 +196,7 @@ public actor BetterAuthSessionManager {
 
     // MARK: - Auto-Refresh
 
-    public func startAutoRefresh() {
+    func startAutoRefresh() {
         stopAutoRefresh()
         logger?.debug("Starting auto-refresh timer")
         autoRefreshTask = Task { [weak self] in
@@ -206,12 +204,12 @@ public actor BetterAuthSessionManager {
         }
     }
 
-    public func stopAutoRefresh() {
+    func stopAutoRefresh() {
         autoRefreshTask?.cancel()
         autoRefreshTask = nil
     }
 
-    public func shutdown() {
+    func shutdown() {
         stopAutoRefresh()
         inFlightRefreshTask?.cancel()
         inFlightRefreshTask = nil
@@ -219,7 +217,7 @@ public actor BetterAuthSessionManager {
         authStateListenerRegistrations.removeAll()
     }
 
-    public func applicationDidBecomeActive() async {
+    func applicationDidBecomeActive() async {
         guard configuration.autoRefreshToken, state.currentSession != nil else { return }
         startAutoRefresh()
         do {
@@ -229,7 +227,7 @@ public actor BetterAuthSessionManager {
         }
     }
 
-    public func applicationWillResignActive() {
+    func applicationWillResignActive() {
         stopAutoRefresh()
     }
 
@@ -261,11 +259,11 @@ public actor BetterAuthSessionManager {
 
     // MARK: - Deep Link Handling
 
-    public func parseIncomingURL(_ url: URL) -> BetterAuthIncomingURL {
+    func parseIncomingURL(_ url: URL) -> BetterAuthIncomingURL {
         callbackHandler.parseIncomingURL(url)
     }
 
-    public func handleIncomingURL(_ url: URL) async throws -> BetterAuthHandledURLResult {
+    func handleIncomingURL(_ url: URL) async throws -> BetterAuthHandledURLResult {
         switch parseIncomingURL(url) {
         case let .genericOAuth(payload):
             try await .genericOAuth(completeGenericOAuth(payload))
@@ -281,7 +279,7 @@ public actor BetterAuthSessionManager {
         }
     }
 
-    public func handle(_ url: URL) async {
+    func handle(_ url: URL) async {
         do {
             let result = try await handleIncomingURL(url)
             switch result {
@@ -302,7 +300,7 @@ public actor BetterAuthSessionManager {
         }
     }
 
-    public func installAuthStateListeners(_ listeners: [any BetterAuthAuthStateListener]) async {
+    func installAuthStateListeners(_ listeners: [any BetterAuthAuthStateListener]) async {
         authStateListenerRegistrations.forEach { $0.remove() }
         authStateListenerRegistrations = Self.makeAuthStateListenerRegistrations(listeners,
                                                                                  eventEmitter: state.eventEmitter)

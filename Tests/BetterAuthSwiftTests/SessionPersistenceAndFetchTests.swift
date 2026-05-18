@@ -168,6 +168,61 @@ struct SessionPersistenceAndFetchTests {
     }
 
     @Test
+    func loadStoredSessionMigratesFirstAvailableLegacyStorageKey() async throws {
+        let legacySession = BetterAuthSession(session: .init(id: "legacy-session",
+                                                             userId: "user-1",
+                                                             accessToken: "legacy-token"),
+                                              user: .init(id: "user-1", email: "legacy@example.com"))
+        let store = InMemorySessionStore()
+        try store.saveSession(legacySession, for: "legacy-key")
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                    storage: .init(key: "current-key",
+                                                                                   migrationKeys: ["missing-key",
+                                                                                                   "legacy-key"])),
+                             sessionStore: store,
+                             transport: MockTransport { request in
+                                 emptyResponse(for: request)
+                             })
+
+        let restored = try await client.auth.loadStoredSession()
+
+        #expect(restored == legacySession)
+        #expect(try store.loadSession(for: "current-key") == legacySession)
+        #expect(try store.loadSession(for: "legacy-key") == nil)
+        #expect(await client.auth.currentSession() == nil)
+    }
+
+    @Test
+    func loadStoredSessionKeepsCurrentStorageKeyWhenLegacyAlsoExists() async throws {
+        let currentSession = BetterAuthSession(session: .init(id: "current-session",
+                                                              userId: "user-1",
+                                                              accessToken: "current-token"),
+                                               user: .init(id: "user-1", email: "current@example.com"))
+        let legacySession = BetterAuthSession(session: .init(id: "legacy-session",
+                                                             userId: "user-1",
+                                                             accessToken: "legacy-token"),
+                                              user: .init(id: "user-1", email: "legacy@example.com"))
+        let store = InMemorySessionStore()
+        try store.saveSession(currentSession, for: "current-key")
+        try store.saveSession(legacySession, for: "legacy-key")
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                    storage: .init(key: "current-key",
+                                                                                   migrationKeys: ["legacy-key"])),
+                             sessionStore: store,
+                             transport: MockTransport { request in
+                                 emptyResponse(for: request)
+                             })
+
+        let restored = try await client.auth.loadStoredSession()
+
+        #expect(restored == currentSession)
+        #expect(try store.loadSession(for: "current-key") == currentSession)
+        #expect(try store.loadSession(for: "legacy-key") == legacySession)
+    }
+
+    @Test
     func authStateChangesStreamReplaysLatestSessionToNewSubscribers() async throws {
         let emitter = AuthEventEmitter()
         let signedIn = BetterAuthSession(session: .init(id: "session-1", userId: "user-1", accessToken: "token"),

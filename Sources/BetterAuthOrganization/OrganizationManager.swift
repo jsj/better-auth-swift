@@ -91,7 +91,7 @@ public actor OrganizationManager {
     }
 }
 
-struct OrganizationRoutes: Sendable {
+struct OrganizationRoutes {
     private let requests: any BetterAuthRequestPerforming
 
     init(requests: any BetterAuthRequestPerforming) {
@@ -198,18 +198,18 @@ struct OrganizationRoutes: Sendable {
 
 // MARK: - Internal Request Types
 
-private struct OrganizationIdRequest: Encodable, Sendable {
+private struct OrganizationIdRequest: Encodable {
     let organizationId: String
 }
 
-private struct InvitationIdRequest: Encodable, Sendable {
+private struct InvitationIdRequest: Encodable {
     let invitationId: String
 }
 
-private struct SlugCheckRequest: Encodable, Sendable {
+private struct SlugCheckRequest: Encodable {
     let slug: String
 }
 
-private struct SlugAvailabilityResponse: Decodable, Sendable {
+private struct SlugAvailabilityResponse: Decodable {
     let status: Bool
 }

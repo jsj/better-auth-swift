@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "node ./scripts/dev-stack.mjs",
     "dev:tunnel": "node ./scripts/dev-stack.mjs --cloudflared",
-    "dev:status": "node ./scripts/dev-stack.mjs --status"
+    "dev:status": "node ./scripts/dev-stack.mjs --status",
+    "e2e:oauth": "node ./scripts/oauth-e2e.mjs"
   }
 }

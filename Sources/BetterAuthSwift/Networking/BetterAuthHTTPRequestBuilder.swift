@@ -1,6 +1,6 @@
 import Foundation
 
-struct BetterAuthHTTPRequestBuilder: Sendable {
+struct BetterAuthHTTPRequestBuilder {
     let baseURL: URL
     let requestOrigin: String?
     let timeoutInterval: TimeInterval
@@ -30,7 +30,8 @@ struct BetterAuthHTTPRequestBuilder: Sendable {
         request.timeoutInterval = timeoutInterval
         if let accessToken {
             request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-        } else if let requestOrigin {
+        }
+        if let requestOrigin {
             request.setValue(requestOrigin, forHTTPHeaderField: "Origin")
         }
         headers.forEach { request.setValue($1, forHTTPHeaderField: $0) }

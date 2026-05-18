@@ -236,4 +236,23 @@ public struct BetterAuthStatusResponse: Codable, Sendable, Equatable {
     public init(status: Bool) {
         self.status = status
     }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if let status = try container.decodeIfPresent(Bool.self, forKey: .status) {
+            self.status = status
+        } else {
+            self.status = try container.decode(Bool.self, forKey: .success)
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(status, forKey: .status)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case success
+    }
 }

@@ -13,8 +13,8 @@ import Foundation
 public struct BetterAuthClient: BetterAuthModuleSupporting, Sendable {
     /// The resolved configuration for this client.
     public let configuration: BetterAuthConfiguration
-    /// Session manager for sign-in, sign-out, refresh, and all auth flows.
-    public let auth: BetterAuthSessionManager
+    /// Auth client for sign-in, sign-out, refresh, and all auth flows.
+    public let auth: BetterAuthAuthClient
     /// Authenticated HTTP request client with automatic 401 retry.
     public let requests: BetterAuthRequestClient
     /// Registered optional modules for this client instance.
@@ -39,15 +39,16 @@ public struct BetterAuthClient: BetterAuthModuleSupporting, Sendable {
                                                                  accessGroup: configuration.storage.accessGroup,
                                                                  accessibility: configuration.storage.accessibility,
                                                                  synchronizable: configuration.storage.synchronizable)
-        let auth = BetterAuthSessionManager(configuration: configuration,
-                                            sessionStore: resolvedStore,
-                                            transport: transport,
-                                            logger: configuration.logger,
-                                            eventEmitter: eventEmitter,
-                                            authStateListeners: [])
+        let sessionManager = BetterAuthSessionManager(configuration: configuration,
+                                                      sessionStore: resolvedStore,
+                                                      transport: transport,
+                                                      logger: configuration.logger,
+                                                      eventEmitter: eventEmitter,
+                                                      authStateListeners: [])
+        let auth = BetterAuthAuthClient(sessionManager: sessionManager)
         self.auth = auth
         let baseRequests = BetterAuthRequestClient(configuration: configuration,
-                                                   sessionManager: auth,
+                                                   sessionManager: sessionManager,
                                                    transport: transport)
         let resolvedModules = BetterAuthModuleRegistry.build(configuration: configuration,
                                                              authFeatures: BetterAuthAuthFeatures(sessionLifecycle: auth,
@@ -61,7 +62,7 @@ public struct BetterAuthClient: BetterAuthModuleSupporting, Sendable {
                                                              requestsPerformer: baseRequests,
                                                              requestPerformerFactory: { hooks in
                                                                  BetterAuthRequestClient(configuration: configuration,
-                                                                                         sessionManager: auth,
+                                                                                         sessionManager: sessionManager,
                                                                                          transport: transport,
                                                                                          requestHooks: hooks)
                                                              },
@@ -71,12 +72,12 @@ public struct BetterAuthClient: BetterAuthModuleSupporting, Sendable {
             self.requests = baseRequests
         } else {
             self.requests = BetterAuthRequestClient(configuration: configuration,
-                                                    sessionManager: auth,
+                                                    sessionManager: sessionManager,
                                                     transport: transport,
                                                     requestHooks: resolvedModules.registeredRequestHooks)
         }
         self.authStateListenerRegistrations = resolvedModules.registeredAuthStateListeners.map { listener in
-            auth.onAuthStateChange.on { change in
+            sessionManager.onAuthStateChange.on { change in
                 await listener.authStateDidChange(change)
             }
         }

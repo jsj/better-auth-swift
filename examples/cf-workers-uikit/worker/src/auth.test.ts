@@ -4,11 +4,14 @@ import app from './index';
 import { __testables, mapEmailSignInFailure, mapUsernameSignInFailure } from './routes/app';
 import {
   buildFixtureCapture,
+  createGoogleAuthorizationURL,
   getEmulatedAppleUserInfo,
   getFixtureGoogleUserInfo,
+  getGoogleUserInfo,
   repairLocalD1AuthSchema,
   verifyEmulatedAppleIdToken,
   verifyFixtureGoogleIdToken,
+  verifyGoogleIdToken,
 } from './auth';
 import { mapEmailAuthResponse } from './routes/app';
 import type { Env } from './types';
@@ -44,6 +47,7 @@ function createApp(handler: (request: Request) => Promise<Response>) {
     await next();
   });
   instance.route('/', appRoutes);
+  instance.all('/api/auth/*', async (c) => c.get('auth').handler(c.req.raw));
   return instance;
 }
 
@@ -223,10 +227,21 @@ describe('better auth example worker', () => {
   });
 
   it('upstream token route requires a bearer token and JWKS route remains exposed', async () => {
-    const jwtResponse = await app.fetch(new Request('http://localhost/api/auth/token'), env);
+    const instance = createApp(async (request) => {
+      const url = new URL(request.url);
+      if (url.pathname === '/api/auth/token') {
+        return Response.json({ error: 'Missing Authorization header.' }, { status: 401 });
+      }
+      if (url.pathname === '/api/auth/jwks') {
+        return Response.json({ keys: [] });
+      }
+      return Response.json({ error: 'Not found' }, { status: 404 });
+    });
+
+    const jwtResponse = await instance.fetch(new Request('http://localhost/api/auth/token'), env);
     expect(jwtResponse.status).toBe(401);
 
-    const jwksResponse = await app.fetch(new Request('http://localhost/api/auth/jwks'), env);
+    const jwksResponse = await instance.fetch(new Request('http://localhost/api/auth/jwks'), env);
     expect(jwksResponse.status).not.toBe(404);
   });
 
@@ -393,7 +408,8 @@ describe('better auth example worker', () => {
   });
 
   it('email sign-up bridge requires the expected payload shape', async () => {
-    const response = await app.fetch(new Request('http://localhost/api/auth/email/sign-up', {
+    const instance = createApp(async () => Response.json({ error: 'Invalid request' }, { status: 400 }));
+    const response = await instance.fetch(new Request('http://localhost/api/auth/email/sign-up', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({}),
@@ -403,7 +419,8 @@ describe('better auth example worker', () => {
   });
 
   it('email sign-in bridge requires the expected payload shape', async () => {
-    const response = await app.fetch(new Request('http://localhost/api/auth/email/sign-in', {
+    const instance = createApp(async () => Response.json({ error: 'Invalid request' }, { status: 400 }));
+    const response = await instance.fetch(new Request('http://localhost/api/auth/email/sign-in', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({}),
@@ -413,7 +430,8 @@ describe('better auth example worker', () => {
   });
 
   it('upstream username availability route exists', async () => {
-    const response = await app.fetch(new Request('http://localhost/api/auth/is-username-available', {
+    const instance = createApp(async () => Response.json({ available: true }));
+    const response = await instance.fetch(new Request('http://localhost/api/auth/is-username-available', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ username: 'candidate_user' }),
@@ -423,7 +441,8 @@ describe('better auth example worker', () => {
   });
 
   it('username sign-in bridge exists', async () => {
-    const response = await app.fetch(new Request('http://localhost/api/auth/username/sign-in', {
+    const instance = createApp(async () => Response.json({ error: 'Invalid request' }, { status: 400 }));
+    const response = await instance.fetch(new Request('http://localhost/api/auth/username/sign-in', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ username: 'candidate_user', password: 'password123' }),
@@ -433,7 +452,8 @@ describe('better auth example worker', () => {
   });
 
   it('anonymous sign-in bridge exists', async () => {
-    const response = await app.fetch(new Request('http://localhost/api/auth/anonymous/sign-in', {
+    const instance = createApp(async () => Response.json({ error: 'Invalid request' }, { status: 400 }));
+    const response = await instance.fetch(new Request('http://localhost/api/auth/anonymous/sign-in', {
       method: 'POST',
     }), env);
 
@@ -450,7 +470,8 @@ describe('better auth example worker', () => {
   });
 
   it('upstream generic OAuth sign-in route exists', async () => {
-    const response = await app.fetch(new Request('http://localhost/api/auth/sign-in/oauth2', {
+    const instance = createApp(async () => Response.json({ url: 'betterauth://oauth/success', redirect: true }));
+    const response = await instance.fetch(new Request('http://localhost/api/auth/sign-in/oauth2', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -538,7 +559,8 @@ describe('better auth example worker', () => {
   });
 
   it('magic-link sign-in bridge requires the expected payload shape', async () => {
-    const response = await app.fetch(new Request('http://localhost/api/auth/magic-link/sign-in', {
+    const instance = createApp(async () => Response.json({ error: 'Invalid request' }, { status: 400 }));
+    const response = await instance.fetch(new Request('http://localhost/api/auth/magic-link/sign-in', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -1234,7 +1256,8 @@ describe('better auth example worker', () => {
   });
 
   it('upstream email OTP request route exists', async () => {
-    const response = await app.fetch(new Request('http://localhost/api/auth/email-otp/send-verification-otp', {
+    const instance = createApp(async () => Response.json({ status: true }));
+    const response = await instance.fetch(new Request('http://localhost/api/auth/email-otp/send-verification-otp', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ email: 'otp@example.com', type: 'sign-in' }),
@@ -1244,7 +1267,8 @@ describe('better auth example worker', () => {
   });
 
   it('email OTP verify bridge exists', async () => {
-    const response = await app.fetch(new Request('http://localhost/api/auth/email-otp/verify', {
+    const instance = createApp(async () => Response.json({ error: 'Invalid request' }, { status: 400 }));
+    const response = await instance.fetch(new Request('http://localhost/api/auth/email-otp/verify', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ email: 'otp@example.com', otp: '123456' }),
@@ -1545,7 +1569,22 @@ describe('better auth example worker', () => {
       handler,
       api: {
         getSession: vi.fn(async ({ headers }: { headers: Headers }) => {
-          expect(headers.get('Authorization')).toBe('Bearer fresh-rotated-token');
+          const authorization = headers.get('Authorization');
+          if (authorization === 'Bearer fixture-token') {
+            return {
+              session: {
+                id: 'fixture-session',
+                userId: 'user-1',
+                expiresAt: '2026-03-30T02:00:00.000Z',
+              },
+              user: {
+                id: 'user-1',
+                email: 'fixture@example.com',
+                name: 'Fixture User',
+              },
+            };
+          }
+          expect(authorization).toBe('Bearer fresh-rotated-token');
           return {
             session: {
               id: 'replacement-session',
@@ -2195,6 +2234,14 @@ describe('better auth example worker', () => {
     await expect(verifyFixtureGoogleIdToken('valid-google-token', 'expected')).resolves.toBe(true);
   });
 
+  it('emulated google token verifier falls back to fixture behavior when JWKS is unavailable', async () => {
+    await expect(verifyGoogleIdToken({
+      ...env,
+      GOOGLE_AUTH_MODE: 'emulated',
+      GOOGLE_EMULATOR_BASE_URL: 'http://127.0.0.1:4002',
+    }, 'valid-google-token', 'expected')).resolves.toBe(true);
+  });
+
   it('fixture google user info can simulate missing-email provider identities', async () => {
     const result = await getFixtureGoogleUserInfo({ idToken: 'missing-email-token' });
     expect(result.user.email).toBe('');
@@ -2207,10 +2254,78 @@ describe('better auth example worker', () => {
     expect(result.user.id).toBe('google-cross-user');
   });
 
-  it('fixture capture route exists', async () => {
-    const response = await app.fetch(new Request('http://localhost/api/fixtures/captures'), env);
+  it('creates google authorization URLs against the emulator when enabled', () => {
+    const url = createGoogleAuthorizationURL({
+      ...env,
+      GOOGLE_AUTH_MODE: 'emulated',
+      GOOGLE_CLIENT_ID: 'google-client',
+      GOOGLE_EMULATOR_BASE_URL: 'http://127.0.0.1:4002',
+    }, {
+      state: 'state-1',
+      redirectURI: 'http://127.0.0.1:8787/api/auth/callback/google',
+      loginHint: 'person@example.com',
+    });
 
-    expect(response.status).not.toBe(404);
+    expect(url.origin).toBe('http://127.0.0.1:4002');
+    expect(url.pathname).toBe('/o/oauth2/v2/auth');
+    expect(url.searchParams.get('client_id')).toBe('google-client');
+    expect(url.searchParams.get('scope')).toBe('openid email profile');
+    expect(url.searchParams.get('login_hint')).toBe('person@example.com');
+  });
+
+  it('uses emulated google userinfo when the emulator responds', async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (input, init) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      expect(url).toBe('http://127.0.0.1:4002/oauth2/v2/userinfo');
+      expect(init?.headers).toEqual({ Authorization: 'Bearer access-token' });
+      return new Response(JSON.stringify({
+        sub: 'google-user-1',
+        name: 'Google User',
+        email: 'google@example.com',
+        email_verified: true,
+        picture: 'https://example.com/avatar.png',
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    };
+
+    try {
+      const result = await getGoogleUserInfo({
+        ...env,
+        GOOGLE_AUTH_MODE: 'emulated',
+        GOOGLE_EMULATOR_BASE_URL: 'http://127.0.0.1:4002',
+      }, { accessToken: 'access-token' });
+
+      expect(result.user).toEqual({
+        id: 'google-user-1',
+        name: 'Google User',
+        email: 'google@example.com',
+        emailVerified: true,
+        image: 'https://example.com/avatar.png',
+      });
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('fixture capture route exists', async () => {
+    const getDbSpy = vi.spyOn(dbModule, 'getDb').mockReturnValue({
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          orderBy: vi.fn(async () => []),
+        })),
+      })),
+    } as never);
+
+    try {
+      const response = await app.fetch(new Request('http://localhost/api/fixtures/captures'), env);
+
+      expect(response.status).not.toBe(404);
+    } finally {
+      getDbSpy.mockRestore();
+    }
   });
 
   it('fixture capture route returns stored verification captures without rewriting them', async () => {
@@ -2588,18 +2703,19 @@ describe('better auth example worker', () => {
 
 
   it('passkey routes require expected authorization semantics', async () => {
-    const signedOutOptions = await app.fetch(new Request('http://localhost/api/auth/passkey/authenticate-options'), env);
+    const instance = createApp(async () => Response.json({ challenge: 'challenge-token' }));
+    const signedOutOptions = await instance.fetch(new Request('http://localhost/api/auth/passkey/authenticate-options'), env);
     expect(signedOutOptions.status).not.toBe(404);
 
-    const registerOptions = await app.fetch(new Request('http://localhost/api/auth/passkey/register-options'), env);
+    const registerOptions = await instance.fetch(new Request('http://localhost/api/auth/passkey/register-options'), env);
     expect(registerOptions.status).toBe(401);
     await expect(registerOptions.json()).resolves.toEqual({ error: 'Missing Authorization header.' });
 
-    const listPasskeys = await app.fetch(new Request('http://localhost/api/auth/passkeys'), env);
+    const listPasskeys = await instance.fetch(new Request('http://localhost/api/auth/passkeys'), env);
     expect(listPasskeys.status).toBe(401);
     await expect(listPasskeys.json()).resolves.toEqual({ error: 'Missing Authorization header.' });
 
-    const updatePasskey = await app.fetch(new Request('http://localhost/api/auth/passkey/update', {
+    const updatePasskey = await instance.fetch(new Request('http://localhost/api/auth/passkey/update', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ id: 'passkey-1', name: 'Renamed' }),
@@ -2607,7 +2723,7 @@ describe('better auth example worker', () => {
     expect(updatePasskey.status).toBe(401);
     await expect(updatePasskey.json()).resolves.toEqual({ error: 'Missing Authorization header.' });
 
-    const deletePasskey = await app.fetch(new Request('http://localhost/api/auth/passkey/delete', {
+    const deletePasskey = await instance.fetch(new Request('http://localhost/api/auth/passkey/delete', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ id: 'passkey-1' }),

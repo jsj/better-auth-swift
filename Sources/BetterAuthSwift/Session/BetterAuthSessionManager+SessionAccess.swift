@@ -1,6 +1,6 @@
 import Foundation
 
-public extension BetterAuthSessionManager {
+extension BetterAuthSessionManager {
     // MARK: - Session Access
 
     /// Loads the persisted session from the session store through the session actor.

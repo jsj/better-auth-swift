@@ -93,12 +93,12 @@ struct AuthNetworkClient {
 
 extension AuthNetworkClient: BetterAuthTransporting {}
 
-enum BetterAuthHTTPStatusValidation: Sendable, Equatable {
+enum BetterAuthHTTPStatusValidation: Equatable {
     case validateSuccess
     case preserve
 }
 
-struct BetterAuthHTTPPipeline: Sendable {
+struct BetterAuthHTTPPipeline {
     let transport: BetterAuthTransport
 
     func executeDecoding<Response: Decodable>(_ request: URLRequest,

@@ -100,18 +100,21 @@ public extension BetterAuthConfiguration {
 
     struct SessionStorage: Sendable {
         public let key: String
+        public let migrationKeys: [String]
         public let service: String
         public let accessGroup: String?
         public let accessibility: KeychainSessionStore.Accessibility
         public let synchronizable: Bool
 
         public init(key: String = "better-auth.session",
+                    migrationKeys: [String] = [],
                     service: String = "BetterAuth",
                     accessGroup: String? = nil,
                     accessibility: KeychainSessionStore.Accessibility = .afterFirstUnlock,
                     synchronizable: Bool = false)
         {
             self.key = key
+            self.migrationKeys = migrationKeys.filter { $0 != key }
             self.service = service
             self.accessGroup = accessGroup
             self.accessibility = accessibility
@@ -119,12 +122,14 @@ public extension BetterAuthConfiguration {
         }
 
         public static func shared(key: String = "better-auth.session",
+                                  migrationKeys: [String] = [],
                                   service: String = "BetterAuth",
                                   accessGroup: String,
                                   accessibility: KeychainSessionStore.Accessibility = .afterFirstUnlock,
                                   synchronizable: Bool = false) -> Self
         {
             .init(key: key,
+                  migrationKeys: migrationKeys,
                   service: service,
                   accessGroup: accessGroup,
                   accessibility: accessibility,

@@ -80,7 +80,7 @@ struct BetterAuthSessionResultHandler {
     }
 }
 
-enum BetterAuthSessionOutcome: Sendable {
+enum BetterAuthSessionOutcome {
     case signedIn(BetterAuthSession)
     case refreshed(BetterAuthSession)
     case token(token: String, fallbackUser: BetterAuthSession.User)
@@ -89,7 +89,7 @@ enum BetterAuthSessionOutcome: Sendable {
     case none
 }
 
-enum BetterAuthSessionOutcomeResult: Sendable, Equatable {
+enum BetterAuthSessionOutcomeResult: Equatable {
     case signedIn(BetterAuthSession)
     case updated(BetterAuthSession)
     case unchanged
@@ -273,11 +273,14 @@ struct BetterAuthSessionAdministrationService {
     func signOut(remotely: Bool, accessToken: String?) async throws {
         if remotely, accessToken != nil {
             _ = try await context.network.post(path: context.configuration.endpoints.session.signOutPath,
+                                               body: EmptyAuthRequest(),
                                                accessToken: accessToken) as SignOutResponse
         }
         try relay.clearSession(event: .signedOut)
     }
 }
+
+struct EmptyAuthRequest: Encodable {}
 
 struct BetterAuthPasskeyService {
     let context: BetterAuthSessionContext

@@ -10,9 +10,31 @@ import { passkey } from '@better-auth/passkey';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { withCloudflare } from 'better-auth-cloudflare';
 import { drizzle } from 'drizzle-orm/d1';
-import { createRemoteJWKSet, decodeJwt, importPKCS8, jwtVerify, SignJWT } from 'jose';
+import { importPKCS8, SignJWT } from 'jose';
 import type { Env } from './types';
 import { schema } from './db/schema';
+import {
+  createGoogleAuthorizationURL,
+  getEmulatedAppleUserInfo,
+  getFixtureGoogleUserInfo,
+  getGoogleUserInfo,
+  isEmulatedApple,
+  verifyEmulatedAppleIdToken,
+  verifyFixtureGoogleIdToken,
+  verifyGoogleIdToken,
+  type AuthorizationURLInput,
+} from './providerEmulation';
+
+export {
+  createGoogleAuthorizationURL,
+  getAppleAuthBaseURL,
+  getEmulatedAppleUserInfo,
+  getFixtureGoogleUserInfo,
+  getGoogleUserInfo,
+  verifyEmulatedAppleIdToken,
+  verifyFixtureGoogleIdToken,
+  verifyGoogleIdToken,
+} from './providerEmulation';
 
 const applePrivateKeyPlaceholder = 'REPLACE_ME';
 
@@ -138,179 +160,6 @@ export async function generateAppleClientSecret(env: Env) {
     .setExpirationTime(now + 60 * 60)
     .sign(key);
 }
-
-export function getAppleAuthBaseURL(env: Pick<Env, 'APPLE_AUTH_MODE' | 'APPLE_AUTH_PROXY_BASE_URL' | 'APPLE_EMULATOR_BASE_URL'>) {
-  if ((env.APPLE_AUTH_MODE ?? 'real') === 'emulated') {
-    return (env.APPLE_EMULATOR_BASE_URL ?? 'http://127.0.0.1:4010').replace(/\/$/, '');
-  }
-
-  if (env.APPLE_AUTH_PROXY_BASE_URL) {
-    return env.APPLE_AUTH_PROXY_BASE_URL.replace(/\/$/, '');
-  }
-
-  return 'https://appleid.apple.com';
-}
-
-function isEmulatedApple(env: Env) {
-  return (env.APPLE_AUTH_MODE ?? 'real') === 'emulated';
-}
-
-function getEmulatorIssuer(env: Env) {
-  const configured = (env.APPLE_EMULATOR_BASE_URL ?? 'http://127.0.0.1:4010').replace(/\/$/, '');
-  try {
-    const url = new URL(configured);
-    if (url.hostname === '127.0.0.1') {
-      url.hostname = 'localhost';
-    }
-    return url.toString().replace(/\/$/, '');
-  } catch {
-    return configured;
-  }
-}
-
-export async function verifyEmulatedAppleIdToken(
-  env: Env,
-  token: string,
-  nonce?: string,
-) {
-  const issuer = getEmulatorIssuer(env);
-  const jwks = createRemoteJWKSet(new URL('/auth/keys', issuer));
-  const audiences = [env.APPLE_APP_BUNDLE_IDENTIFIER, env.APPLE_CLIENT_ID].filter(
-    (value): value is string => Boolean(value),
-  );
-  try {
-    const { payload } = await jwtVerify(token, jwks, {
-      issuer,
-      audience: audiences.length === 1 ? audiences[0] : audiences,
-    });
-    if (nonce && payload.nonce !== nonce) {
-      return false;
-    }
-
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export function getEmulatedAppleUserInfo(token: {
-  idToken?: string;
-  user?: {
-    email?: string;
-    name?: {
-      firstName?: string;
-      lastName?: string;
-    };
-  };
-}) {
-  if (!token.idToken) {
-    return null;
-  }
-
-  const profile = decodeJwt<Record<string, unknown>>(token.idToken);
-  const firstName = token.user?.name?.firstName ?? '';
-  const lastName = token.user?.name?.lastName ?? '';
-  const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
-  const name = fullName.length === 0 ? String(profile.name ?? ' ') : fullName;
-  const email = token.user?.email ?? String(profile.email ?? '');
-
-  if (!email) {
-    return null;
-  }
-
-  return {
-    user: {
-      id: String(profile.sub ?? ''),
-      name,
-      email,
-      emailVerified: String(profile.email_verified ?? 'false') === 'true' || profile.email_verified === true,
-    },
-    data: profile,
-  };
-}
-
-type GenericProviderToken = {
-  idToken?: string;
-  accessToken?: string;
-  refreshToken?: string;
-  user?: {
-    email?: string;
-    name?: string;
-    image?: string;
-    emailVerified?: boolean;
-    id?: string;
-  };
-};
-
-export async function verifyFixtureGoogleIdToken(_token: string, nonce?: string) {
-  return nonce !== 'mismatch';
-}
-
-export async function getFixtureGoogleUserInfo(token: GenericProviderToken) {
-  if (token.idToken === 'missing-email-token') {
-    return {
-      user: {
-        id: 'google-missing-email',
-        name: 'Missing Email User',
-        email: '',
-        emailVerified: true,
-      },
-      data: {
-        sub: 'google-missing-email',
-      },
-    };
-  }
-
-  if (token.idToken === 'cross-user-token') {
-    return {
-      user: {
-        id: 'google-cross-user',
-        name: 'Cross User',
-        email: 'other@example.com',
-        emailVerified: true,
-      },
-      data: {
-        sub: 'google-cross-user',
-      },
-    };
-  }
-
-  if (token.idToken === 'existing-link-token') {
-    return {
-      user: {
-        id: 'google-existing',
-        name: 'Existing Link',
-        email: 'linked@example.com',
-        emailVerified: true,
-      },
-      data: {
-        sub: 'google-existing',
-      },
-    };
-  }
-
-  return {
-    user: {
-      id: token.user?.id ?? 'google-fixture-user',
-      name: token.user?.name ?? 'Fixture Google User',
-      email: token.user?.email ?? 'linked@example.com',
-      emailVerified: token.user?.emailVerified ?? true,
-      image: token.user?.image,
-    },
-    data: {
-      sub: token.user?.id ?? 'google-fixture-user',
-      email: token.user?.email ?? 'linked@example.com',
-      email_verified: token.user?.emailVerified ?? true,
-    },
-  };
-}
-
-type AuthorizationURLInput = {
-  state: string;
-  redirectURI: string;
-  scopes?: string[];
-  loginHint?: string;
-};
 
 export async function createAuth(env: Env, cf?: IncomingRequestCfProperties) {
   const db = drizzle(env.DB, { schema });
@@ -542,21 +391,12 @@ export function createAuthInstance({
               : undefined,
           },
           google: {
-            clientId: 'fixture-google-client-id',
-            clientSecret: 'fixture-google-client-secret',
-            verifyIdToken: verifyFixtureGoogleIdToken,
-            getUserInfo: getFixtureGoogleUserInfo,
+            clientId: env.GOOGLE_CLIENT_ID ?? 'fixture-google-client-id',
+            clientSecret: env.GOOGLE_CLIENT_SECRET ?? 'fixture-google-client-secret',
+            verifyIdToken: (token, nonce) => verifyGoogleIdToken(env, token, nonce),
+            getUserInfo: (token) => getGoogleUserInfo(env, token),
             async createAuthorizationURL({ state, redirectURI, scopes, loginHint }: AuthorizationURLInput) {
-              const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-              url.searchParams.set('client_id', 'fixture-google-client-id');
-              url.searchParams.set('redirect_uri', redirectURI);
-              url.searchParams.set('response_type', 'code');
-              url.searchParams.set('scope', (scopes?.length ? scopes : ['openid', 'email', 'profile']).join(' '));
-              url.searchParams.set('state', state);
-              if (loginHint) {
-                url.searchParams.set('login_hint', loginHint);
-              }
-              return url;
+              return createGoogleAuthorizationURL(env, { state, redirectURI, scopes, loginHint });
             },
           },
           github: {
@@ -657,6 +497,16 @@ const requiredTables: TableDefinition[] = [
       'CREATE UNIQUE INDEX IF NOT EXISTS "user_phone_number_unique" ON "user" ("phone_number")',
       'CREATE UNIQUE INDEX IF NOT EXISTS "user_username_unique" ON "user" ("username")',
     ],
+  },
+  {
+    name: 'jwks',
+    createSQL: `CREATE TABLE IF NOT EXISTS "jwks" (
+  "id" TEXT PRIMARY KEY NOT NULL,
+  "public_key" TEXT NOT NULL,
+  "private_key" TEXT NOT NULL,
+  "created_at" INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)),
+  "expires_at" INTEGER
+)`,
   },
 ];
 
@@ -789,4 +639,3 @@ const auth = createAuthInstance({
 });
 
 export default auth;
-

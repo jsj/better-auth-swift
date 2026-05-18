@@ -10,6 +10,10 @@ export interface Env {
   APPLE_PRIVATE_KEY: string;
   APPLE_EMULATOR_BASE_URL?: string;
   APPLE_AUTH_PROXY_BASE_URL?: string;
+  GOOGLE_AUTH_MODE?: 'fixture' | 'emulated';
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
+  GOOGLE_EMULATOR_BASE_URL?: string;
   TRUSTED_ORIGIN: string;
   FIXTURE_CAPTURE_SECRET?: string;
   EMAIL_OTP_DISABLE_SIGN_UP?: string;

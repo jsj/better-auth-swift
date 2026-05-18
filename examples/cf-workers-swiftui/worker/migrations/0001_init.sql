@@ -87,9 +87,16 @@ CREATE TABLE IF NOT EXISTS two_factor (
 CREATE INDEX IF NOT EXISTS twoFactor_secret_idx ON two_factor (secret);
 CREATE INDEX IF NOT EXISTS twoFactor_userId_idx ON two_factor (user_id);
 
+CREATE TABLE IF NOT EXISTS jwks (
+  id TEXT PRIMARY KEY NOT NULL,
+  public_key TEXT NOT NULL,
+  private_key TEXT NOT NULL,
+  created_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)),
+  expires_at INTEGER
+);
+
 CREATE TABLE IF NOT EXISTS profiles (
   id TEXT PRIMARY KEY NOT NULL,
   email TEXT NOT NULL,
   created_at INTEGER NOT NULL
 );
-

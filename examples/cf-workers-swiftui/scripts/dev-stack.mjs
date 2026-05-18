@@ -8,59 +8,132 @@ import { fileURLToPath } from 'node:url';
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const exampleDir = path.resolve(scriptDir, '..');
 const workerDir = path.join(exampleDir, 'worker');
-const workerURL = 'http://127.0.0.1:8787/health';
-const emulatorURL = 'http://127.0.0.1:4010/.well-known/openid-configuration';
-const tunnelURL = 'http://127.0.0.1:8787';
+const workerPort = process.env.WORKER_PORT ?? '8787';
+const appleEmulatorPort = process.env.APPLE_EMULATOR_PORT ?? '4010';
+const googleEmulatorPort = process.env.GOOGLE_EMULATOR_PORT ?? '4002';
+const workerBaseURL = `http://127.0.0.1:${workerPort}`;
+const appleEmulatorBaseURL = `http://127.0.0.1:${appleEmulatorPort}`;
+const googleEmulatorBaseURL = `http://127.0.0.1:${googleEmulatorPort}`;
+const workerURL = `${workerBaseURL}/health`;
+const appleEmulatorURL = `${appleEmulatorBaseURL}/auth/keys`;
+const googleEmulatorURL = `${googleEmulatorBaseURL}/.well-known/openid-configuration`;
+const googleWorkspaceEmulatorURL = `${googleEmulatorBaseURL}/$discovery/rest?version=v1&service=drive`;
+const tunnelURL = workerBaseURL;
+const defaultApiEmulatorRepo = '/Users/james/Developer/zzabandoned/api-emulator';
+const defaultApiEmulatorRegistry = '/Users/james/Developer/zmirror/api-emulator-registry';
 
 const args = new Set(process.argv.slice(2));
 const wantsTunnel = args.has('--cloudflared');
 const statusOnly = args.has('--status');
 
-const emulatorRepo = process.env.APPLE_API_EMULATOR_REPO ?? process.env.APPLE_EMULATOR_REPO;
+const emulatorRepo = process.env.API_EMULATOR_REPO
+  ?? process.env.APPLE_API_EMULATOR_REPO
+  ?? process.env.APPLE_EMULATOR_REPO
+  ?? (existsSync(defaultApiEmulatorRepo) ? defaultApiEmulatorRepo : undefined);
 const emulatorRepoEntry = emulatorRepo
   ? path.join(emulatorRepo, 'packages', 'emulate', 'dist', 'index.js')
   : null;
+const emulatorCli = process.env.API_EMULATOR_CLI
+  ?? (emulatorRepo ? path.join(emulatorRepo, 'packages', 'api-emulator', 'dist', 'index.js') : null);
+const emulatorRegistry = process.env.API_EMULATOR_REGISTRY
+  ?? (existsSync(defaultApiEmulatorRegistry) ? defaultApiEmulatorRegistry : undefined);
 const localApiEmulatorBin = path.join(exampleDir, 'node_modules', '.bin', 'api-emulator');
 const canUseInstalledApiEmulator = existsSync(localApiEmulatorBin);
 const canUseRepoEntry = emulatorRepoEntry ? existsSync(emulatorRepoEntry) : false;
+const canUseEmulatorCli = emulatorCli ? existsSync(emulatorCli) : false;
+const wranglerPersistTo = process.env.WRANGLER_PERSIST_TO;
 
 function log(message) {
   process.stdout.write(`${message}\n`);
 }
 
-function buildEmulatorService() {
+function getPluginPath(service) {
+  const envKey = `${service.toUpperCase()}_API_EMULATOR_PLUGIN`;
+  const candidates = [
+    process.env[envKey],
+    emulatorRegistry ? path.join(emulatorRegistry, `@${service}`, 'api-emulator', 'dist', 'index.js') : null,
+    emulatorRegistry ? path.join(emulatorRegistry, `@${service}`, 'api-emulator.mjs') : null,
+  ];
+  return candidates.find((candidate) => candidate && existsSync(candidate)) ?? null;
+}
+
+function buildEmulatorService({ name, service, port, healthURL }) {
+  const pluginPath = getPluginPath(service);
+  const resolvedHealthURL = service === 'google' && pluginPath?.endsWith('/api-emulator.mjs')
+    ? googleWorkspaceEmulatorURL
+    : healthURL;
+
+  if (canUseEmulatorCli && pluginPath) {
+    return {
+      name,
+      command: 'node',
+      args: [emulatorCli, 'start', '--service', service, '--port', port, '--plugin', pluginPath],
+      healthURL: resolvedHealthURL,
+      source: `${emulatorCli} + ${pluginPath}`,
+    };
+  }
+
   if (canUseInstalledApiEmulator) {
     return {
-      name: 'apple-emulator',
+      name,
       command: localApiEmulatorBin,
-      args: ['--service', 'apple', '--port', '4010'],
-      healthURL: emulatorURL,
+      args: ['--service', service, '--port', port],
+      healthURL: resolvedHealthURL,
+      source: localApiEmulatorBin,
     };
   }
 
   if (canUseRepoEntry) {
     return {
-      name: 'apple-emulator',
+      name,
       command: 'node',
-      args: [emulatorRepoEntry, '--service', 'apple', '--port', '4010'],
-      healthURL: emulatorURL,
+      args: [emulatorRepoEntry, '--service', service, '--port', port],
+      healthURL: resolvedHealthURL,
+      source: emulatorRepoEntry,
     };
   }
 
   const guidance = [
-    'Apple emulator dependency is not available.',
+    `${service} emulator dependency is not available.`,
+    `Expected local CLI: ${emulatorCli ?? '(unset)'}`,
+    `Expected ${service} plugin: ${pluginPath ?? path.join(emulatorRegistry ?? '(unset)', `@${service}`, 'api-emulator.mjs')}`,
     `Install it with: npm --prefix "${exampleDir}" install`,
-    'Or set APPLE_API_EMULATOR_REPO=/path/to/api-emulator',
+    'Or set API_EMULATOR_REPO=/path/to/api-emulator and API_EMULATOR_REGISTRY=/path/to/api-emulator-registry',
   ].join('\n');
   throw new Error(guidance);
 }
 
 const services = [
-  buildEmulatorService(),
+  buildEmulatorService({
+    name: 'apple-emulator',
+    service: 'apple',
+    port: appleEmulatorPort,
+    healthURL: appleEmulatorURL,
+  }),
+  buildEmulatorService({
+    name: 'google-emulator',
+    service: 'google',
+    port: googleEmulatorPort,
+    healthURL: googleEmulatorURL,
+  }),
   {
     name: 'worker',
     command: 'npm',
-    args: ['run', 'dev', '--', '--port', '8787'],
+    args: [
+      'run',
+      'dev',
+      '--',
+      '--port',
+      workerPort,
+      '--var',
+      `BETTER_AUTH_URL:${workerBaseURL}`,
+      '--var',
+      `TRUSTED_ORIGIN:${workerBaseURL}`,
+      '--var',
+      `APPLE_EMULATOR_BASE_URL:${appleEmulatorBaseURL}`,
+      '--var',
+      `GOOGLE_EMULATOR_BASE_URL:${googleEmulatorBaseURL}`,
+    ].concat(wranglerPersistTo ? ['--persist-to', wranglerPersistTo] : []),
     cwd: workerDir,
     healthURL: workerURL,
   },
@@ -87,15 +160,14 @@ async function checkHealth(url) {
 }
 
 async function printStatus() {
-  const [emulatorHealthy, workerHealthy] = await Promise.all([
-    checkHealth(emulatorURL),
-    checkHealth(workerURL),
-  ]);
-
-  log(`apple-emulator: ${emulatorHealthy ? 'up' : 'down'} (${emulatorURL})`);
-  log(`worker: ${workerHealthy ? 'up' : 'down'} (${workerURL})`);
+  for (const service of services.filter((service) => service.healthURL)) {
+    const healthy = await checkHealth(service.healthURL);
+    log(`${service.name}: ${healthy ? 'up' : 'down'} (${service.healthURL})`);
+  }
   log(`cloudflared: ${wantsTunnel ? 'managed by this wrapper when started with --cloudflared' : 'not requested'}`);
-  log(`api-emulator source: ${canUseInstalledApiEmulator ? 'npm dependency' : canUseRepoEntry ? emulatorRepoEntry : 'missing'}`);
+  for (const service of services.filter((service) => service.name.endsWith('-emulator'))) {
+    log(`${service.name} source: ${service.source ?? 'missing'}`);
+  }
 }
 
 function attachOutput(child, name) {
@@ -124,7 +196,7 @@ function spawnService(service) {
   children.push(child);
 }
 
-async function waitForHealth(service, timeoutMs = 20_000) {
+async function waitForHealth(service, timeoutMs = 60_000) {
   if (!service.healthURL) return true;
 
   const deadline = Date.now() + timeoutMs;

@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Swift Package
+    runs-on: macos-latest
+    env:
+      BETTER_AUTH_CONTRACT_BASE_URL: ${{ secrets.BETTER_AUTH_CONTRACT_BASE_URL }}
+      BETTER_AUTH_CONTRACT_EMAIL: ${{ secrets.BETTER_AUTH_CONTRACT_EMAIL }}
+      BETTER_AUTH_CONTRACT_PASSWORD: ${{ secrets.BETTER_AUTH_CONTRACT_PASSWORD }}
+      BETTER_AUTH_CONTRACT_USERNAME: ${{ secrets.BETTER_AUTH_CONTRACT_USERNAME }}
+      BETTER_AUTH_CONTRACT_USERNAME_PASSWORD: ${{ secrets.BETTER_AUTH_CONTRACT_USERNAME_PASSWORD }}
+      BETTER_AUTH_CONTRACT_EXPECT_JWKS: ${{ secrets.BETTER_AUTH_CONTRACT_EXPECT_JWKS }}
+      BETTER_AUTH_CONTRACT_SUPPORTS_ANONYMOUS: ${{ secrets.BETTER_AUTH_CONTRACT_SUPPORTS_ANONYMOUS }}
+      BETTER_AUTH_CONTRACT_PROVISION_WITH_FIXTURES: ${{ secrets.BETTER_AUTH_CONTRACT_PROVISION_WITH_FIXTURES }}
+      BETTER_AUTH_CONTRACT_FIXTURE_CAPTURE_URL: ${{ secrets.BETTER_AUTH_CONTRACT_FIXTURE_CAPTURE_URL }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            examples/cf-workers-swiftui/worker/package-lock.json
+            examples/cf-workers-uikit/worker/package-lock.json
+
+      - name: Install release tools
+        run: brew install swiftformat swiftlint
+
+      - name: Install worker dependencies
+        run: |
+          npm ci --prefix examples/cf-workers-swiftui/worker
+          npm ci --prefix examples/cf-workers-uikit/worker
+
+      - name: Typecheck example workers
+        run: |
+          npm --prefix examples/cf-workers-swiftui/worker run typecheck
+          npm --prefix examples/cf-workers-uikit/worker run typecheck
+
+      - name: Run OAuth example E2E
+        run: npm --prefix examples/cf-workers-swiftui run e2e:oauth
+
+      - name: Run release verifier
+        run: Scripts/verify_release.sh
+
+      - name: Run local live contracts
+        run: Scripts/run_local_contracts.sh

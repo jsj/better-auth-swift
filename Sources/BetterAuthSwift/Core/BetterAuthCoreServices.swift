@@ -23,7 +23,18 @@ struct BetterAuthSessionService: BetterAuthSessionStoring {
     let sessionStore: BetterAuthSessionStore
 
     func loadStoredSession() throws -> BetterAuthSession? {
-        try sessionStore.loadSession(for: configuration.storage.key)
+        if let session = try sessionStore.loadSession(for: configuration.storage.key) {
+            return session
+        }
+
+        for migrationKey in configuration.storage.migrationKeys {
+            guard let session = try sessionStore.loadSession(for: migrationKey) else { continue }
+            try sessionStore.saveSession(session, for: configuration.storage.key)
+            try sessionStore.clearSession(for: migrationKey)
+            return session
+        }
+
+        return nil
     }
 
     func persist(_ session: BetterAuthSession?) throws {

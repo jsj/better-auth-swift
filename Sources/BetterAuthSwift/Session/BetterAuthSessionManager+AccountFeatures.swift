@@ -1,6 +1,6 @@
 import Foundation
 
-public extension BetterAuthSessionManager {
+extension BetterAuthSessionManager {
     // MARK: - JWT
 
     func getSessionJWT() async throws -> BetterAuthJWT {

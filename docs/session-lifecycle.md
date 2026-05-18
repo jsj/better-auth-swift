@@ -99,7 +99,7 @@ Use `revokeSession(token:)`, `setActiveDeviceSession(_:)`, and `revokeDeviceSess
 ## Incoming URLs
 
 ```swift
-let parsed = client.auth.parseIncomingURL(url)
+let parsed = await client.auth.parseIncomingURL(url)
 let handled = try await client.auth.handleIncomingURL(url)
 ```
 

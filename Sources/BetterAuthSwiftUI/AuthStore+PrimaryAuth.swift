@@ -62,7 +62,9 @@ public extension AuthStore {
 
     @discardableResult
     func signInWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult {
-        try await performThrowing(status: "Social sign-in initiated") { try await primaryAuth.signInWithSocial(payload) }
+        try await performThrowing(status: "Social sign-in initiated") {
+            try await primaryAuth.signInWithSocial(payload)
+        }
     }
 
     @discardableResult

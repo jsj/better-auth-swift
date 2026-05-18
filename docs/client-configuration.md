@@ -71,6 +71,7 @@ The root URL for your Better Auth backend.
 Controls how sessions are stored locally.
 
 - `key`: storage key used for the session payload
+- `migrationKeys`: optional previous storage keys to read once and migrate into `key`
 - `service`: Keychain service name
 - `accessGroup`: optional shared Keychain group
 - `accessibility`: Keychain accessibility level

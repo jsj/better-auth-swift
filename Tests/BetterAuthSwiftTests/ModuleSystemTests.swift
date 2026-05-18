@@ -51,7 +51,7 @@ struct ModuleSystemTests {
     }
 
     @Test
-    func clientAuthSessionLifecycleUsesSessionManagerDirectly() throws {
+    func clientAuthSessionLifecycleUsesPublicAuthFacade() async throws {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
@@ -60,7 +60,15 @@ struct ModuleSystemTests {
                              })
 
         let lifecycle = client.authSessionLifecycle
-        #expect(type(of: lifecycle) == BetterAuthSessionManager.self)
+        #expect(type(of: lifecycle) == BetterAuthAuthClient.self)
+
+        let session = BetterAuthSession(session: .init(id: "session-1",
+                                                       userId: "user-1",
+                                                       accessToken: "token-1"),
+                                        user: .init(id: "user-1", email: "test@example.com"))
+        try await client.auth.updateSession(session)
+
+        #expect(await lifecycle.currentSession() == session)
     }
 
     @Test

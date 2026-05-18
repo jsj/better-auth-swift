@@ -224,7 +224,7 @@ struct EmailOtpMagicLinkAndRequestClientTests {
 
         let store = InMemorySessionStore()
         let client =
-            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: URL(string: "https://example.com")!,
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key")),
                              sessionStore: store,
                              transport: SequencedMockTransport([.response(statusCode: 200,
@@ -262,17 +262,18 @@ struct EmailOtpMagicLinkAndRequestClientTests {
 
         let store = InMemorySessionStore()
         let client =
-            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: URL(string: "https://example.com")!,
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key")),
                              sessionStore: store,
                              transport: MockTransport { request in
                                  try expect(request.url?.path == "/api/auth/get-session")
                                  try expect(request.value(forHTTPHeaderField: "Authorization") ==
                                      "Bearer materialized-token")
-                                 return try response(for: request, statusCode: 200, data: encodeJSON(materializedSession))
+                                 return try response(for: request, statusCode: 200,
+                                                     data: encodeJSON(materializedSession))
                              })
-        let sessionResults = BetterAuthSessionResultHandler(relay: await client.auth.makeRelay(),
-                                                            materializer: await client.auth.makeMaterializer())
+        let sessionResults = await BetterAuthSessionResultHandler(relay: client.auth.makeRelay(),
+                                                                  materializer: client.auth.makeMaterializer())
 
         let result = try await sessionResults.apply(.token(token: "materialized-token",
                                                            fallbackUser: .init(id: "user-1",
@@ -298,15 +299,15 @@ struct EmailOtpMagicLinkAndRequestClientTests {
                                                             username: "old_user"))
         let store = InMemorySessionStore()
         let client =
-            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: URL(string: "https://example.com")!,
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key")),
                              sessionStore: store,
                              transport: MockTransport { request in
                                  emptyResponse(for: request)
                              })
         try await client.auth.updateSession(existingSession)
-        let sessionResults = BetterAuthSessionResultHandler(relay: await client.auth.makeRelay(),
-                                                            materializer: await client.auth.makeMaterializer())
+        let sessionResults = await BetterAuthSessionResultHandler(relay: client.auth.makeRelay(),
+                                                                  materializer: client.auth.makeMaterializer())
 
         let updated = try await sessionResults.apply(.updatedUser(.init(id: "user-1",
                                                                         email: "new@example.com",
@@ -314,7 +315,7 @@ struct EmailOtpMagicLinkAndRequestClientTests {
                                                                   currentSession: existingSession))
         let ignored = try await sessionResults.apply(.updatedUser(.init(id: "other-user",
                                                                         email: "other@example.com"),
-                                                                  currentSession: await client.auth.currentSession()))
+                                                                  currentSession: client.auth.currentSession()))
 
         #expect(updated.session?.user.email == "new@example.com")
         #expect(updated.session?.user.username == "old_user")

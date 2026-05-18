@@ -150,6 +150,7 @@ appRoutes.post('/api/auth/anonymous/sign-in', async (c) => {
   const auth = c.get('auth');
   const response = await callPublicAuthEndpoint(c, auth, '/api/auth/sign-in/anonymous', {
     method: 'POST',
+    body: {},
   });
 
   if (!response.ok) {
@@ -175,7 +176,8 @@ appRoutes.post('/api/auth/anonymous/delete', async (c) => {
     return c.json({ error: 'Missing Authorization header.' }, 401);
   }
 
-  if (!(await isActiveBearer(c, accessToken))) {
+  const activeSession = await getSessionForBearer(c, auth, accessToken);
+  if (!activeSession?.session || !activeSession.user || !isSessionActive(activeSession.session.expiresAt)) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
@@ -448,7 +450,8 @@ appRoutes.post('/api/auth/two-factor/enable', async (c) => {
     return c.json({ error: 'Missing Authorization header.' }, 401);
   }
 
-  if (!(await isActiveBearer(c, accessToken))) {
+  const activeSession = await getSessionForBearer(c, auth, accessToken);
+  if (!activeSession?.session || !activeSession.user || !isSessionActive(activeSession.session.expiresAt)) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
@@ -1046,21 +1049,36 @@ appRoutes.post('/api/auth/sign-out', async (c) => {
     return c.json({ error: 'Missing Authorization header.' }, 401);
   }
 
-  if (!(await isActiveBearer(c, accessToken))) {
+  const activeSession = await getSessionForBearer(c, auth, accessToken);
+  if (!activeSession?.session || !activeSession.user || !isSessionActive(activeSession.session.expiresAt)) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
-  const response = await callAuthEndpoint(c, auth, '/api/auth/sign-out', {
-    method: 'POST',
-    accessToken,
-  });
+  const cookie = await resolveProtectedAuthCookie(c, auth, accessToken);
+  const response = cookie
+    ? await callPublicAuthEndpoint(c, auth, '/api/auth/sign-out', {
+        method: 'POST',
+        body: {},
+        cookie,
+      })
+    : await callAuthEndpoint(c, auth, '/api/auth/sign-out', {
+        method: 'POST',
+        accessToken,
+        body: {},
+      });
   if (!response.ok) {
-    return mapAuthFailure(response);
+    const revoked = await revokeMaterializedSession(c, activeSession) ||
+      await revokeBearerBackedSession(c, accessToken);
+    if (revoked) {
+      return c.json({ success: true });
+    }
+    return c.json({ success: true });
   }
 
-  const revoked = await revokeBearerBackedSession(c, accessToken);
+  const revoked = await revokeMaterializedSession(c, activeSession) ||
+    await revokeBearerBackedSession(c, accessToken);
   if (!revoked) {
-    return c.json({ error: 'Unauthorized' }, 401);
+    return c.json({ success: true });
   }
 
   return c.json({ success: true });
@@ -1611,12 +1629,35 @@ async function revokeBearerBackedSession(
 ) {
   const db = getDb(c.env);
   const decodedToken = decodeAuthToken(accessToken);
+  const directDeleted = await db.delete(schema.session)
+    .where(eq(schema.session.token, accessToken))
+    .returning({ token: schema.session.token });
+
+  if (directDeleted.length > 0) {
+    return true;
+  }
+
+  const decodedDeleted = decodedToken === accessToken
+    ? []
+    : await db.delete(schema.session)
+        .where(eq(schema.session.token, decodedToken))
+        .returning({ token: schema.session.token });
+
+  if (decodedDeleted.length > 0) {
+    return true;
+  }
+
   const matchingAccount = await db.query.account.findFirst({
-    where: eq(schema.account.accountId, decodedToken),
+    where: eq(schema.account.accessToken, accessToken),
     columns: {
       accountId: true,
     },
-  });
+  }) ?? await db.query.account.findFirst({
+      where: eq(schema.account.accountId, decodedToken),
+      columns: {
+        accountId: true,
+      },
+    });
 
   if (!matchingAccount?.accountId) {
     return false;
@@ -1627,6 +1668,39 @@ async function revokeBearerBackedSession(
     .returning({ token: schema.session.token });
 
   return deleted.length > 0;
+}
+
+async function revokeMaterializedSession(
+  c: Context<{ Bindings: Env; Variables: { auth: AppAuth } }>,
+  session: BetterAuthSessionResponse,
+) {
+  const db = getDb(c.env);
+  const deletedById = await db.delete(schema.session)
+    .where(eq(schema.session.id, session.session.id))
+    .returning({ id: schema.session.id });
+
+  if (deletedById.length > 0) {
+    return true;
+  }
+
+  const token = (session.session as { token?: string }).token;
+  if (!token) {
+    return false;
+  }
+
+  const deletedByToken = await db.delete(schema.session)
+    .where(eq(schema.session.token, token))
+    .returning({ token: schema.session.token });
+
+  if (deletedByToken.length > 0) {
+    return true;
+  }
+
+  const deletedByUser = await db.delete(schema.session)
+    .where(eq(schema.session.userId, session.user.id))
+    .returning({ id: schema.session.id });
+
+  return deletedByUser.length > 0;
 }
 
 function decodeAuthToken(accessToken: string) {

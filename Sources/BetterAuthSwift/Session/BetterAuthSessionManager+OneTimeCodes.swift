@@ -1,6 +1,6 @@
 import Foundation
 
-public extension BetterAuthSessionManager {
+extension BetterAuthSessionManager {
     // MARK: - Magic Link
 
     @discardableResult

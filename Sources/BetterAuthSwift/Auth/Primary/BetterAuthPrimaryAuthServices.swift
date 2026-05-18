@@ -83,6 +83,7 @@ struct BetterAuthPrimaryAuthService {
     func signInAnonymously() async throws -> BetterAuthSession {
         let response: SignedInTokenResponse = try await context.network
             .post(path: context.configuration.endpoints.auth.anonymousSignInPath,
+                  body: EmptyAuthRequest(),
                   accessToken: nil)
         return try await sessionResults.appliedSession(from: .token(token: response.token, fallbackUser: response.user))
     }
@@ -90,6 +91,7 @@ struct BetterAuthPrimaryAuthService {
     func deleteAnonymousUser(accessToken: String?) async throws -> Bool {
         let response: BetterAuthStatusResponse = try await context.network
             .post(path: context.configuration.endpoints.user.deleteAnonymousUserPath,
+                  body: EmptyAuthRequest(),
                   accessToken: accessToken)
         try relay.clearSession(event: .signedOut)
         return response.status

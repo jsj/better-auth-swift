@@ -24,10 +24,42 @@ Dropping a supported OS, Swift, or Xcode version requires a minor release before
 
 Before tagging a release:
 
-1. Run `swift test --enable-swift-testing`.
-2. Run `swiftformat . --lint --config .swiftformat`.
-3. Run `swiftlint --config .swiftlint.yml --strict`.
-4. Run live contract tests against a Better Auth server when credentials are available:
+1. Run the release verifier:
+
+   ```sh
+   Scripts/verify_release.sh --version vMAJOR.MINOR.PATCH
+   ```
+
+2. For release candidates, require a configured live Better Auth backend:
+
+   ```sh
+   BETTER_AUTH_CONTRACT_BASE_URL="https://auth.example.com" \
+   BETTER_AUTH_CONTRACT_EMAIL="contract-user@example.com" \
+   BETTER_AUTH_CONTRACT_PASSWORD="..." \
+   Scripts/verify_release.sh --version vMAJOR.MINOR.PATCH --require-live-contracts
+   ```
+
+   The verifier runs:
+
+   - `swift build -c release`
+   - `swift test --enable-swift-testing`
+   - public symbol graph guard for the exported `BetterAuth` API surface
+   - `swiftformat . --lint --config .swiftformat`
+   - `swiftlint --config .swiftlint.yml --strict`
+   - live contract tests when Better Auth contract credentials are configured
+
+   The repository also includes a deterministic local fixture backend runner:
+
+   ```sh
+   Scripts/run_local_contracts.sh
+   ```
+
+   This starts the Cloudflare Workers example with a fresh local D1 database,
+   provisions a contract user through the fixture capture endpoint, and runs the
+   live contract suite with email/session lifecycle, JWKS, and anonymous account
+   coverage enabled.
+
+   Live contract tests can also be run directly:
 
    ```sh
    BETTER_AUTH_CONTRACT_BASE_URL="https://auth.example.com" \
@@ -36,4 +68,18 @@ Before tagging a release:
    swift test --enable-swift-testing --filter LiveBetterAuthContractTests
    ```
 
-5. Tag with `vMAJOR.MINOR.PATCH`.
+   Optional contract coverage can be enabled with:
+
+   - `BETTER_AUTH_CONTRACT_USERNAME` and `BETTER_AUTH_CONTRACT_USERNAME_PASSWORD`
+   - `BETTER_AUTH_CONTRACT_EXPECT_JWKS=true`
+   - `BETTER_AUTH_CONTRACT_SUPPORTS_ANONYMOUS=true`
+
+   For the repository's Cloudflare Workers fixture backend, the email/password
+   contract can self-provision its configured user before sign-in:
+
+   - `BETTER_AUTH_CONTRACT_PROVISION_WITH_FIXTURES=true`
+   - `BETTER_AUTH_CONTRACT_FIXTURE_CAPTURE_URL` when the capture endpoint is not
+     `${BETTER_AUTH_CONTRACT_BASE_URL}/api/fixtures/captures`
+
+3. Confirm GitHub Actions is green for the release commit.
+4. Tag with `vMAJOR.MINOR.PATCH`.
