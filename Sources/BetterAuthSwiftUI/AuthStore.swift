@@ -147,7 +147,7 @@ public final class AuthStore {
         }
     }
 
-    func performThrowing<T>(_ operation: () async throws -> T) async throws -> T {
+    func performThrowing<T: Sendable>(_ operation: () async throws -> T) async throws -> T {
         isLoading = true
         defer { isLoading = false }
         do {
@@ -164,7 +164,9 @@ public final class AuthStore {
         }
     }
 
-    func performThrowing<T>(status successStatus: String, _ operation: () async throws -> T) async throws -> T {
+    func performThrowing<T: Sendable>(status successStatus: String,
+                                      _ operation: () async throws -> T) async throws -> T
+    {
         try await performThrowing {
             let result = try await operation()
             statusMessage = successStatus
@@ -172,8 +174,8 @@ public final class AuthStore {
         }
     }
 
-    func performThrowing<T>(status successStatus: (T) -> String,
-                            _ operation: () async throws -> T) async throws -> T
+    func performThrowing<T: Sendable>(status successStatus: (T) -> String,
+                                      _ operation: () async throws -> T) async throws -> T
     {
         try await performThrowing {
             let result = try await operation()
