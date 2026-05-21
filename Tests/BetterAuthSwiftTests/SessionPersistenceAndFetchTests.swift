@@ -168,6 +168,35 @@ struct SessionPersistenceAndFetchTests {
     }
 
     @Test
+    func sessionStorageICloudKeychainFactoryEnablesSyncAndLocalMigration() {
+        let storage = BetterAuthConfiguration.SessionStorage.iCloudKeychain(service: "com.example.auth")
+
+        #expect(storage.service == "com.example.auth")
+        #expect(storage.synchronizable)
+        #expect(storage.migratesFromNonSynchronizableKeychain)
+        #expect(storage.accessibility == .afterFirstUnlock)
+    }
+
+    @Test
+    func migratingSessionStoreCopiesLegacySessionToPrimaryAndClearsLegacy() throws {
+        let legacySession = BetterAuthSession(session: .init(id: "legacy-session",
+                                                             userId: "user-1",
+                                                             accessToken: "legacy-token"),
+                                              user: .init(id: "user-1", email: "legacy@example.com"))
+        let primaryStore = InMemorySessionStore()
+        let legacyStore = InMemorySessionStore()
+        let migratingStore = MigratingSessionStore(primary: primaryStore, legacyStores: [legacyStore])
+
+        try legacyStore.saveSession(legacySession, for: "session-key")
+
+        let restored = try migratingStore.loadSession(for: "session-key")
+
+        #expect(restored == legacySession)
+        #expect(try primaryStore.loadSession(for: "session-key") == legacySession)
+        #expect(try legacyStore.loadSession(for: "session-key") == nil)
+    }
+
+    @Test
     func loadStoredSessionMigratesFirstAvailableLegacyStorageKey() async throws {
         let legacySession = BetterAuthSession(session: .init(id: "legacy-session",
                                                              userId: "user-1",

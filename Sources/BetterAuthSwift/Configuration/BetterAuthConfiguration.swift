@@ -105,13 +105,15 @@ public extension BetterAuthConfiguration {
         public let accessGroup: String?
         public let accessibility: KeychainSessionStore.Accessibility
         public let synchronizable: Bool
+        public let migratesFromNonSynchronizableKeychain: Bool
 
         public init(key: String = "better-auth.session",
                     migrationKeys: [String] = [],
                     service: String = "BetterAuth",
                     accessGroup: String? = nil,
                     accessibility: KeychainSessionStore.Accessibility = .afterFirstUnlock,
-                    synchronizable: Bool = false)
+                    synchronizable: Bool = false,
+                    migratesFromNonSynchronizableKeychain: Bool = false)
         {
             self.key = key
             self.migrationKeys = migrationKeys.filter { $0 != key }
@@ -119,6 +121,7 @@ public extension BetterAuthConfiguration {
             self.accessGroup = accessGroup
             self.accessibility = accessibility
             self.synchronizable = synchronizable
+            self.migratesFromNonSynchronizableKeychain = migratesFromNonSynchronizableKeychain
         }
 
         public static func shared(key: String = "better-auth.session",
@@ -126,14 +129,32 @@ public extension BetterAuthConfiguration {
                                   service: String = "BetterAuth",
                                   accessGroup: String,
                                   accessibility: KeychainSessionStore.Accessibility = .afterFirstUnlock,
-                                  synchronizable: Bool = false) -> Self
+                                  synchronizable: Bool = false,
+                                  migratesFromNonSynchronizableKeychain: Bool = false) -> Self
         {
             .init(key: key,
                   migrationKeys: migrationKeys,
                   service: service,
                   accessGroup: accessGroup,
                   accessibility: accessibility,
-                  synchronizable: synchronizable)
+                  synchronizable: synchronizable,
+                  migratesFromNonSynchronizableKeychain: migratesFromNonSynchronizableKeychain)
+        }
+
+        public static func iCloudKeychain(key: String = "better-auth.session",
+                                          migrationKeys: [String] = [],
+                                          service: String = "BetterAuth",
+                                          accessGroup: String? = nil,
+                                          accessibility: KeychainSessionStore.Accessibility = .afterFirstUnlock,
+                                          migrateFromLocalKeychain: Bool = true) -> Self
+        {
+            .init(key: key,
+                  migrationKeys: migrationKeys,
+                  service: service,
+                  accessGroup: accessGroup,
+                  accessibility: accessibility,
+                  synchronizable: true,
+                  migratesFromNonSynchronizableKeychain: migrateFromLocalKeychain)
         }
     }
 

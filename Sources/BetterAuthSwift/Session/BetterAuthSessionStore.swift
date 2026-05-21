@@ -42,11 +42,57 @@ public final class InMemorySessionStore: BetterAuthSessionStore, Sendable {
     }
 }
 
+public struct MigratingSessionStore: BetterAuthSessionStore, Sendable {
+    private let primary: any BetterAuthSessionStore
+    private let legacyStores: [any BetterAuthSessionStore]
+    private let removeLegacySessionOnMigration: Bool
+
+    public init(primary: any BetterAuthSessionStore,
+                legacyStores: [any BetterAuthSessionStore],
+                removeLegacySessionOnMigration: Bool = true)
+    {
+        self.primary = primary
+        self.legacyStores = legacyStores
+        self.removeLegacySessionOnMigration = removeLegacySessionOnMigration
+    }
+
+    public func loadSession(for key: String) throws -> BetterAuthSession? {
+        if let session = try primary.loadSession(for: key) {
+            return session
+        }
+
+        for legacyStore in legacyStores {
+            guard let session = try legacyStore.loadSession(for: key) else {
+                continue
+            }
+
+            try primary.saveSession(session, for: key)
+            if removeLegacySessionOnMigration {
+                try legacyStore.clearSession(for: key)
+            }
+            return session
+        }
+
+        return nil
+    }
+
+    public func saveSession(_ session: BetterAuthSession, for key: String) throws {
+        try primary.saveSession(session, for: key)
+    }
+
+    public func clearSession(for key: String) throws {
+        try primary.clearSession(for: key)
+        for legacyStore in legacyStores {
+            try legacyStore.clearSession(for: key)
+        }
+    }
+}
+
 public struct KeychainSessionStore: BetterAuthSessionStore, Sendable {
     private static let missingEntitlementStatus = OSStatus(-34018)
     private static let memoryFallback = InMemorySessionStore()
 
-    public enum Accessibility: Sendable {
+    public enum Accessibility: Sendable, Equatable {
         case afterFirstUnlock
         case afterFirstUnlockThisDeviceOnly
         case whenUnlocked

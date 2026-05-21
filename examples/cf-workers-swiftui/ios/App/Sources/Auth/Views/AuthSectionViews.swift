@@ -21,6 +21,8 @@ struct AppleAuthSection: View {
                 LabeledContent("Given Name", value: payload.givenName ?? "—")
                 LabeledContent("Family Name", value: payload.familyName ?? "—")
                 LabeledContent("Nonce", value: payload.nonce.map { String($0.prefix(12)) + "…" } ?? "—")
+                LabeledContent("Authorization Code",
+                               value: payload.authorizationCode.map { String($0.prefix(12)) + "…" } ?? "—")
             }
         }
     }

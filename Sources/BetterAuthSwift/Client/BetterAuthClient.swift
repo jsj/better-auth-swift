@@ -35,10 +35,7 @@ public struct BetterAuthClient: BetterAuthModuleSupporting, Sendable {
                 modules: [any BetterAuthModule] = [])
     {
         self.configuration = configuration
-        let resolvedStore = sessionStore ?? KeychainSessionStore(service: configuration.storage.service,
-                                                                 accessGroup: configuration.storage.accessGroup,
-                                                                 accessibility: configuration.storage.accessibility,
-                                                                 synchronizable: configuration.storage.synchronizable)
+        let resolvedStore = sessionStore ?? Self.makeSessionStore(storage: configuration.storage)
         let sessionManager = BetterAuthSessionManager(configuration: configuration,
                                                       sessionStore: resolvedStore,
                                                       transport: transport,
@@ -81,6 +78,24 @@ public struct BetterAuthClient: BetterAuthModuleSupporting, Sendable {
                 await listener.authStateDidChange(change)
             }
         }
+    }
+
+    private static func makeSessionStore(storage: BetterAuthConfiguration
+        .SessionStorage) -> any BetterAuthSessionStore
+    {
+        let primaryStore = KeychainSessionStore(service: storage.service,
+                                                accessGroup: storage.accessGroup,
+                                                accessibility: storage.accessibility,
+                                                synchronizable: storage.synchronizable)
+        guard storage.synchronizable, storage.migratesFromNonSynchronizableKeychain else {
+            return primaryStore
+        }
+
+        let localStore = KeychainSessionStore(service: storage.service,
+                                              accessGroup: storage.accessGroup,
+                                              accessibility: storage.accessibility,
+                                              synchronizable: false)
+        return MigratingSessionStore(primary: primaryStore, legacyStores: [localStore])
     }
 }
 

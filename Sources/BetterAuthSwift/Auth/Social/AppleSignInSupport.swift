@@ -49,6 +49,8 @@ public enum AppleSignInSupport {
         case unexpectedCredentialType
         case missingIdentityToken
         case invalidIdentityToken
+        case missingAuthorizationCode
+        case invalidAuthorizationCode
 
         public var errorDescription: String? {
             switch self {
@@ -60,6 +62,12 @@ public enum AppleSignInSupport {
 
             case .invalidIdentityToken:
                 "Invalid Apple identity token."
+
+            case .missingAuthorizationCode:
+                "Missing Apple authorization code."
+
+            case .invalidAuthorizationCode:
+                "Invalid Apple authorization code."
             }
         }
     }
@@ -71,6 +79,35 @@ public enum AppleSignInSupport {
         {
             request.requestedScopes = scopes
             request.nonce = context.hashedNonce
+        }
+
+        public static func configureForAccountDeletion(_ request: ASAuthorizationAppleIDRequest,
+                                                       context: AppleSignInSupport.Context,
+                                                       scopes: [ASAuthorization.Scope] = [.fullName, .email])
+        {
+            configure(request, context: context, scopes: scopes)
+        }
+
+        public static func authorizationCode(from authorization: ASAuthorization) throws -> String {
+            guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else {
+                throw AppleSignInBridgeError.unexpectedCredentialType
+            }
+
+            return try authorizationCode(from: credential)
+        }
+
+        public static func authorizationCode(from credential: ASAuthorizationAppleIDCredential) throws -> String {
+            guard let authorizationCodeData = credential.authorizationCode else {
+                throw AppleSignInBridgeError.missingAuthorizationCode
+            }
+
+            guard let authorizationCode = String(data: authorizationCodeData, encoding: .utf8),
+                  !authorizationCode.isEmpty
+            else {
+                throw AppleSignInBridgeError.invalidAuthorizationCode
+            }
+
+            return authorizationCode
         }
 
         public static func payload(from authorization: ASAuthorization,
@@ -94,7 +131,7 @@ public enum AppleSignInSupport {
                 throw AppleSignInBridgeError.invalidIdentityToken
             }
 
-            let authorizationCode = credential.authorizationCode.flatMap { String(data: $0, encoding: .utf8) }
+            let authorizationCode = try? authorizationCode(from: credential)
 
             return AppleNativeSignInPayload(token: identityToken,
                                             nonce: context?.rawNonce,
