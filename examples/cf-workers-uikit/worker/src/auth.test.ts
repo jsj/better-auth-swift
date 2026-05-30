@@ -2026,7 +2026,7 @@ describe('better auth example worker', () => {
         if (statement.includes('FROM sqlite_master')) {
           return {
             all: vi.fn(async () => ({
-              results: [{ name: 'user' }, { name: 'two_factor' }],
+              results: [{ name: 'user' }, { name: 'two_factor' }, { name: 'jwks' }],
             })),
           };
         }
@@ -2053,6 +2053,14 @@ describe('better auth example worker', () => {
           };
         }
 
+        if (statement === 'PRAGMA index_list("jwks")') {
+          return {
+            all: vi.fn(async () => ({
+              results: [],
+            })),
+          };
+        }
+
         return {
           run: vi.fn(async () => ({ success: true })),
         };
@@ -2070,6 +2078,7 @@ describe('better auth example worker', () => {
       'PRAGMA index_list("user")',
       'CREATE UNIQUE INDEX IF NOT EXISTS "user_phone_number_unique" ON "user" ("phone_number")',
       'CREATE UNIQUE INDEX IF NOT EXISTS "user_username_unique" ON "user" ("username")',
+      'PRAGMA index_list("jwks")',
     ]);
   });
 
