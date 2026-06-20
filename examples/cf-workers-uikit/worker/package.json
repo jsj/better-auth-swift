@@ -23,10 +23,17 @@
     "jose": "^6.2.3"
   },
   "devDependencies": {
-    "@better-auth/cli": "^1.4.21",
+    "@better-auth/cli": "1.5.0-beta.13",
     "@cloudflare/workers-types": "^4.20260620.1",
     "typescript": "^6.0.3",
     "vitest": "^4.1.9",
     "wrangler": "^4.103.0"
+  },
+  "overrides": {
+    "@better-auth/cli": {
+      "@mrleebo/prisma-ast": "0.16.0",
+      "better-auth": "$better-auth",
+      "drizzle-orm": "$drizzle-orm"
+    }
   }
 }

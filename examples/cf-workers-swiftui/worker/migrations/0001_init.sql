@@ -81,6 +81,7 @@ CREATE TABLE IF NOT EXISTS two_factor (
   secret TEXT NOT NULL,
   backup_codes TEXT NOT NULL,
   user_id TEXT NOT NULL,
+  verified INTEGER DEFAULT 1,
   FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE cascade
 );
 
@@ -91,7 +92,7 @@ CREATE TABLE IF NOT EXISTS jwks (
   id TEXT PRIMARY KEY NOT NULL,
   public_key TEXT NOT NULL,
   private_key TEXT NOT NULL,
-  created_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)),
+  created_at INTEGER NOT NULL,
   expires_at INTEGER
 );
 
