@@ -37,6 +37,7 @@ const emulatorCli = process.env.API_EMULATOR_CLI
   ?? (emulatorRepo ? path.join(emulatorRepo, 'packages', 'api-emulator', 'dist', 'index.js') : null);
 const emulatorRegistry = process.env.API_EMULATOR_REGISTRY
   ?? (existsSync(defaultApiEmulatorRegistry) ? defaultApiEmulatorRegistry : undefined);
+const installedPluginRoot = path.join(exampleDir, 'node_modules', '@emulators');
 const installedApiEmulatorCandidates = [
   path.join(exampleDir, 'node_modules', '.bin', 'api-emulator'),
   path.join(exampleDir, 'node_modules', '.bin', 'api'),
@@ -55,6 +56,7 @@ function getPluginPath(service) {
   const envKey = `${service.toUpperCase()}_API_EMULATOR_PLUGIN`;
   const candidates = [
     process.env[envKey],
+    existsSync(installedPluginRoot) ? path.join(installedPluginRoot, service, 'dist', 'index.js') : null,
     emulatorRegistry ? path.join(emulatorRegistry, `@${service}`, 'api-emulator', 'dist', 'index.js') : null,
     emulatorRegistry ? path.join(emulatorRegistry, `@${service}`, 'api-emulator.mjs') : null,
   ];
@@ -81,7 +83,7 @@ function buildEmulatorService({ name, service, port, healthURL }) {
     return {
       name,
       command: localApiEmulatorBin,
-      args: ['--service', service, '--port', port],
+      args: ['start', '--service', service, '--port', port].concat(pluginPath ? ['--plugin', pluginPath] : []),
       healthURL: resolvedHealthURL,
       source: localApiEmulatorBin,
     };
@@ -101,7 +103,7 @@ function buildEmulatorService({ name, service, port, healthURL }) {
     `${service} emulator dependency is not available.`,
     `Expected local CLI: ${emulatorCli ?? '(unset)'}`,
     `Expected ${service} plugin: ${pluginPath ?? path.join(emulatorRegistry ?? '(unset)', `@${service}`, 'api-emulator.mjs')}`,
-    `Install it with: npm --prefix "${exampleDir}" install`,
+    `Install it with: bun install --cwd "${exampleDir}"`,
     'Or set API_EMULATOR_REPO=/path/to/api-emulator and API_EMULATOR_REGISTRY=/path/to/api-emulator-registry',
   ].join('\n');
   throw new Error(guidance);
@@ -122,7 +124,7 @@ const services = [
   }),
   {
     name: 'worker',
-    command: 'npm',
+    command: 'bun',
     args: [
       'run',
       'dev',

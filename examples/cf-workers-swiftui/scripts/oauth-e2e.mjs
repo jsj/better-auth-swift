@@ -39,6 +39,33 @@ function cookieHeader(jar) {
   return Array.from(jar.entries()).map(([name, value]) => `${name}=${value}`).join('; ');
 }
 
+function decodeAttr(value) {
+  return value
+    .replaceAll('&quot;', '"')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&amp;', '&')
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>');
+}
+
+async function submitFirstForm(response, baseURL) {
+  const html = await response.text();
+  const form = html.match(/<form\b[^>]*\baction="([^"]+)"[^>]*>([\s\S]*?)<\/form>/i);
+  assert.ok(form, 'Authorization page did not render a sign-in form');
+
+  const body = new URLSearchParams();
+  for (const input of form[2].matchAll(/<input\b[^>]*\bname="([^"]+)"[^>]*\bvalue="([^"]*)"[^>]*>/gi)) {
+    body.set(decodeAttr(input[1]), decodeAttr(input[2]));
+  }
+
+  return fetch(new URL(decodeAttr(form[1]), baseURL), {
+    method: 'POST',
+    redirect: 'manual',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body,
+  });
+}
+
 async function fetchChecked(url, init) {
   const response = await fetch(url, init);
   if (response.status >= 400) {
@@ -77,10 +104,8 @@ process.on('SIGTERM', () => {
   void shutdown().finally(() => process.exit(143));
 });
 
-const migration = spawnSync('npm', [
-  'exec',
+const migration = spawnSync('bunx', [
   'wrangler',
-  '--',
   'd1',
   'migrations',
   'apply',
@@ -97,7 +122,7 @@ if (migration.status !== 0) {
   process.exit(migration.status ?? 1);
 }
 
-const stack = spawn('node', [path.join(scriptDir, 'dev-stack.mjs')], {
+const stack = spawn('bun', [path.join(scriptDir, 'dev-stack.mjs')], {
   cwd: exampleDir,
   stdio: ['ignore', 'pipe', 'pipe'],
   env: {
@@ -136,7 +161,13 @@ try {
   assert.equal(signInBody.redirect, false);
   assert.equal(new URL(signInBody.url).origin, `http://127.0.0.1:${appleEmulatorPort}`);
 
-  const authorize = await fetchChecked(signInBody.url, { redirect: 'manual' });
+  let authorize = await fetchChecked(signInBody.url, { redirect: 'manual' });
+  if (authorize.status === 200) {
+    authorize = await submitFirstForm(authorize, signInBody.url);
+    if (authorize.status >= 400) {
+      throw new Error(`POST authorization form failed with ${authorize.status}: ${await authorize.text()}`);
+    }
+  }
   assert.equal(authorize.status, 302);
   const callbackLocation = authorize.headers.get('location');
   assert.ok(callbackLocation, 'Apple emulator did not redirect back with an OAuth code');

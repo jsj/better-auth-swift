@@ -66,7 +66,7 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-for tool in curl npm npx swift; do
+for tool in bun curl swift; do
   if ! command -v "$tool" >/dev/null 2>&1; then
     echo "$tool is required for local contract verification." >&2
     exit 127
@@ -76,12 +76,12 @@ done
 trap cleanup EXIT
 
 echo "Preparing fresh local D1 store..."
-(cd "$WORKER_DIR" && npx wrangler d1 migrations apply DB --local --persist-to "$PERSIST_TO")
+(cd "$WORKER_DIR" && bunx wrangler d1 migrations apply DB --local --persist-to "$PERSIST_TO")
 
 echo "Starting local Better Auth fixture backend on $BASE_URL..."
 (
   cd "$WORKER_DIR"
-  npm run dev -- \
+  bun run dev -- \
     --port "$PORT" \
     --persist-to "$PERSIST_TO" \
     --var "BETTER_AUTH_URL:$BASE_URL" \

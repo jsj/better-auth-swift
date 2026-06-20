@@ -1,0 +1,38 @@
+{
+  "lockfileVersion": 1,
+  "configVersion": 0,
+  "workspaces": {
+    "": {
+      "name": "better-auth-cf-workers-swiftui-example",
+      "dependencies": {
+        "@emulators/apple": "^0.5.0",
+        "@emulators/core": "^0.5.0",
+        "@emulators/google": "^0.5.0",
+        "api-emulator": "^0.7.0",
+      },
+    },
+  },
+  "packages": {
+    "@api-emulator/core": ["@api-emulator/core@0.7.0", "", { "dependencies": { "hono": "^4", "jose": "^6.2.2" } }, "sha512-7cw82IZRcwv1JTo3OdBHuNeWKItHYUeT2wFw89I1HuccFaEW+7b4GsBRDTkQmtX9g/Ck6PF4Sy+gDv+eN3J7NQ=="],
+
+    "@emulators/apple": ["@emulators/apple@0.5.0", "", { "dependencies": { "@emulators/core": "0.5.0", "hono": "^4", "jose": "^6" } }, "sha512-ipuI3jLIb8HJDWG22qZVSLOyYesAknXse8ejNYIkHgU4VkbQLteJ0OA03zmCQf6FCpT/GXodcbq2sJfsSt4xvQ=="],
+
+    "@emulators/core": ["@emulators/core@0.5.0", "", { "dependencies": { "hono": "^4", "jose": "^6.2.2" } }, "sha512-GCWKlCJCso4ZlVtnfLHY+k2M+SOhtE8NyZ+fkb51N2ZBhniH046tw46vJXCRQE9YjYGoaSrrpzAatcpov35wnQ=="],
+
+    "@emulators/google": ["@emulators/google@0.5.0", "", { "dependencies": { "@emulators/core": "0.5.0", "hono": "^4", "jose": "^6" } }, "sha512-fJ3SrWr8E/GcpFPgsecxMCGhi3jW7jA+j2u+3iTTEugjBndfWFnpPG3fuKbh4jFVG8Db7rmJPvMf8+SVyMi4Tw=="],
+
+    "@hono/node-server": ["@hono/node-server@1.19.12", "", { "peerDependencies": { "hono": "^4" } }, "sha512-txsUW4SQ1iilgE0l9/e9VQWmELXifEFvmdA1j6WFh/aFPj99hIntrSsq/if0UWyGVkmrRPKA1wCeP+UCr1B9Uw=="],
+
+    "api-emulator": ["api-emulator@0.7.0", "", { "dependencies": { "@api-emulator/core": "0.7.0", "@hono/node-server": "^1", "commander": "^14", "picocolors": "^1.1.1", "yaml": "^2" }, "bin": { "api": "dist/index.js" } }, "sha512-uhq98toPK7QK9BT2tU9VaJu9RUH3Qoh7geOKJh8x1C0cR/gQWH+TJwNUUwvQggvjEMdWsp8xZzFkL+qUlyW8Ig=="],
+
+    "commander": ["commander@14.0.3", "", {}, "sha512-H+y0Jo/T1RZ9qPP4Eh1pkcQcLRglraJaSLoyOtHxu6AapkjWVCy2Sit1QQ4x3Dng8qDlSsZEet7g5Pq06MvTgw=="],
+
+    "hono": ["hono@4.12.9", "", {}, "sha512-wy3T8Zm2bsEvxKZM5w21VdHDDcwVS1yUFFY6i8UobSsKfFceT7TOwhbhfKsDyx7tYQlmRM5FLpIuYvNFyjctiA=="],
+
+    "jose": ["jose@6.2.3", "", {}, "sha512-YYVDInQKFJfR/xa3ojUTl8c2KoTwiL1R5Wg9YCydwH0x0B9grbzlg5HC7mMjCtUJjbQ/YnGEZIhI5tCgfTb4Hw=="],
+
+    "picocolors": ["picocolors@1.1.1", "", {}, "sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA=="],
+
+    "yaml": ["yaml@2.8.3", "", { "bin": "bin.mjs" }, "sha512-AvbaCLOO2Otw/lW5bmh9d/WEdcDFdQp2Z2ZUH3pX9U2ihyUY0nvLv7J6TrWowklRGPYbB/IuIMfYgxaCPg5Bpg=="],
+  }
+}

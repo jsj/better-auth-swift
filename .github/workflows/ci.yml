@@ -29,21 +29,23 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: |
-            examples/cf-workers-swiftui/worker/package-lock.json
-            examples/cf-workers-uikit/worker/package-lock.json
+          cache-dependency-path: examples/cf-workers-uikit/worker/package-lock.json
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
 
       - name: Install release tools
         run: brew install swiftformat swiftlint
 
       - name: Install worker dependencies
         run: |
-          npm ci --prefix examples/cf-workers-swiftui/worker
+          bun install --cwd examples/cf-workers-swiftui --frozen-lockfile
+          bun install --cwd examples/cf-workers-swiftui/worker --frozen-lockfile
           npm ci --prefix examples/cf-workers-uikit/worker
 
       - name: Typecheck example workers
         run: |
-          npm --prefix examples/cf-workers-swiftui/worker run typecheck
+          bun run --cwd examples/cf-workers-swiftui/worker typecheck
           npm --prefix examples/cf-workers-uikit/worker run typecheck
 
       - name: Run release verifier

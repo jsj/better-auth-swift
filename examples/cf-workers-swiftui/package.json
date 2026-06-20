@@ -6,12 +6,12 @@
     "@emulators/apple": "^0.5.0",
     "@emulators/core": "^0.5.0",
     "@emulators/google": "^0.5.0",
-    "api-emulator": "^0.5.0"
+    "api-emulator": "^0.7.0"
   },
   "scripts": {
-    "dev": "node ./scripts/dev-stack.mjs",
-    "dev:tunnel": "node ./scripts/dev-stack.mjs --cloudflared",
-    "dev:status": "node ./scripts/dev-stack.mjs --status",
-    "e2e:oauth": "node ./scripts/oauth-e2e.mjs"
+    "dev": "bun ./scripts/dev-stack.mjs",
+    "dev:tunnel": "bun ./scripts/dev-stack.mjs --cloudflared",
+    "dev:status": "bun ./scripts/dev-stack.mjs --status",
+    "e2e:oauth": "bun ./scripts/oauth-e2e.mjs"
   }
 }
