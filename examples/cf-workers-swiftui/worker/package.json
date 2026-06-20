@@ -18,22 +18,22 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "@better-auth/passkey": "^1.6.12",
-    "better-auth": "^1.6.12",
-    "better-auth-cloudflare": "^0.2.9",
-    "drizzle-orm": "^0.45.1",
-    "hono": "^4.12.3",
-    "jose": "^6.1.0",
-    "kysely": "0.28.17"
+    "@better-auth/passkey": "^1.6.20",
+    "better-auth": "^1.6.20",
+    "better-auth-cloudflare": "^0.3.0",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.26",
+    "jose": "^6.2.3",
+    "kysely": "0.29.2"
   },
   "devDependencies": {
     "@better-auth/cli": "^1.4.21",
-    "@cloudflare/workers-types": "^4.20260301.1",
-    "typescript": "^5.9.3",
-    "vitest": "^3.2.4",
-    "wrangler": "^4.98.0"
+    "@cloudflare/workers-types": "^4.20260620.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9",
+    "wrangler": "^4.103.0"
   },
   "overrides": {
-    "kysely": "0.28.17"
+    "kysely": "0.29.2"
   }
 }

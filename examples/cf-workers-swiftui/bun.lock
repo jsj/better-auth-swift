@@ -5,9 +5,9 @@
     "": {
       "name": "better-auth-cf-workers-swiftui-example",
       "dependencies": {
-        "@emulators/apple": "^0.5.0",
-        "@emulators/core": "^0.5.0",
-        "@emulators/google": "^0.5.0",
+        "@emulators/apple": "^0.7.0",
+        "@emulators/core": "^0.7.0",
+        "@emulators/google": "^0.7.0",
         "api-emulator": "^0.7.0",
       },
     },
@@ -15,11 +15,11 @@
   "packages": {
     "@api-emulator/core": ["@api-emulator/core@0.7.0", "", { "dependencies": { "hono": "^4", "jose": "^6.2.2" } }, "sha512-7cw82IZRcwv1JTo3OdBHuNeWKItHYUeT2wFw89I1HuccFaEW+7b4GsBRDTkQmtX9g/Ck6PF4Sy+gDv+eN3J7NQ=="],
 
-    "@emulators/apple": ["@emulators/apple@0.5.0", "", { "dependencies": { "@emulators/core": "0.5.0", "hono": "^4", "jose": "^6" } }, "sha512-ipuI3jLIb8HJDWG22qZVSLOyYesAknXse8ejNYIkHgU4VkbQLteJ0OA03zmCQf6FCpT/GXodcbq2sJfsSt4xvQ=="],
+    "@emulators/apple": ["@emulators/apple@0.7.0", "", { "dependencies": { "@emulators/core": "0.7.0", "jose": "^6" } }, "sha512-S0OausV+RwmDdzH//evnSHjySPK6+avcqB/ax4H1DimkVvrPiIwEdS5XiodnemCzYQVtEeW4GdnVEFUfdD45vw=="],
 
-    "@emulators/core": ["@emulators/core@0.5.0", "", { "dependencies": { "hono": "^4", "jose": "^6.2.2" } }, "sha512-GCWKlCJCso4ZlVtnfLHY+k2M+SOhtE8NyZ+fkb51N2ZBhniH046tw46vJXCRQE9YjYGoaSrrpzAatcpov35wnQ=="],
+    "@emulators/core": ["@emulators/core@0.7.0", "", { "dependencies": { "jose": "^6.2.2" } }, "sha512-UGEaLtZjAxFmM5euiBv1B8DYI02kaD+2mxNkfTs4OcxL6VIESKHTm4cNQY1I9Me18jbYFtz0mkXfRwt86bpEtw=="],
 
-    "@emulators/google": ["@emulators/google@0.5.0", "", { "dependencies": { "@emulators/core": "0.5.0", "hono": "^4", "jose": "^6" } }, "sha512-fJ3SrWr8E/GcpFPgsecxMCGhi3jW7jA+j2u+3iTTEugjBndfWFnpPG3fuKbh4jFVG8Db7rmJPvMf8+SVyMi4Tw=="],
+    "@emulators/google": ["@emulators/google@0.7.0", "", { "dependencies": { "@emulators/core": "0.7.0", "jose": "^6" } }, "sha512-1sNEJoS1RnvmEA6dBaTcQOR73VqDuXjaXoybMA+UsgaXuZSc7EcV91QU0isGpM02TUJgRbizYND3UOup979hnA=="],
 
     "@hono/node-server": ["@hono/node-server@1.19.12", "", { "peerDependencies": { "hono": "^4" } }, "sha512-txsUW4SQ1iilgE0l9/e9VQWmELXifEFvmdA1j6WFh/aFPj99hIntrSsq/if0UWyGVkmrRPKA1wCeP+UCr1B9Uw=="],
 

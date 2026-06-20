@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@emulators/apple": "^0.5.0",
-    "@emulators/core": "^0.5.0",
-    "@emulators/google": "^0.5.0",
+    "@emulators/apple": "^0.7.0",
+    "@emulators/core": "^0.7.0",
+    "@emulators/google": "^0.7.0",
     "api-emulator": "^0.7.0"
   },
   "scripts": {
