@@ -558,7 +558,7 @@ struct EmailOtpMagicLinkAndRequestClientTests {
     }
 }
 
-private struct RetryMockResponse: Sendable {
+private struct RetryMockResponse {
     let statusCode: Int
     let data: Data
 }
