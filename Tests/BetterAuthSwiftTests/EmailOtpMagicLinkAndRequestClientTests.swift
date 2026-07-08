@@ -456,17 +456,9 @@ struct EmailOtpMagicLinkAndRequestClientTests {
 
     @Test
     func requestClientAppliesConfiguredRetryPolicyToTransientStatusCodes() async throws {
-        let requests = Locked<[URLRequest]>([])
-        let transport = SequencedMockTransport([.handler { request in
-                requests.withLock { $0.append(request) }
-                return response(for: request,
-                                statusCode: 503,
-                                data: Data(#"{"message":"try again"}"#.utf8))
-            },
-            .handler { request in
-                requests.withLock { $0.append(request) }
-                return response(for: request, statusCode: 200, data: Data("ok".utf8))
-            }])
+        let transport = RecordingRetryTransport(responses: [.init(statusCode: 503,
+                                                                  data: Data(#"{"message":"try again"}"#.utf8)),
+                                                            .init(statusCode: 200, data: Data("ok".utf8))])
         let retryPolicy = RetryPolicy(maxRetries: 1, baseDelay: 0, maxDelay: 0, jitterFactor: 0)
         let configuration = BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                     networking: .init(retryPolicy: retryPolicy))
@@ -480,25 +472,16 @@ struct EmailOtpMagicLinkAndRequestClientTests {
 
         #expect(response.statusCode == 200)
         #expect(String(data: data, encoding: .utf8) == "ok")
-        let paths = requests.withLock { $0.compactMap(\.url?.path) }
-        #expect(paths == ["/transient", "/transient"])
+        #expect(await transport.recordedPaths() == ["/transient", "/transient"])
     }
 
     @Test
     func requestClientPreservesFinalRawTransientFailureAfterRetries() async throws {
-        let requests = Locked<[URLRequest]>([])
-        let transport = SequencedMockTransport([.handler { request in
-                requests.withLock { $0.append(request) }
-                return response(for: request,
-                                statusCode: 503,
-                                data: Data(#"{"message":"still unavailable"}"#.utf8))
-            },
-            .handler { request in
-                requests.withLock { $0.append(request) }
-                return response(for: request,
-                                statusCode: 503,
-                                data: Data(#"{"message":"still unavailable"}"#.utf8))
-            }])
+        let transport = RecordingRetryTransport(responses: [.init(statusCode: 503,
+                                                                  data: Data(#"{"message":"still unavailable"}"#.utf8)),
+                                                            .init(statusCode: 503,
+                                                                  data: Data(#"{"message":"still unavailable"}"#
+                                                                      .utf8))])
         let retryPolicy = RetryPolicy(maxRetries: 1, baseDelay: 0, maxDelay: 0, jitterFactor: 0)
         let configuration = BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                     networking: .init(retryPolicy: retryPolicy))
@@ -512,7 +495,7 @@ struct EmailOtpMagicLinkAndRequestClientTests {
 
         #expect(response.statusCode == 503)
         #expect(String(data: data, encoding: .utf8) == #"{"message":"still unavailable"}"#)
-        #expect(requests.withLock { $0.count } == 2)
+        #expect(await transport.requestCount() == 2)
     }
 
     @Test
@@ -572,5 +555,37 @@ struct EmailOtpMagicLinkAndRequestClientTests {
         #expect(paths == ["/protected", "/api/auth/get-session", "/protected"])
         let authorizations = requests.withLock { $0.map { $0.value(forHTTPHeaderField: "Authorization") } }
         #expect(authorizations == ["Bearer current-token", "Bearer current-token", "Bearer refreshed-token"])
+    }
+}
+
+private struct RetryMockResponse: Sendable {
+    let statusCode: Int
+    let data: Data
+}
+
+private actor RecordingRetryTransport: BetterAuthTransport {
+    private var responses: [RetryMockResponse]
+    private var paths: [String] = []
+
+    init(responses: [RetryMockResponse]) {
+        self.responses = responses
+    }
+
+    func execute(_ request: URLRequest) async throws -> (Data, URLResponse) {
+        paths.append(request.url?.path ?? "")
+        guard !responses.isEmpty else {
+            throw TestFailure("No retry mock responses left for request: \(request.url?.absoluteString ?? "nil")")
+        }
+
+        let response = responses.removeFirst()
+        return BetterAuthTestHelpers.response(for: request, statusCode: response.statusCode, data: response.data)
+    }
+
+    func recordedPaths() -> [String] {
+        paths
+    }
+
+    func requestCount() -> Int {
+        paths.count
     }
 }
