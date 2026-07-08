@@ -38,8 +38,12 @@ struct BetterAuthSessionEventRelay {
 
     func shouldClearSession(for error: Error) -> Bool {
         guard let authError = error as? BetterAuthError else { return false }
-        if authError.isUnauthorized { return true }
-        if let code = authError.authErrorCode, ErrorParsing.sessionCleanupCodes.contains(code) { return true }
+        if authError.isUnauthorized {
+            return true
+        }
+        if let code = authError.authErrorCode, ErrorParsing.sessionCleanupCodes.contains(code) {
+            return true
+        }
         return false
     }
 

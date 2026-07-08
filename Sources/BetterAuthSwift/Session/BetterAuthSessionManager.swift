@@ -35,7 +35,9 @@ actor BetterAuthSessionManager {
     var cachedOAuthService: BetterAuthOAuthService?
 
     func makeRelay() -> BetterAuthSessionEventRelay {
-        if let cachedRelay { return cachedRelay }
+        if let cachedRelay {
+            return cachedRelay
+        }
         let relay = BetterAuthSessionEventRelay(context: context,
                                                 refreshSession: {
                                                     try await self.refreshSession()
@@ -45,14 +47,18 @@ actor BetterAuthSessionManager {
     }
 
     func makeMaterializer() -> BetterAuthSessionMaterializer {
-        if let cachedMaterializer { return cachedMaterializer }
+        if let cachedMaterializer {
+            return cachedMaterializer
+        }
         let materializer = BetterAuthSessionMaterializer(context: context)
         cachedMaterializer = materializer
         return materializer
     }
 
     func makePrimaryAuthService() -> BetterAuthPrimaryAuthService {
-        if let cachedPrimaryAuthService { return cachedPrimaryAuthService }
+        if let cachedPrimaryAuthService {
+            return cachedPrimaryAuthService
+        }
         let service = BetterAuthPrimaryAuthService(context: context,
                                                    relay: makeRelay(),
                                                    materializer: makeMaterializer())
@@ -61,7 +67,9 @@ actor BetterAuthSessionManager {
     }
 
     func makeProfileService() -> BetterAuthProfileService {
-        if let cachedProfileService { return cachedProfileService }
+        if let cachedProfileService {
+            return cachedProfileService
+        }
         let service = BetterAuthProfileService(context: context,
                                                relay: makeRelay(),
                                                materializer: makeMaterializer())
@@ -70,7 +78,9 @@ actor BetterAuthSessionManager {
     }
 
     func makePasskeyService() -> BetterAuthPasskeyService {
-        if let cachedPasskeyService { return cachedPasskeyService }
+        if let cachedPasskeyService {
+            return cachedPasskeyService
+        }
         let service = BetterAuthPasskeyService(context: context,
                                                relay: makeRelay(),
                                                materializer: makeMaterializer())
@@ -79,7 +89,9 @@ actor BetterAuthSessionManager {
     }
 
     func makeOneTimeCodeService() -> BetterAuthOneTimeCodeService {
-        if let cachedOneTimeCodeService { return cachedOneTimeCodeService }
+        if let cachedOneTimeCodeService {
+            return cachedOneTimeCodeService
+        }
         let service = BetterAuthOneTimeCodeService(context: context,
                                                    relay: makeRelay(),
                                                    materializer: makeMaterializer())
@@ -88,7 +100,9 @@ actor BetterAuthSessionManager {
     }
 
     func makeTwoFactorService() -> BetterAuthTwoFactorService {
-        if let cachedTwoFactorService { return cachedTwoFactorService }
+        if let cachedTwoFactorService {
+            return cachedTwoFactorService
+        }
         let service = BetterAuthTwoFactorService(context: context,
                                                  relay: makeRelay(),
                                                  materializer: makeMaterializer())
@@ -97,21 +111,27 @@ actor BetterAuthSessionManager {
     }
 
     func makeSessionAdministrationService() -> BetterAuthSessionAdministrationService {
-        if let cachedSessionAdministrationService { return cachedSessionAdministrationService }
+        if let cachedSessionAdministrationService {
+            return cachedSessionAdministrationService
+        }
         let service = BetterAuthSessionAdministrationService(context: context, relay: makeRelay())
         cachedSessionAdministrationService = service
         return service
     }
 
     func makeSessionBootstrapService() -> BetterAuthSessionBootstrapService {
-        if let cachedSessionBootstrapService { return cachedSessionBootstrapService }
+        if let cachedSessionBootstrapService {
+            return cachedSessionBootstrapService
+        }
         let service = BetterAuthSessionBootstrapService(context: context, relay: makeRelay())
         cachedSessionBootstrapService = service
         return service
     }
 
     func makeOAuthService() -> BetterAuthOAuthService {
-        if let cachedOAuthService { return cachedOAuthService }
+        if let cachedOAuthService {
+            return cachedOAuthService
+        }
         let service = BetterAuthOAuthService(context: context, relay: makeRelay())
         cachedOAuthService = service
         return service

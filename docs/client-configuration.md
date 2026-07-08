@@ -96,7 +96,7 @@ Controls auth-specific behavior:
 
 Controls request behavior:
 
-- `retryPolicy`: retry behavior for transient networking failures
+- `retryPolicy`: retry behavior for transient networking failures and retryable HTTP statuses
 - `requestOrigin`: optional `Origin` header override
 - `timeoutInterval`: URL request timeout
 

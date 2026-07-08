@@ -9,6 +9,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
     private let pipeline: BetterAuthHTTPPipeline
     private let requestHooks: [any BetterAuthRequestHook]
     private let requestBuilder: BetterAuthHTTPRequestBuilder
+    private let retryPolicy: RetryPolicy
 
     init(configuration: BetterAuthConfiguration,
          sessionManager: BetterAuthSessionManager,
@@ -19,6 +20,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
         self.pipeline = BetterAuthHTTPPipeline(transport: transport)
         self.requestHooks = requestHooks
         self.requestBuilder = BetterAuthHTTPRequestBuilder(configuration: configuration)
+        self.retryPolicy = configuration.retryPolicy
     }
 
     /// Sends a raw HTTP request, returning `(Data, HTTPURLResponse)`.
@@ -160,7 +162,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
     }
 
     private func execute(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
-        try await pipeline.execute(request, statusValidation: .preserve)
+        try await pipeline.execute(request, statusValidation: .preserve, retryPolicy: retryPolicy)
     }
 
     private func preparedRequest(from request: URLRequest) async throws -> URLRequest {

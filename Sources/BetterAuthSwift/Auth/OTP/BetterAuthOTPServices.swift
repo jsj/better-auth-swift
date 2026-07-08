@@ -73,8 +73,12 @@ struct BetterAuthOneTimeCodeService {
             .post(path: context.configuration.endpoints.phoneOTP.requestPath,
                   body: payload,
                   accessToken: nil)
-        if let success = response.success { return success }
-        if let status = response.status { return status }
+        if let success = response.success {
+            return success
+        }
+        if let status = response.status {
+            return status
+        }
         throw BetterAuthError.invalidResponse
     }
 

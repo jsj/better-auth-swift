@@ -115,7 +115,9 @@ public func waitForCondition(timeout: TimeInterval = 1,
 {
     let deadline = Date().addingTimeInterval(timeout)
     while Date() < deadline {
-        if condition() { return }
+        if condition() {
+            return
+        }
         try await Task.sleep(for: .seconds(pollInterval))
     }
     throw TestFailure("Condition not met within \(timeout) seconds")

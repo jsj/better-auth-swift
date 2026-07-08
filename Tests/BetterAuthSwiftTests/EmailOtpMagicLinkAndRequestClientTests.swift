@@ -455,6 +455,63 @@ struct EmailOtpMagicLinkAndRequestClientTests {
     }
 
     @Test
+    func requestClientAppliesConfiguredRetryPolicyToTransientStatusCodes() async throws {
+        let requests = Locked<[URLRequest]>([])
+        let transport = MockTransport { request in
+            let attempt = requests.withLock { requests in
+                requests.append(request)
+                return requests.count
+            }
+            if attempt == 1 {
+                return response(for: request,
+                                statusCode: 503,
+                                data: Data(#"{"message":"try again"}"#.utf8))
+            }
+            return response(for: request, statusCode: 200, data: Data("ok".utf8))
+        }
+        let retryPolicy = RetryPolicy(maxRetries: 1, baseDelay: 0, maxDelay: 0, jitterFactor: 0)
+        let configuration = BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                    networking: .init(retryPolicy: retryPolicy))
+        let client = BetterAuthClient(configuration: configuration,
+                                      sessionStore: InMemorySessionStore(),
+                                      transport: transport)
+
+        let (data, response) = try await client.requests.send(path: "/transient",
+                                                              requiresAuthentication: false,
+                                                              retryOnUnauthorized: false)
+
+        #expect(response.statusCode == 200)
+        #expect(String(data: data, encoding: .utf8) == "ok")
+        let paths = requests.withLock { $0.compactMap(\.url?.path) }
+        #expect(paths == ["/transient", "/transient"])
+    }
+
+    @Test
+    func requestClientPreservesFinalRawTransientFailureAfterRetries() async throws {
+        let requests = Locked<[URLRequest]>([])
+        let transport = MockTransport { request in
+            requests.withLock { $0.append(request) }
+            return response(for: request,
+                            statusCode: 503,
+                            data: Data(#"{"message":"still unavailable"}"#.utf8))
+        }
+        let retryPolicy = RetryPolicy(maxRetries: 1, baseDelay: 0, maxDelay: 0, jitterFactor: 0)
+        let configuration = BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                    networking: .init(retryPolicy: retryPolicy))
+        let client = BetterAuthClient(configuration: configuration,
+                                      sessionStore: InMemorySessionStore(),
+                                      transport: transport)
+
+        let (data, response) = try await client.requests.send(path: "/transient",
+                                                              requiresAuthentication: false,
+                                                              retryOnUnauthorized: false)
+
+        #expect(response.statusCode == 503)
+        #expect(String(data: data, encoding: .utf8) == #"{"message":"still unavailable"}"#)
+        #expect(requests.withLock { $0.count } == 2)
+    }
+
+    @Test
     func requestClientThrowsWhenRetriedRawSendStillFails() async throws {
         let requests = Locked<[URLRequest]>([])
         let transport = MockTransport { request in

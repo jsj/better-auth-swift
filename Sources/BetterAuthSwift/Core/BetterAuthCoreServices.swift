@@ -57,8 +57,8 @@ struct BetterAuthSessionRefreshService {
                                           body: RefreshPayload(refreshToken: refreshToken),
                                           accessToken: existingSession.session.accessToken)
         }
-        return try await network.post(path: configuration.endpoints.session.sessionRefreshPath,
-                                      accessToken: existingSession.session.accessToken)
+        return try await network.get(path: configuration.endpoints.session.currentSessionPath,
+                                     accessToken: existingSession.session.accessToken)
     }
 
     func fetchCurrentSession(accessToken: String?) async throws -> BetterAuthSession {

@@ -126,16 +126,12 @@ struct BetterAuthHTTPPipeline {
                 guard let httpResponse = response as? HTTPURLResponse else {
                     throw BetterAuthError.invalidResponse
                 }
-                do {
-                    if statusValidation == .validateSuccess {
-                        try validateSuccess(data: data, response: httpResponse)
-                    }
-                } catch {
-                    if retryPolicy.isRetryable(statusCode: httpResponse.statusCode), attempt < retryPolicy.maxRetries {
-                        lastError = error
-                        continue
-                    }
-                    throw error
+                if retryPolicy.isRetryable(statusCode: httpResponse.statusCode), attempt < retryPolicy.maxRetries {
+                    lastError = ErrorParsing.parse(statusCode: httpResponse.statusCode, data: data)
+                    continue
+                }
+                if statusValidation == .validateSuccess {
+                    try validateSuccess(data: data, response: httpResponse)
                 }
                 return (data, httpResponse)
             } catch let error as BetterAuthError {

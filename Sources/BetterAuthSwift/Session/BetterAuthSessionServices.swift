@@ -173,7 +173,9 @@ struct BetterAuthSessionBootstrapService {
         guard let current = context.state.currentSession else { return nil }
         if current.needsRefresh(clockSkew: context.configuration.auth.clockSkew) {
             do { return try await refreshSession() } catch {
-                if relay.shouldClearSession(for: error) { try relay.clearSession(event: .sessionExpired) }
+                if relay.shouldClearSession(for: error) {
+                    try relay.clearSession(event: .sessionExpired)
+                }
                 throw error
             }
         }
@@ -188,7 +190,9 @@ struct BetterAuthSessionBootstrapService {
                                                                 materializer: BetterAuthSessionMaterializer(context: context))
             return try await sessionResults.appliedSession(from: .refreshed(session))
         } catch {
-            if relay.shouldClearSession(for: error) { try relay.clearSession(event: .sessionExpired) }
+            if relay.shouldClearSession(for: error) {
+                try relay.clearSession(event: .sessionExpired)
+            }
             throw error
         }
     }

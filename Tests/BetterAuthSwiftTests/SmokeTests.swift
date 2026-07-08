@@ -6,6 +6,47 @@ import Testing
 @Suite("Smoke")
 struct SmokeTests {
     @Test
+    func namespacedAuthClientsUseSameSessionPipeline() async throws {
+        let signedInSession = BetterAuthSession(session: .init(id: "session-1",
+                                                               userId: "user-1",
+                                                               accessToken: "token-1",
+                                                               expiresAt: Date().addingTimeInterval(300)),
+                                                user: .init(id: "user-1", email: "user@example.com"))
+        let listedSession = BetterAuthSessionListEntry(id: "session-1",
+                                                       userId: "user-1",
+                                                       token: "token-1",
+                                                       expiresAt: Date().addingTimeInterval(300),
+                                                       createdAt: Date(),
+                                                       updatedAt: Date(),
+                                                       ipAddress: nil,
+                                                       userAgent: nil)
+        let transport = SequencedMockTransport([.handler { request in
+            try expect(request.url?.path == "/api/auth/email/sign-in")
+            try expect(request.httpMethod == "POST")
+            return try response(for: request, statusCode: 200, data: encodeJSON(signedInSession))
+        }, .handler { request in
+            try expect(request.url?.path == "/api/auth/list-sessions")
+            try expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer token-1")
+            return try response(for: request, statusCode: 200, data: encodeJSON([listedSession]))
+        }])
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                    storage: .init(key: "namespace-smoke-key")),
+                             sessionStore: InMemorySessionStore(),
+                             transport: transport)
+
+        let session = try await client.auth.email.signIn(.init(email: "user@example.com", password: "password123"))
+        #expect(session.session.accessToken == "token-1")
+        let current = await client.auth.lifecycle.current()
+        #expect(current?.session.id == signedInSession.session.id)
+        #expect(current?.session.accessToken == signedInSession.session.accessToken)
+        #expect(current?.user.email == signedInSession.user.email)
+
+        let sessions = try await client.auth.sessions.list()
+        #expect(sessions.map(\.id) == ["session-1"])
+    }
+
+    @Test
     func signInRestoreRefreshAndSignOutFlow() async throws {
         let initialSession = BetterAuthSession(session: .init(id: "session-1",
                                                               userId: "user-1",

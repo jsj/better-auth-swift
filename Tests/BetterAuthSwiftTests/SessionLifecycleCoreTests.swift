@@ -405,8 +405,9 @@ struct SessionLifecycleCoreTests {
                                      sessionStore: InMemorySessionStore(),
                                      transport: MockTransport { request in
                                          try expect(request.url?.path == "/api/auth/get-session")
-                                         try expect(request.httpMethod == "POST")
+                                         try expect(request.httpMethod == "GET")
                                          try expect(request.httpBody == nil)
+                                         try expect(request.value(forHTTPHeaderField: "Content-Type") == nil)
                                          try expect(request
                                              .value(forHTTPHeaderField: "Authorization") ==
                                              "Bearer old-token")

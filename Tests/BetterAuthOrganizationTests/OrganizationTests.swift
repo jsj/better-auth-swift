@@ -61,6 +61,25 @@ struct OrganizationTests {
     }
 
     @Test
+    func organizationManagerUsesCustomEndpoints() async throws {
+        let orgs = [Organization(id: "org-1", name: "Acme", slug: "acme", createdAt: Date())]
+
+        let transport = MockTransport { request in
+            try expect(request.url?.path == "/custom/auth/orgs")
+            try expect(request.httpMethod == "GET")
+            return try response(for: request, statusCode: 200, data: encodeJSON(orgs))
+        }
+
+        let client = try makeClient(transport: transport)
+        _ = try await client.auth.restoreSession()
+        let manager = OrganizationManager(client: client,
+                                          endpoints: .init(listPath: "/custom/auth/orgs"))
+
+        let result = try await manager.listOrganizations()
+        #expect(result.map(\.slug) == ["acme"])
+    }
+
+    @Test
     func getFullOrganizationUsesQueryAndReturnsMembersAndInvitations() async throws {
         let full = FullOrganization(id: "org-1",
                                     name: "Acme",
@@ -286,6 +305,32 @@ struct OrganizationTests {
         #expect(modularClient.organizationFeatureClient?.moduleIdentifier == "organization")
         let organizations = try await modularClient.organizationModule?.manager.listOrganizations()
         #expect(organizations?.isEmpty == true)
+    }
+
+    @Test
+    func organizationModuleUsesCustomEndpoints() async throws {
+        let observedPath = Locked<String?>(nil)
+        let store = InMemorySessionStore()
+        try store.saveSession(BetterAuthSession(session: .init(id: "session-1", userId: "user-1",
+                                                               accessToken: "token-1"),
+                                                user: .init(id: "user-1", email: "user@example.com",
+                                                            name: "Test User")),
+                              for: "test-key")
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                    storage: .init(key: "test-key")),
+                             sessionStore: store,
+                             transport: MockTransport { request in
+                                 observedPath.withLock { $0 = request.url?.path }
+                                 return response(for: request, statusCode: 200, data: Data("[]".utf8))
+                             },
+                             modules: [BetterAuthOrganizationModule(endpoints: .init(listPath: "/custom/org/list"))])
+        _ = try await client.auth.restoreSession()
+
+        let organizations = try await client.organizationModule?.manager.listOrganizations()
+
+        #expect(organizations?.isEmpty == true)
+        #expect(observedPath.withLock { $0 } == "/custom/org/list")
     }
 
     @Test

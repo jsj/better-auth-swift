@@ -137,6 +137,60 @@ struct SessionRestoreAndAuthStoreTests {
     }
 
     @Test @MainActor
+    func authStoreLifecycleNamespaceAndViewStateWrapLaunchState() async throws {
+        let stored = BetterAuthSession(session: .init(id: "session-view-state",
+                                                      userId: "user-view-state",
+                                                      accessToken: "token",
+                                                      expiresAt: Date().addingTimeInterval(3600)),
+                                       user: .init(id: "user-view-state", email: "view@example.com"))
+
+        let store = InMemorySessionStore()
+        try store.saveSession(stored, for: "test-key")
+
+        let authStore =
+            AuthStore(client: BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
+                                                                                      storage: .init(key: "test-key")),
+                                               sessionStore: store,
+                                               transport: MockTransport { request in
+                                                   emptyResponse(for: request)
+                                               }))
+
+        await authStore.lifecycle.bootstrap()
+
+        let viewState = authStore.viewState
+        #expect(viewState.session == stored)
+        #expect(viewState.launchState == .authenticated(stored))
+        #expect(viewState.isAuthenticated)
+        #expect(viewState.user?.email == "view@example.com")
+        #expect(viewState.statusMessage == "Session restored")
+        #expect(!viewState.isLoading)
+    }
+
+    @Test @MainActor
+    func authStoreEmailNamespaceUsesExistingSessionPipeline() async throws {
+        let signedIn = BetterAuthSession(session: .init(id: "session-email-namespace",
+                                                        userId: "user-email-namespace",
+                                                        accessToken: "token"),
+                                         user: .init(id: "user-email-namespace", email: "email@example.com"))
+        let authStore =
+            AuthStore(client: BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
+                                               sessionStore: InMemorySessionStore(),
+                                               transport: MockTransport { request in
+                                                   try expect(request.url?.path == "/api/auth/email/sign-in")
+                                                   return try response(for: request,
+                                                                       statusCode: 200,
+                                                                       data: encodeJSON(signedIn))
+                                               }))
+
+        await authStore.email.signIn(.init(email: "email@example.com", password: "password123"))
+
+        await waitUntil { authStore.session?.session.id == signedIn.session.id }
+        #expect(authStore.viewState.session == signedIn)
+        #expect(authStore.viewState.launchState == .authenticated(signedIn))
+        #expect(authStore.statusMessage == "Signed in")
+    }
+
+    @Test @MainActor
     func authStoreBootstrapSurfacesRecoverableFailureForDeferredRefresh() async throws {
         let stored = BetterAuthSession(session: .init(id: "session-1",
                                                       userId: "user-1",

@@ -49,11 +49,11 @@ let client = BetterAuthClient(
 Restore app-launch state with the typed restore result:
 
 ```swift
-let result = try await client.auth.restoreSessionOnLaunch()
+let result = try await client.auth.lifecycle.restoreOnLaunch()
 ```
 
 For the older session-only path, use:
 
 ```swift
-let session = try await client.auth.restoreOrRefreshSession()
+let session = try await client.auth.lifecycle.restoreOrRefresh()
 ```

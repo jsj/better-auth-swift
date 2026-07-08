@@ -22,6 +22,7 @@ let authStore = AuthStore(
 
 - `session`
 - `launchState`
+- `viewState`
 - `lastRestoreResult`
 - `isLoading`
 - `statusMessage`
@@ -31,9 +32,9 @@ let authStore = AuthStore(
 ## App launch
 
 ```swift
-await authStore.bootstrap()
+await authStore.lifecycle.bootstrap()
 
-switch authStore.launchState {
+switch authStore.viewState.launchState {
 case .idle, .restoring:
     break
 case .authenticated(let session):
@@ -51,24 +52,34 @@ case .failed:
 
 ```swift
 .onOpenURL { url in
-    Task { await authStore.handleIncomingURL(url) }
+    Task { await authStore.oauth.handleIncomingURL(url) }
 }
 ```
 
 ## Common lifecycle calls
 
 ```swift
-await authStore.bootstrap()
-await authStore.restore()
-await authStore.refresh()
-await authStore.fetchCurrentSession()
-await authStore.signOut()
-authStore.shutdown()
+await authStore.lifecycle.bootstrap()
+await authStore.lifecycle.restore()
+await authStore.lifecycle.refresh()
+await authStore.lifecycle.fetchCurrentSession()
+await authStore.lifecycle.signOut()
+authStore.lifecycle.shutdown()
 ```
 
 ## Auth flows
 
-`AuthStore` wraps the underlying auth methods and updates observable state for you, including:
+`AuthStore` wraps the underlying auth methods and updates observable state for you. Prefer the
+namespaced API for new UI code:
+
+```swift
+await authStore.email.signIn(.init(email: email, password: password))
+await authStore.magicLinks.request(.init(email: email))
+let passkeys = try await authStore.passkeys.list()
+let sessions = try await authStore.sessions.list()
+```
+
+Available namespaces:
 
 - email sign-up and sign-in
 - username sign-in and availability checks

@@ -12,11 +12,14 @@ public struct BetterAuthOrganizationModuleRuntime: BetterAuthModuleRuntime, Bett
 
 public struct BetterAuthOrganizationModule: BetterAuthModule {
     public let moduleIdentifier = "organization"
+    private let endpoints: BetterAuthOrganizationEndpoints
 
-    public init() {}
+    public init(endpoints: BetterAuthOrganizationEndpoints = .init()) {
+        self.endpoints = endpoints
+    }
 
     public func configure(context: BetterAuthModuleContext) -> BetterAuthModuleRuntime {
-        BetterAuthOrganizationModuleRuntime(manager: OrganizationManager(client: context))
+        BetterAuthOrganizationModuleRuntime(manager: OrganizationManager(client: context, endpoints: endpoints))
     }
 }
 

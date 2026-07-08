@@ -65,6 +65,26 @@ describe('better auth example worker', () => {
     await expect(response.json()).resolves.toEqual({ ok: true });
   });
 
+  it('returns SDK diagnostics metadata', async () => {
+    const response = await app.fetch(new Request('http://localhost/api/better-auth-swift/diagnostics'), env);
+
+    expect(response.status).toBe(200);
+    const body = await response.json<{
+      ok: boolean;
+      platform: string;
+      authBasePath: string;
+      features: string[];
+      routes: Record<string, string>;
+    }>();
+    expect(body.ok).toBe(true);
+    expect(body.platform).toBe('cloudflare-workers');
+    expect(body.authBasePath).toBe('/api/auth');
+    expect(body.features).toContain('bearer');
+    expect(body.features).toContain('passkey');
+    expect(body.features).toContain('email-password');
+    expect(body.routes.diagnostics).toBe('/api/better-auth-swift/diagnostics');
+  });
+
   it('rejects session inventory without a bearer token', async () => {
     const response = await app.fetch(new Request('http://localhost/api/auth/list-sessions'), env);
 

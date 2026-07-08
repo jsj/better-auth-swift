@@ -17,6 +17,9 @@
 
 Native Swift SDK for [Better Auth](https://github.com/better-auth/better-auth) with first-class support for Apple platforms.
 
+Use a self-hosted Better Auth backend, including serverless Cloudflare Workers
+deployments, without committing your app's auth stack to Firebase or Supabase.
+
 > [!WARNING]
 > This is an early release. The API may change before `1.0`, and the first tagged release will start at `0.0.1`.
 
@@ -101,7 +104,7 @@ let client = BetterAuthClient(
 ### Restore a session at app launch
 
 ```swift
-let result = try await client.auth.restoreSessionOnLaunch()
+let result = try await client.auth.lifecycle.restoreOnLaunch()
 
 switch result {
 case .noStoredSession:
@@ -117,15 +120,15 @@ case .cleared:
 
 ```swift
 // Email + password
-let session = try await client.auth.signInWithEmail(
+let session = try await client.auth.email.signIn(
     EmailSignInRequest(email: "user@example.com", password: "password")
 )
 
 // Apple native sign in
-let session = try await client.auth.signInWithApple(payload)
+let session = try await client.auth.apple.signIn(payload)
 
 // Anonymous (upgrade later)
-let session = try await client.auth.signInAnonymously()
+let session = try await client.auth.anonymous.signIn()
 ```
 
 ### Make authenticated requests
@@ -134,7 +137,19 @@ let session = try await client.auth.signInAnonymously()
 let profile: Profile = try await client.requests.sendJSON(path: "/api/me")
 ```
 
-The request client automatically attaches bearer tokens and retries once on `401` after refreshing the session.
+The request client automatically attaches bearer tokens, applies the configured
+transient retry policy, and retries once on `401` after refreshing the session.
+
+### Check backend compatibility
+
+```swift
+let report = await client.diagnostics.check(
+    expectedFeatures: [.bearer, .emailPassword, .passkey]
+)
+```
+
+The Cloudflare Workers examples expose `/api/better-auth-swift/diagnostics` so
+apps can verify plugin support before calling auth flows.
 
 ## SwiftUI integration
 
@@ -145,10 +160,10 @@ import BetterAuthSwiftUI
 let store = AuthStore(client: client)
 
 // Launch
-await store.bootstrap()
+await store.lifecycle.bootstrap()
 
 // Drive UI from typed launch state
-switch store.launchState {
+switch store.viewState.launchState {
 case .authenticated(let session):
     print("Show app", session.user.id)
 case .unauthenticated:
@@ -158,6 +173,10 @@ case .restoring:
 default:
     break
 }
+
+// Namespaced UI actions keep view code organized
+await store.email.signIn(.init(email: email, password: password))
+await store.lifecycle.signOut()
 ```
 
 ## Organization plugin
@@ -178,6 +197,20 @@ let org = try await orgs.createOrganization(
     CreateOrganizationRequest(name: "Acme", slug: "acme")
 )
 let members = try await orgs.listMembers(organizationId: org.id)
+```
+
+If your backend mounts organization routes somewhere else, pass a route catalog
+when registering the module:
+
+```swift
+let client = BetterAuthClient(
+    baseURL: URL(string: "https://your-api.example.com")!,
+    modules: [
+        BetterAuthOrganizationModule(
+            endpoints: .init(listPath: "/custom/auth/organization/list")
+        )
+    ]
+)
 ```
 
 ## Apple Sign In

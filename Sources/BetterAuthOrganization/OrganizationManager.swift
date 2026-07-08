@@ -1,11 +1,67 @@
 import BetterAuth
 import Foundation
 
+public struct BetterAuthOrganizationEndpoints: Sendable, Equatable {
+    public let createPath: String
+    public let listPath: String
+    public let getFullOrganizationPath: String
+    public let updatePath: String
+    public let deletePath: String
+    public let checkSlugPath: String
+    public let listMembersPath: String
+    public let removeMemberPath: String
+    public let updateMemberRolePath: String
+    public let inviteMemberPath: String
+    public let acceptInvitationPath: String
+    public let cancelInvitationPath: String
+    public let rejectInvitationPath: String
+    public let listInvitationsPath: String
+    public let setActivePath: String
+    public let getActiveMemberPath: String
+
+    public init(createPath: String = "/api/auth/organization/create",
+                listPath: String = "/api/auth/organization/list",
+                getFullOrganizationPath: String = "/api/auth/organization/get-full-organization",
+                updatePath: String = "/api/auth/organization/update",
+                deletePath: String = "/api/auth/organization/delete",
+                checkSlugPath: String = "/api/auth/organization/check-slug",
+                listMembersPath: String = "/api/auth/organization/list-members",
+                removeMemberPath: String = "/api/auth/organization/remove-member",
+                updateMemberRolePath: String = "/api/auth/organization/update-member-role",
+                inviteMemberPath: String = "/api/auth/organization/invite-member",
+                acceptInvitationPath: String = "/api/auth/organization/accept-invitation",
+                cancelInvitationPath: String = "/api/auth/organization/cancel-invitation",
+                rejectInvitationPath: String = "/api/auth/organization/reject-invitation",
+                listInvitationsPath: String = "/api/auth/organization/list-invitations",
+                setActivePath: String = "/api/auth/organization/set-active",
+                getActiveMemberPath: String = "/api/auth/organization/get-active-member")
+    {
+        self.createPath = createPath
+        self.listPath = listPath
+        self.getFullOrganizationPath = getFullOrganizationPath
+        self.updatePath = updatePath
+        self.deletePath = deletePath
+        self.checkSlugPath = checkSlugPath
+        self.listMembersPath = listMembersPath
+        self.removeMemberPath = removeMemberPath
+        self.updateMemberRolePath = updateMemberRolePath
+        self.inviteMemberPath = inviteMemberPath
+        self.acceptInvitationPath = acceptInvitationPath
+        self.cancelInvitationPath = cancelInvitationPath
+        self.rejectInvitationPath = rejectInvitationPath
+        self.listInvitationsPath = listInvitationsPath
+        self.setActivePath = setActivePath
+        self.getActiveMemberPath = getActiveMemberPath
+    }
+}
+
 public actor OrganizationManager {
     private let routes: OrganizationRoutes
 
-    public init(client: some BetterAuthClientProtocol) {
-        routes = OrganizationRoutes(requests: client.requestsPerformer)
+    public init(client: some BetterAuthClientProtocol,
+                endpoints: BetterAuthOrganizationEndpoints = .init())
+    {
+        routes = OrganizationRoutes(requests: client.requestsPerformer, endpoints: endpoints)
     }
 
     // MARK: - Organization CRUD
@@ -93,83 +149,87 @@ public actor OrganizationManager {
 
 struct OrganizationRoutes {
     private let requests: any BetterAuthRequestPerforming
+    private let endpoints: BetterAuthOrganizationEndpoints
 
-    init(requests: any BetterAuthRequestPerforming) {
+    init(requests: any BetterAuthRequestPerforming,
+         endpoints: BetterAuthOrganizationEndpoints)
+    {
         self.requests = requests
+        self.endpoints = endpoints
     }
 
     func createOrganization(_ payload: CreateOrganizationRequest) async throws -> Organization {
-        try await post("/api/auth/organization/create", body: payload)
+        try await post(endpoints.createPath, body: payload)
     }
 
     func listOrganizations() async throws -> [Organization] {
-        try await get("/api/auth/organization/list")
+        try await get(endpoints.listPath)
     }
 
     func getFullOrganization(organizationId: String) async throws -> FullOrganization {
-        try await get(try path("/api/auth/organization/get-full-organization",
+        try await get(try path(endpoints.getFullOrganizationPath,
                                queryItems: [URLQueryItem(name: "organizationId", value: organizationId)]))
     }
 
     func updateOrganization(_ payload: UpdateOrganizationRequest) async throws -> Organization {
-        try await post("/api/auth/organization/update", body: payload)
+        try await post(endpoints.updatePath, body: payload)
     }
 
     func deleteOrganization(organizationId: String) async throws -> Bool {
-        try await status(path: "/api/auth/organization/delete",
+        try await status(path: endpoints.deletePath,
                          body: OrganizationIdRequest(organizationId: organizationId))
     }
 
     func checkSlug(_ slug: String) async throws -> Bool {
-        let response: SlugAvailabilityResponse = try await post("/api/auth/organization/check-slug",
+        let response: SlugAvailabilityResponse = try await post(endpoints.checkSlugPath,
                                                                 body: SlugCheckRequest(slug: slug))
         return response.status
     }
 
     func listMembers(organizationId: String) async throws -> [OrganizationMember] {
-        try await get(try path("/api/auth/organization/list-members",
+        try await get(try path(endpoints.listMembersPath,
                                queryItems: [URLQueryItem(name: "organizationId", value: organizationId)]))
     }
 
     func removeMember(_ payload: RemoveMemberRequest) async throws -> Bool {
-        try await status(path: "/api/auth/organization/remove-member", body: payload)
+        try await status(path: endpoints.removeMemberPath, body: payload)
     }
 
     func updateMemberRole(_ payload: UpdateMemberRoleRequest) async throws -> OrganizationMember {
-        try await post("/api/auth/organization/update-member-role", body: payload)
+        try await post(endpoints.updateMemberRolePath, body: payload)
     }
 
     func inviteMember(_ payload: InviteMemberRequest) async throws -> OrganizationInvitation {
-        try await post("/api/auth/organization/invite-member", body: payload)
+        try await post(endpoints.inviteMemberPath, body: payload)
     }
 
     func acceptInvitation(invitationId: String) async throws -> OrganizationMember {
-        try await post("/api/auth/organization/accept-invitation",
+        try await post(endpoints.acceptInvitationPath,
                        body: InvitationIdRequest(invitationId: invitationId))
     }
 
     func cancelInvitation(invitationId: String) async throws -> Bool {
-        try await status(path: "/api/auth/organization/cancel-invitation",
+        try await status(path: endpoints.cancelInvitationPath,
                          body: InvitationIdRequest(invitationId: invitationId))
     }
 
     func rejectInvitation(invitationId: String) async throws -> Bool {
-        try await status(path: "/api/auth/organization/reject-invitation",
+        try await status(path: endpoints.rejectInvitationPath,
                          body: InvitationIdRequest(invitationId: invitationId))
     }
 
     func listInvitations(organizationId: String) async throws -> [OrganizationInvitation] {
-        try await get(try path("/api/auth/organization/list-invitations",
+        try await get(try path(endpoints.listInvitationsPath,
                                queryItems: [URLQueryItem(name: "organizationId", value: organizationId)]))
     }
 
     func setActiveOrganization(organizationId: String) async throws -> Organization {
-        try await post("/api/auth/organization/set-active",
+        try await post(endpoints.setActivePath,
                        body: OrganizationIdRequest(organizationId: organizationId))
     }
 
     func getActiveMember() async throws -> OrganizationMember {
-        try await get("/api/auth/organization/get-active-member")
+        try await get(endpoints.getActiveMemberPath)
     }
 
     private func get<Response: Decodable>(_ path: String) async throws -> Response {

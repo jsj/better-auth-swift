@@ -21,6 +21,33 @@ appRoutes.get('/', (c) => {
 
 appRoutes.get('/health', (c) => c.json({ ok: true }));
 
+appRoutes.get('/api/better-auth-swift/diagnostics', (c) => c.json({
+  ok: true,
+  name: 'better-auth-swift-cloudflare-worker',
+  platform: 'cloudflare-workers',
+  authBasePath: '/api/auth',
+  features: [
+    'bearer',
+    'email-password',
+    'username',
+    'apple-native',
+    'social-oauth',
+    'generic-oauth',
+    'anonymous',
+    'magic-link',
+    'email-otp',
+    'phone-otp',
+    'two-factor',
+    'passkey',
+    'multi-session',
+    'jwt',
+  ],
+  routes: {
+    health: '/health',
+    diagnostics: '/api/better-auth-swift/diagnostics',
+  },
+}));
+
 appRoutes.get('/api/fixtures/captures', async (c) => {
   const db = getDb(c.env);
   const rows = await db.select().from(schema.verification)

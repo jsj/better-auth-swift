@@ -51,7 +51,9 @@ final class AuthOptionsViewController: UITableViewController {
 
         case 2:
             var count = controller.viewModel.statusMessage == nil ? 0 : 1
-            if launchError != nil { count += 1 }
+            if launchError != nil {
+                count += 1
+            }
             return count
 
         case 3:
