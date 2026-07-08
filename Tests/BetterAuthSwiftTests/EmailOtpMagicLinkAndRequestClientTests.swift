@@ -457,18 +457,16 @@ struct EmailOtpMagicLinkAndRequestClientTests {
     @Test
     func requestClientAppliesConfiguredRetryPolicyToTransientStatusCodes() async throws {
         let requests = Locked<[URLRequest]>([])
-        let transport = MockTransport { request in
-            let attempt = requests.withLock { requests in
-                requests.append(request)
-                return requests.count
-            }
-            if attempt == 1 {
+        let transport = SequencedMockTransport([.handler { request in
+                requests.withLock { $0.append(request) }
                 return response(for: request,
                                 statusCode: 503,
                                 data: Data(#"{"message":"try again"}"#.utf8))
-            }
-            return response(for: request, statusCode: 200, data: Data("ok".utf8))
-        }
+            },
+            .handler { request in
+                requests.withLock { $0.append(request) }
+                return response(for: request, statusCode: 200, data: Data("ok".utf8))
+            }])
         let retryPolicy = RetryPolicy(maxRetries: 1, baseDelay: 0, maxDelay: 0, jitterFactor: 0)
         let configuration = BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                     networking: .init(retryPolicy: retryPolicy))
@@ -489,12 +487,18 @@ struct EmailOtpMagicLinkAndRequestClientTests {
     @Test
     func requestClientPreservesFinalRawTransientFailureAfterRetries() async throws {
         let requests = Locked<[URLRequest]>([])
-        let transport = MockTransport { request in
-            requests.withLock { $0.append(request) }
-            return response(for: request,
-                            statusCode: 503,
-                            data: Data(#"{"message":"still unavailable"}"#.utf8))
-        }
+        let transport = SequencedMockTransport([.handler { request in
+                requests.withLock { $0.append(request) }
+                return response(for: request,
+                                statusCode: 503,
+                                data: Data(#"{"message":"still unavailable"}"#.utf8))
+            },
+            .handler { request in
+                requests.withLock { $0.append(request) }
+                return response(for: request,
+                                statusCode: 503,
+                                data: Data(#"{"message":"still unavailable"}"#.utf8))
+            }])
         let retryPolicy = RetryPolicy(maxRetries: 1, baseDelay: 0, maxDelay: 0, jitterFactor: 0)
         let configuration = BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                     networking: .init(retryPolicy: retryPolicy))
