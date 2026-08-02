@@ -592,7 +592,7 @@ final class AuthViewModel {
             switch refresh {
             case .deferred:
                 launchState = .recoverableFailure(restoredSession)
-                statusMessage = "Session restored; refresh deferred"
+                statusMessage = "Session restored. Refresh deferred."
 
             case .notNeeded, .refreshed:
                 launchState = .authenticated(restoredSession)

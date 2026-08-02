@@ -30,11 +30,13 @@ Then choose the products you need:
 )
 ```
 
-Use `BetterAuth` for the core SDK, add `BetterAuthSwiftUI` for the observable `AuthStore`, and add `BetterAuthOrganization` when using the organization plugin module.
+Use `BetterAuth` for the core SDK. Add `BetterAuthSwiftUI` for the observable `AuthStore`.
+If you use the organization plugin, add `BetterAuthOrganization`.
 
 ## Xcode
 
-In Xcode, add the repository URL in the Swift Package Dependencies UI and select the products your target needs.
+In Xcode, add the repository URL in the Swift Package Dependencies UI.
+Then select the products that your target needs.
 
 ## First client
 

@@ -4,14 +4,14 @@ import Observation
 
 /// Observable SwiftUI state wrapper around ``BetterAuthClient``.
 ///
-/// Provides `session`, `isLoading`, and `statusMessage` for driving UI,
-/// plus async methods that mirror every auth flow on the session manager.
+/// Provides `session`, `isLoading`, and `statusMessage` for the UI.
+/// Its asynchronous methods mirror each authentication flow on the session manager.
 @Observable
 @MainActor
 public final class AuthStore {
     /// The current authenticated session, or `nil` if signed out.
     public internal(set) var session: BetterAuthSession?
-    /// Explicit app-launch state for bootstrapping root UI.
+    /// The explicit state of the root UI during app launch.
     public internal(set) var launchState: AuthLaunchState = .idle
     /// The last detailed restore outcome returned by the core SDK.
     public internal(set) var lastRestoreResult: BetterAuthRestoreResult?
@@ -84,7 +84,7 @@ public final class AuthStore {
 
             case .deferred:
                 launchState = .recoverableFailure(restoredSession)
-                statusMessage = "Session restored; refresh deferred"
+                statusMessage = "Session restored. Refresh deferred."
             }
 
         case .cleared:

@@ -8,7 +8,7 @@ extension BetterAuthSessionManager {
         try sessionService.loadStoredSession()
     }
 
-    /// Restores the session from storage into memory and starts auto-refresh if configured.
+    /// Restores the session from storage into memory. If configured, this method starts automatic refresh.
     func restoreSession() throws -> BetterAuthSession? {
         let session = try makeSessionBootstrapService().loadStoredSession()
         try applyRestoredSession(session)
@@ -28,7 +28,7 @@ extension BetterAuthSessionManager {
         state.currentSession
     }
 
-    /// Returns a session that is safe to use for authenticated requests, refreshing it first if needed.
+    /// If necessary, refreshes the session. Then returns the session for authenticated requests.
     @discardableResult
     func validSession() async throws -> BetterAuthSession {
         try await makeRelay().validSession()
@@ -146,7 +146,8 @@ extension BetterAuthSessionManager {
 
     // MARK: - Restore / Refresh
 
-    /// Restores from storage and refreshes if expired. The recommended way to bootstrap a session at app launch.
+    /// Restores the session from storage. If the session expired, this method refreshes it.
+    /// Use this method to restore a session at app launch.
     func restoreOrRefreshSession() async throws -> BetterAuthSession? {
         let bootstrap = makeSessionBootstrapService()
         let session = try await bootstrap

@@ -15,10 +15,12 @@ What is included:
 
 Suggested local flow:
 
-1. Copy `examples/cf-workers-swiftui/ios/.env.example` to `examples/cf-workers-swiftui/ios/.env` if needed.
+1. If the environment file does not exist, copy `examples/cf-workers-swiftui/ios/.env.example` to `examples/cf-workers-swiftui/ios/.env`.
 2. Start the backend stack from `examples/cf-workers-swiftui` with `npm run dev`.
-3. In `examples/cf-workers-swiftui/worker`, run `npm test` and `npm run typecheck` when validating backend behavior.
-4. Open the iOS project under `examples/cf-workers-swiftui/ios` and run the app against the local base URL.
+3. To validate backend behavior, run `npm test` in `examples/cf-workers-swiftui/worker`.
+4. Run `npm run typecheck` in the same directory.
+5. Open the iOS project under `examples/cf-workers-swiftui/ios`.
+6. Run the app with the local base URL.
 
 ## UIKit example
 
@@ -32,9 +34,11 @@ What is included:
 
 Suggested local flow:
 
-1. Copy `examples/cf-workers-uikit/ios/.env.example` to `examples/cf-workers-uikit/ios/.env` if needed.
-2. In `examples/cf-workers-uikit/worker`, run `npm test` and `npm run typecheck`.
-3. Open the iOS project under `examples/cf-workers-uikit/ios` and run the app against the local base URL.
+1. If the environment file does not exist, copy `examples/cf-workers-uikit/ios/.env.example` to `examples/cf-workers-uikit/ios/.env`.
+2. Run `npm test` in `examples/cf-workers-uikit/worker`.
+3. Run `npm run typecheck` in the same directory.
+4. Open the iOS project under `examples/cf-workers-uikit/ios`.
+5. Run the app with the local base URL.
 
 ## Default local URL
 
@@ -42,4 +46,4 @@ Both example apps default to `http://127.0.0.1:8787` for local development.
 
 ## When to use them
 
-Use these examples when you want a full integration reference for app launch restore, native Apple sign-in, authenticated requests, and common Better Auth flows rather than isolated SDK snippets.
+Use these examples for a full integration reference. They cover app launch, native Apple sign-in, authenticated requests, and common Better Auth flows.

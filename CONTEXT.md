@@ -2,12 +2,11 @@
 
 ## Product Wedge
 
-`better-auth-swift` is a first-class Apple client SDK for Better Auth. Its
-strategic wedge is native Swift auth against a self-hosted Better Auth backend,
-with Cloudflare Workers as the primary serverless reference path.
+`better-auth-swift` is a native Apple client SDK for Better Auth. It supports
+self-hosted Better Auth backends. Cloudflare Workers provide the primary serverless reference.
 
-The SDK should compete with Firebase Auth and Supabase Auth on Apple ergonomics,
-session reliability, and portability rather than on vendor-owned backend lock-in.
+The SDK competes with Firebase Auth and Supabase Auth through native Apple interfaces,
+reliable sessions, and backend portability.
 
 ## Domain Terms
 
@@ -29,16 +28,16 @@ session reliability, and portability rather than on vendor-owned backend lock-in
 - **Backend contract**: The wire-level behavior the SDK expects from a Better
   Auth backend, including paths, methods, headers, response shapes, and error
   semantics.
-- **Backend diagnostics**: Optional backend metadata that lets the Apple client
-  verify reachability and advertised Better Auth features before auth flows run.
+- **Backend diagnostics**: Optional backend metadata that reports reachability
+  and available Better Auth features before authentication starts.
 
 ## Architecture Preferences
 
 - Prefer modern Swift interfaces over legacy compatibility shims.
 - Keep the SDK instance-based and injectable. Do not introduce a global auth
   singleton.
-- Make backend compatibility explicit and testable. Runtime failures caused by
-  missing server plugins or route mismatches should become diagnosable.
+- Make backend compatibility explicit and testable. Diagnostics must identify
+  missing server plugins and route mismatches.
 - Keep auth behavior in core modules and SwiftUI view state in SwiftUI modules.
-- Treat public API added before `1.0` as a candidate long-term compatibility
-  promise; shrink or reshape broad surfaces before tagging `1.0`.
+- Treat each public API added before `1.0` as a possible long-term compatibility
+  promise. Reduce or change broad surfaces before you tag `1.0`.

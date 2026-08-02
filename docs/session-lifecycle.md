@@ -5,7 +5,7 @@ methods on `client.auth` remain available for compatibility.
 
 ## Restore at app launch
 
-Prefer `restoreOnLaunch()` when bootstrapping an app because it returns a typed `BetterAuthRestoreResult`.
+Use `restoreOnLaunch()` at app launch. It returns a typed `BetterAuthRestoreResult`.
 
 ```swift
 let result = try await client.auth.lifecycle.restoreOnLaunch()
@@ -78,7 +78,8 @@ This asks the backend for the current session payload and synchronizes local sta
 try await client.auth.lifecycle.signOut()
 ```
 
-By default this signs out remotely and clears local state. To clear local state only:
+By default, this method signs out remotely and clears local state.
+To clear local state only, use:
 
 ```swift
 try await client.auth.lifecycle.signOut(remotely: false)

@@ -1,6 +1,6 @@
 # SwiftUI
 
-Use `BetterAuthSwiftUI` when you want an observable wrapper around the core SDK.
+If you want an observable wrapper around the core SDK, use `BetterAuthSwiftUI`.
 
 ## Setup
 
@@ -69,8 +69,8 @@ authStore.lifecycle.shutdown()
 
 ## Auth flows
 
-`AuthStore` wraps the underlying auth methods and updates observable state for you. Prefer the
-namespaced API for new UI code:
+`AuthStore` wraps the underlying authentication methods and updates observable state.
+Use the namespaced API for new UI code:
 
 ```swift
 await authStore.email.signIn(.init(email: email, password: password))

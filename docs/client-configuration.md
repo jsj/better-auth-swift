@@ -77,11 +77,12 @@ Controls how sessions are stored locally.
 - `accessibility`: Keychain accessibility level
 - `synchronizable`: whether the Keychain item is synchronizable
 
-Use `BetterAuthConfiguration.SessionStorage.shared(...)` when sharing credentials across app targets with an access group.
+If app targets share credentials through an access group, use `BetterAuthConfiguration.SessionStorage.shared(...)`.
 
 ### `endpoints`
 
-Override endpoint paths if your Better Auth deployment uses custom routing. Endpoints are grouped by feature: `auth`, `user`, `session`, `oauth`, `passkey`, `magicLink`, `emailOTP`, `phoneOTP`, and `twoFactor`.
+If your Better Auth deployment uses custom routes, override the endpoint paths.
+The endpoints are grouped by feature: `auth`, `user`, `session`, `oauth`, `passkey`, `magicLink`, `emailOTP`, `phoneOTP`, and `twoFactor`.
 
 ### `auth`
 

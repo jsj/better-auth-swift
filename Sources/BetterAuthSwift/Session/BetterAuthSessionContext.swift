@@ -1,6 +1,7 @@
 import Foundation
 
-/// Internal session dependencies; actor isolation controls most access and state is lock-protected where shared.
+/// These are the internal session dependencies. Actor isolation controls most access.
+/// A lock protects shared state.
 struct BetterAuthSessionContext {
     let configuration: BetterAuthConfiguration
     let state: BetterAuthSessionState

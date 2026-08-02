@@ -3,17 +3,22 @@
 ## Token Storage
 
 By default, `better-auth-swift` stores the encoded `BetterAuthSession` in the Apple Keychain through `KeychainSessionStore`.
-The session includes access and refresh tokens, so apps should choose the narrowest viable Keychain options for their threat model:
+The session includes access and refresh tokens. Select the most restrictive Keychain options that your app can use:
 
 - Use the default non-synchronizable storage unless cross-device session sync is intentional.
 - Use an access group only when sharing auth state across targets is required.
 - Prefer stricter Keychain accessibility when background access is not needed.
 
-The SDK does not add an application-level encryption envelope on top of Keychain storage today. That is intentional for the default path because envelope encryption requires app-owned key lifecycle decisions that vary by product. Apps that require an additional envelope can provide a custom `BetterAuthSessionStore`.
+The SDK does not add an application-level encryption envelope to Keychain storage.
+Envelope encryption requires each app to manage an encryption-key lifecycle.
+Apps that require an additional envelope can provide a custom `BetterAuthSessionStore`.
 
 ## Storage Migration
 
-If an app changes its Keychain storage key, configure `migrationKeys` with the previous keys. On the next stored-session load, the SDK checks the active key first, then each migration key in order. The first legacy session found is copied to the active key and removed from the legacy key.
+If an app changes its Keychain storage key, configure `migrationKeys` with the previous keys.
+During the next session load, the SDK examines the active key first.
+Then it examines each migration key in order.
+The SDK copies the first legacy session to the active key and removes the legacy session.
 
 ```swift
 let client = BetterAuthClient(
@@ -25,11 +30,13 @@ let client = BetterAuthClient(
 )
 ```
 
-Changing `service`, `accessGroup`, or `synchronizable` changes the underlying Keychain query. For those moves, provide a custom `BetterAuthSessionStore` that can read both old and new locations and migrate according to your app's release plan.
+A change to `service`, `accessGroup`, or `synchronizable` changes the Keychain query.
+For these changes, provide a custom `BetterAuthSessionStore` that can read the old and new locations.
 
 ## Transport Security
 
-`URLSessionTransport` accepts a caller-provided `URLSession`, so apps can supply their own session configuration and delegate for certificate pinning, proxy policy, or enterprise TLS requirements.
+`URLSessionTransport` accepts a caller-provided `URLSession`.
+Apps can supply a session configuration and delegate for certificate pinning, proxy policy, or enterprise TLS requirements.
 
 ## Client-Side Throttling
 
@@ -42,4 +49,4 @@ let client = BetterAuthClient(
 )
 ```
 
-Server-side rate limiting remains required; client-side throttling is a UX and accidental-hammering guard, not a security boundary.
+Server-side rate limiting remains required. Client-side throttling prevents accidental repeated requests, but it is not a security boundary.

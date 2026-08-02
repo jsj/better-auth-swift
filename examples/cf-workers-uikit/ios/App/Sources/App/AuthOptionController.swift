@@ -29,7 +29,7 @@ final class AuthOptionController {
                           .info(title: "Nonce", detail: "Generated per request and validated on callback.",
                                 symbolName: "number"),
                           .info(title: "Profile Hints",
-                                detail: "Email and names may only be present on first authorization.",
+                                detail: "Email and names can be present only during the first authorization.",
                                 symbolName: "person.text.rectangle")])]
 
         case .authMethod(.emailPassword):

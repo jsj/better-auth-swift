@@ -1,9 +1,9 @@
 import Foundation
 
-/// HTTP client for making authenticated (and unauthenticated) requests to your backend.
+/// This HTTP client sends authenticated and unauthenticated requests to your backend.
 ///
-/// Access via ``BetterAuthClient/requests``. Automatically attaches bearer tokens
-/// and retries once on `401` after refreshing the session.
+/// Access this client through ``BetterAuthClient/requests``. It attaches bearer tokens automatically.
+/// After a `401` response, it refreshes the session and retries once.
 public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
     private let sessionManager: BetterAuthSessionManager
     private let pipeline: BetterAuthHTTPPipeline
@@ -23,11 +23,10 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
         self.retryPolicy = configuration.retryPolicy
     }
 
-    /// Sends a raw HTTP request, returning `(Data, HTTPURLResponse)`.
+    /// Sends a raw HTTP request. Returns `(Data, HTTPURLResponse)`.
     ///
     /// The raw client preserves non-2xx responses for callers that need direct HTTP inspection.
-    /// After a 401-triggered refresh retry, any non-2xx retried response is surfaced as `BetterAuthError`
-    /// to avoid silently masking retry failures.
+    /// After a refresh retry, this method reports a non-2xx response as a `BetterAuthError`.
     public func send(_ request: BetterAuthDataRequest) async throws -> (Data, HTTPURLResponse) {
         try await send(path: request.path,
                        method: request.method,
@@ -123,7 +122,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                                   decoder: decoder)
     }
 
-    /// Sends a request with an optional body, validating the status code but discarding the response body.
+    /// Sends a request with an optional body. Validates the status code and discards the response body.
     public func sendWithoutDecoding(path: String,
                                     method: String = "POST",
                                     headers: [String: String] = [:],

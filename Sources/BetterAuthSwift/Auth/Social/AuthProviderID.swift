@@ -1,6 +1,6 @@
 import Foundation
 
-/// A typed authentication provider identifier that still allows custom providers.
+/// A typed authentication provider identifier that supports custom providers.
 public struct AuthProviderID: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral,
     CustomStringConvertible
 {

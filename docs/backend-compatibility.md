@@ -2,12 +2,12 @@
 
 This SDK is not tied to Cloudflare Workers.
 
-It is designed to work with Better Auth backends in general, as long as your Swift app can reach the backend over HTTP and the backend exposes the routes expected by the SDK.
+The SDK works with a Better Auth backend if two conditions are true.
+The Swift app must reach the backend through HTTP. The backend must expose the routes that the SDK expects.
 
 Cloudflare Workers are the primary reference backend in this repository because
-they make the self-hosted, serverless path concrete. The intended value
-proposition is a native Apple auth SDK without Firebase or Supabase auth
-lock-in, while still keeping backend deployment cheap and portable.
+they provide a concrete self-hosted, serverless example. The Apple SDK does not
+require Firebase Auth or Supabase Auth. The backend remains portable.
 
 ## Compatible deployment styles
 
@@ -31,9 +31,8 @@ If your backend uses custom route paths, configure them with `BetterAuthConfigur
 
 ## Runtime diagnostics
 
-Use `client.diagnostics.check(...)` during development or onboarding to verify
-that the configured backend is reachable and advertises the features your app
-plans to call:
+During development or onboarding, use `client.diagnostics.check(...)` to examine
+the configured backend. The report shows reachability and the available features:
 
 ```swift
 let report = await client.diagnostics.check(
@@ -50,9 +49,8 @@ The diagnostics client checks:
 - `GET /health` by default
 - `GET /api/better-auth-swift/diagnostics` by default, when the backend exposes it
 
-The metadata endpoint is optional for generic Better Auth deployments, but it is
-recommended for self-hosted apps because it turns plugin and route mismatches
-into an explicit compatibility report.
+The metadata endpoint is optional for generic Better Auth deployments.
+For self-hosted apps, the endpoint reports plugin and route mismatches.
 
 The response shape is:
 
@@ -92,11 +90,11 @@ The release contract suite is intentionally split into required core coverage an
 | JWKS | Fetch JWKS and require at least one key | `BETTER_AUTH_CONTRACT_BASE_URL`, `BETTER_AUTH_CONTRACT_EXPECT_JWKS=true` |
 | Anonymous auth | Sign in anonymously and delete the anonymous user | `BETTER_AUTH_CONTRACT_BASE_URL`, `BETTER_AUTH_CONTRACT_SUPPORTS_ANONYMOUS=true` |
 
-Optional tests should only be enabled for backends that have the corresponding Better Auth feature configured.
+Enable an optional test only if the backend has the related Better Auth feature.
 
 ## Cloudflare Workers in this repo
 
 This repository includes Cloudflare Workers-based example stacks because they
-are the reference path for serverless Better Auth deployments. They should be
-kept aligned with the SDK's backend contract and used as contract-test targets
+are the reference path for serverless Better Auth deployments. They must remain
+aligned with the SDK backend contract and serve as contract-test targets
 for supported auth flows.

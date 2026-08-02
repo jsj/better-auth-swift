@@ -15,20 +15,20 @@
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
 </p>
 
-Native Swift SDK for [Better Auth](https://github.com/better-auth/better-auth) with first-class support for Apple platforms.
+This native Swift SDK supports [Better Auth](https://github.com/better-auth/better-auth) on Apple platforms.
 
-Use a self-hosted Better Auth backend, including serverless Cloudflare Workers
-deployments, without committing your app's auth stack to Firebase or Supabase.
+You can use a self-hosted Better Auth backend. This includes serverless Cloudflare Workers deployments.
+You do not have to use Firebase or Supabase for authentication.
 
 > [!WARNING]
-> This is an early release. The API may change before `1.0`, and the first tagged release will start at `0.0.1`.
+> This is an early release. The API can change before `1.0`. The first tagged release will be `0.0.1`.
 
 > [!NOTE]
-> This is an independent community SDK and is not officially affiliated with or maintained by the Better Auth team.
+> The Better Auth team does not maintain or officially support this independent community SDK.
 
 ## Features
 
-| Category | What's supported |
+| Category | Supported features |
 |----------|-----------------|
 | **Email + Password** | Sign up, sign in, password reset, password change |
 | **Username** | Username sign in, availability check |
@@ -43,7 +43,7 @@ deployments, without committing your app's auth stack to Firebase or Supabase.
 | **Session Management** | List, revoke current/other/all, device sessions, JWT/JWKS |
 | **Account Lifecycle** | Delete account, re-authenticate, change email, update profile |
 | **Account Linking** | Link social accounts, list linked accounts |
-| **Organizations** | Create, list, update, delete orgs; manage members and invitations (plugin module) |
+| **Organizations** | Create, list, update, and delete organizations. Manage members and invitations (plugin module). |
 | **SwiftUI** | Observable `AuthStore` with launch state, session, loading |
 | **Keychain** | Reinstall-aware session persistence with configurable accessibility |
 
@@ -58,13 +58,13 @@ deployments, without committing your app's auth stack to Firebase or Supabase.
 
 ### Add the package
 
-Add the package in Xcode using the repository URL:
+Add the package in Xcode. Use this repository URL:
 
 ```text
 https://github.com/jsj/better-auth-swift.git
 ```
 
-Or in `Package.swift`:
+Alternatively, add the package to `Package.swift`:
 
 ```swift
 dependencies: [
@@ -72,7 +72,7 @@ dependencies: [
 ]
 ```
 
-Three products are available:
+The package provides three products:
 
 | Product | Use case |
 |---------|----------|
@@ -137,10 +137,10 @@ let session = try await client.auth.anonymous.signIn()
 let profile: Profile = try await client.requests.sendJSON(path: "/api/me")
 ```
 
-The request client automatically attaches bearer tokens, applies the configured
-transient retry policy, and retries once on `401` after refreshing the session.
+The request client attaches bearer tokens. It uses the configured transient retry policy.
+After a `401` response, it refreshes the session and retries once.
 
-### Check backend compatibility
+### Make sure that the backend is compatible
 
 ```swift
 let report = await client.diagnostics.check(
@@ -148,8 +148,8 @@ let report = await client.diagnostics.check(
 )
 ```
 
-The Cloudflare Workers examples expose `/api/better-auth-swift/diagnostics` so
-apps can verify plugin support before calling auth flows.
+The Cloudflare Workers examples expose `/api/better-auth-swift/diagnostics`.
+Apps can use this endpoint to make sure that the backend supports the required plugins.
 
 ## SwiftUI integration
 
@@ -199,8 +199,7 @@ let org = try await orgs.createOrganization(
 let members = try await orgs.listMembers(organizationId: org.id)
 ```
 
-If your backend mounts organization routes somewhere else, pass a route catalog
-when registering the module:
+If the backend uses a different path for organization routes, register the module with a route catalog:
 
 ```swift
 let client = BetterAuthClient(
@@ -216,7 +215,9 @@ let client = BetterAuthClient(
 ## Apple Sign In
 
 > [!NOTE]
-> Native Apple Sign In support depends on the Better Auth server version and configuration you are integrating with. Verify compatibility against the backend version you deploy.
+> Native Apple Sign In support depends on the deployed Better Auth version and configuration.
+
+Make sure that the deployed backend supports Native Apple Sign In.
 
 ```swift
 let session = try await client.auth.signInWithApple(
@@ -238,7 +239,10 @@ let session = try await client.auth.signInWithApple(
 
 ## Backend compatibility
 
-This SDK works with any Better Auth backend reachable over HTTP — Vercel, Node, Cloudflare Workers, or any other host. The SDK handles session persistence, token refresh, and authenticated requests; the backend handles the auth logic.
+This SDK works with Better Auth backends that are available through HTTP.
+Supported hosts include Vercel, Node, and Cloudflare Workers.
+The SDK manages sessions, token refresh, and authenticated requests.
+The backend manages authentication.
 
 ## Contributing
 

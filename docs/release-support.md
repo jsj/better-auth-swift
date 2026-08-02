@@ -6,9 +6,9 @@
 
 - Patch releases fix bugs without source-breaking API changes.
 - Minor releases add backward-compatible APIs or support new Better Auth server capabilities.
-- Major releases may remove deprecated APIs or require newer Swift, Xcode, or platform versions.
+- Major releases can remove deprecated APIs or require newer Swift, Xcode, or platform versions.
 
-Until `1.0.0`, public APIs can still change, but releases should keep migration notes focused and explicit.
+Until `1.0.0`, public APIs can change. Each release must include clear migration notes for its API changes.
 
 ## Platform Support
 
@@ -18,7 +18,9 @@ The package currently supports:
 - macOS 14+
 - Swift 6 mode
 
-Dropping a supported OS, Swift, or Xcode version requires a minor release before `1.0.0` and a major release after `1.0.0`, unless the old toolchain can no longer build packages accepted by Apple's current developer tooling.
+Before `1.0.0`, removal of a supported OS, Swift, or Xcode version requires a minor release.
+After `1.0.0`, this removal requires a major release.
+This policy does not apply if the old toolchain cannot build packages for the current Apple developer tools.
 
 ## Release Checklist
 
@@ -54,10 +56,9 @@ Before tagging a release:
    Scripts/run_local_contracts.sh
    ```
 
-   This starts the Cloudflare Workers example with a fresh local D1 database,
-   provisions a contract user through the fixture capture endpoint, and runs the
-   live contract suite with email/session lifecycle, JWKS, and anonymous account
-   coverage enabled.
+   This command starts the Cloudflare Workers example with a new local D1 database.
+   It creates a contract user through the fixture capture endpoint.
+   Then it runs the live contract suite with email, session lifecycle, JWKS, and anonymous account coverage.
 
    Live contract tests can also be run directly:
 
@@ -81,5 +82,5 @@ Before tagging a release:
    - `BETTER_AUTH_CONTRACT_FIXTURE_CAPTURE_URL` when the capture endpoint is not
      `${BETTER_AUTH_CONTRACT_BASE_URL}/api/fixtures/captures`
 
-3. Confirm GitHub Actions is green for the release commit.
+3. Make sure that GitHub Actions passes for the release commit.
 4. Tag with `vMAJOR.MINOR.PATCH`.

@@ -5,8 +5,8 @@ private enum AutoRefreshConstants {
     static let minimumSleepInterval: TimeInterval = 1
 }
 
-/// Actor-isolated implementation for auth lifecycle, session persistence,
-/// automatic token refresh, and event emission.
+/// This actor manages the authentication lifecycle, session persistence,
+/// automatic token refresh, and events.
 actor BetterAuthSessionManager {
     let configuration: BetterAuthConfiguration
     let sessionStore: BetterAuthSessionStore
@@ -207,7 +207,7 @@ actor BetterAuthSessionManager {
 
     // MARK: - Sign Out
 
-    /// Signs out and clears the local session. Optionally revokes the session on the backend.
+    /// Signs out and clears the local session. This method can also revoke the backend session.
     func signOut(remotely: Bool = true) async throws {
         stopAutoRefresh()
         try await makeSessionAdministrationService().signOut(remotely: remotely,

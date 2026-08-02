@@ -215,7 +215,7 @@ struct SessionRestoreAndAuthStoreTests {
         #expect(authStore.session == stored)
         #expect(authStore.lastRestoreResult == .restored(stored, source: .keychain, refresh: .deferred))
         #expect(authStore.launchState == .recoverableFailure(stored))
-        #expect(authStore.statusMessage == "Session restored; refresh deferred")
+        #expect(authStore.statusMessage == "Session restored. Refresh deferred.")
     }
 
     @Test @MainActor
