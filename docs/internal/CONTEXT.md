@@ -1,14 +1,13 @@
-# Project Context
+# Project context
 
-## Product Wedge
+## Product focus
 
 `better-auth-swift` is a native Apple client SDK for Better Auth. It supports
 self-hosted Better Auth backends. Cloudflare Workers provide the primary serverless reference.
 
-The SDK competes with Firebase Auth and Supabase Auth through native Apple interfaces,
-reliable sessions, and backend portability.
+The SDK provides native Apple interfaces, reliable sessions, and backend portability.
 
-## Domain Terms
+## Domain terms
 
 - **Apple client**: An iOS or macOS app using the Swift package products.
 - **Better Auth backend**: Any HTTP-reachable Better Auth deployment that exposes
@@ -31,7 +30,7 @@ reliable sessions, and backend portability.
 - **Backend diagnostics**: Optional backend metadata that reports reachability
   and available Better Auth features before authentication starts.
 
-## Architecture Preferences
+## Architecture rules
 
 - Prefer modern Swift interfaces over legacy compatibility shims.
 - Keep the SDK instance-based and injectable. Do not introduce a global auth
@@ -39,5 +38,5 @@ reliable sessions, and backend portability.
 - Make backend compatibility explicit and testable. Diagnostics must identify
   missing server plugins and route mismatches.
 - Keep auth behavior in core modules and SwiftUI view state in SwiftUI modules.
-- Treat each public API added before `1.0` as a possible long-term compatibility
-  promise. Reduce or change broad surfaces before you tag `1.0`.
+- Treat each public API added before `1.0` as a possible long-term promise.
+- Reduce or change broad surfaces before you tag `1.0`.
