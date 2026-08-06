@@ -1,0 +1,77 @@
+name: Bug report
+description: Report a reproducible problem with better-auth-swift
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is an independent community project. The Better Auth team does not maintain or officially support it.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Problem
+      description: Describe the problem. Then describe the result that you expected.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Provide the smallest example or the steps that reproduce the problem.
+      placeholder: |
+        1. Configure the client with...
+        2. Call...
+        3. Observe...
+    validations:
+      required: true
+
+  - type: input
+    id: package-version
+    attributes:
+      label: better-auth-swift version
+      placeholder: 0.0.13
+    validations:
+      required: true
+
+  - type: input
+    id: better-auth-version
+    attributes:
+      label: Better Auth server version
+      description: Enter the server version if the problem involves a Better Auth backend.
+
+  - type: input
+    id: environment
+    attributes:
+      label: Apple platform and version
+      placeholder: iOS 18.5
+    validations:
+      required: true
+
+  - type: input
+    id: toolchain
+    attributes:
+      label: Xcode and Swift versions
+      placeholder: Xcode 16.4, Swift 6.1
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or error output
+      description: Remove credentials, tokens, and personal information before you submit the report.
+      render: shell
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Submission checks
+      options:
+        - label: I removed credentials, tokens, and personal information from this report.
+          required: true
+        - label: I searched the existing issues for this problem.
+          required: true

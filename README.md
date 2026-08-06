@@ -15,16 +15,61 @@
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
 </p>
 
-This native Swift SDK supports [Better Auth](https://github.com/better-auth/better-auth) on Apple platforms.
+<details open>
+<summary align="center"><img src="https://raw.githubusercontent.com/jsj/api-emulator-registry/main/.README/agent-icons/claude.svg" width="18" height="18" alt="Claude">&nbsp;<img src="https://raw.githubusercontent.com/jsj/api-emulator-registry/main/.README/agent-icons/cursor.svg" width="18" height="18" alt="Cursor">&nbsp;<img src="https://raw.githubusercontent.com/jsj/api-emulator-registry/main/.README/agent-icons/github-copilot.svg" width="18" height="18" alt="GitHub Copilot">&nbsp;<img src="https://raw.githubusercontent.com/jsj/api-emulator-registry/main/.README/agent-icons/openai.svg" width="18" height="18" alt="OpenAI">&nbsp;&nbsp;<strong>Copy this prompt to your coding agent</strong></summary>
 
-You can use a self-hosted Better Auth backend. This includes serverless Cloudflare Workers deployments.
-You do not have to use Firebase or Supabase for authentication.
+```text
+Integrate better-auth-swift with this iOS or macOS app.
 
-> [!WARNING]
-> This is an early release. The API can change before `1.0`. The first tagged release will be `0.0.1`.
+Before you change files, inspect these parts of the repository:
+- The current authentication flow
+- The backend configuration
+- The session model and storage
+- The package management method
+- The related tests
 
-> [!NOTE]
-> The Better Auth team does not maintain or officially support this independent community SDK.
+Then describe the smallest integration plan.
+
+Add https://github.com/jsj/better-auth-swift.git with the existing Swift package method and version style.
+Use the SDK README, documentation, and examples as the source of truth.
+If you need more details, clone the SDK outside the app repository:
+
+gh repo clone jsj/better-auth-swift <temporary-directory>
+
+Keep the app's public authentication interface unless a change is necessary.
+Put BetterAuthClient behind the current authentication interface.
+Map the app session model to the Better Auth session model in one location.
+
+Add only the authentication flows that the app uses.
+Configure the backend base URL.
+Configure other values only when a flow requires them.
+These values can include the callback URL scheme, request origin, transport, and session storage.
+
+Use the app's current configuration and secret-management methods.
+Do not add production credentials.
+Do not put secrets in source files.
+Do not change the production backend configuration.
+Use synthetic users and fixtures that contain no personally identifiable information.
+
+Add or update one focused authentication test.
+Use a mock or local transport unless the repository has a live-test command.
+Run the smallest related test command.
+Run the smallest related build command.
+
+If the backend lacks a required route or plugin, finish all safe client work.
+Report the blocked behavior and the backend requirement.
+Do not create an incompatible client workaround.
+
+Report these results:
+- Changed files
+- Added package products and version rule
+- Added authentication flows
+- Test and build commands
+- Test and build results
+- Backend requirements and compatibility gaps
+```
+
+</details>
 
 ## Features
 
@@ -214,11 +259,6 @@ let client = BetterAuthClient(
 
 ## Apple Sign In
 
-> [!NOTE]
-> Native Apple Sign In support depends on the deployed Better Auth version and configuration.
-
-Make sure that the deployed backend supports Native Apple Sign In.
-
 ```swift
 let session = try await client.auth.signInWithApple(
     AppleNativeSignInPayload(
@@ -237,13 +277,74 @@ let session = try await client.auth.signInWithApple(
 - [`examples/cf-workers-swiftui`](./examples/cf-workers-swiftui) — SwiftUI app + Cloudflare Workers backend
 - [`examples/cf-workers-uikit`](./examples/cf-workers-uikit) — UIKit app + Cloudflare Workers backend
 
-## Backend compatibility
-
-This SDK works with Better Auth backends that are available through HTTP.
-Supported hosts include Vercel, Node, and Cloudflare Workers.
-The SDK manages sessions, token refresh, and authenticated requests.
-The backend manages authentication.
-
 ## Contributing
 
-Issues and pull requests are welcome.
+[Report a bug](https://github.com/jsj/better-auth-swift/issues/new?template=bug_report.yml) or open a pull request.
+
+<hr>
+
+<h3 align="center">Start now</h3>
+
+<details>
+<summary align="center"><img src="https://raw.githubusercontent.com/jsj/api-emulator-registry/main/.README/agent-icons/claude.svg" width="18" height="18" alt="Claude">&nbsp;<img src="https://raw.githubusercontent.com/jsj/api-emulator-registry/main/.README/agent-icons/cursor.svg" width="18" height="18" alt="Cursor">&nbsp;<img src="https://raw.githubusercontent.com/jsj/api-emulator-registry/main/.README/agent-icons/github-copilot.svg" width="18" height="18" alt="GitHub Copilot">&nbsp;<img src="https://raw.githubusercontent.com/jsj/api-emulator-registry/main/.README/agent-icons/openai.svg" width="18" height="18" alt="OpenAI">&nbsp;&nbsp;<strong>Copy this prompt to your coding agent</strong></summary>
+
+```text
+Integrate better-auth-swift with this iOS or macOS app.
+
+Before you change files, inspect these parts of the repository:
+- The current authentication flow
+- The backend configuration
+- The session model and storage
+- The package management method
+- The related tests
+
+Then describe the smallest integration plan.
+
+Add https://github.com/jsj/better-auth-swift.git with the existing Swift package method and version style.
+Use the SDK README, documentation, and examples as the source of truth.
+If you need more details, clone the SDK outside the app repository:
+
+gh repo clone jsj/better-auth-swift <temporary-directory>
+
+Keep the app's public authentication interface unless a change is necessary.
+Put BetterAuthClient behind the current authentication interface.
+Map the app session model to the Better Auth session model in one location.
+
+Add only the authentication flows that the app uses.
+Configure the backend base URL.
+Configure other values only when a flow requires them.
+These values can include the callback URL scheme, request origin, transport, and session storage.
+
+Use the app's current configuration and secret-management methods.
+Do not add production credentials.
+Do not put secrets in source files.
+Do not change the production backend configuration.
+Use synthetic users and fixtures that contain no personally identifiable information.
+
+Add or update one focused authentication test.
+Use a mock or local transport unless the repository has a live-test command.
+Run the smallest related test command.
+Run the smallest related build command.
+
+If the backend lacks a required route or plugin, finish all safe client work.
+Report the blocked behavior and the backend requirement.
+Do not create an incompatible client workaround.
+
+Report these results:
+- Changed files
+- Added package products and version rule
+- Added authentication flows
+- Test and build commands
+- Test and build results
+- Backend requirements and compatibility gaps
+```
+
+</details>
+
+## License
+
+[MIT](./LICENSE)
+
+---
+
+<p align="center"><sub>This is an independent community project. The Better Auth team does not maintain or officially support it.</sub></p>
