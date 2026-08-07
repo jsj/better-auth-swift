@@ -16,7 +16,7 @@
 </p>
 
 <details open>
-<summary align="center"><img src="https://raw.githubusercontent.com/jsj/api-emulator-registry/main/.README/agent-icons/claude.svg" width="18" height="18" alt="Claude">&nbsp;<img src="https://raw.githubusercontent.com/jsj/api-emulator-registry/main/.README/agent-icons/cursor.svg" width="18" height="18" alt="Cursor">&nbsp;<img src="https://raw.githubusercontent.com/jsj/api-emulator-registry/main/.README/agent-icons/github-copilot.svg" width="18" height="18" alt="GitHub Copilot">&nbsp;<img src="https://raw.githubusercontent.com/jsj/api-emulator-registry/main/.README/agent-icons/openai.svg" width="18" height="18" alt="OpenAI">&nbsp;&nbsp;<strong>Copy this prompt to your coding agent</strong></summary>
+<summary align="center"><img src="https://cdn.jsdelivr.net/gh/jsj/agent-icons@ec84fc0fc6f70311a33800a53121c8cac0e5b48b/claude.svg" width="18" height="18" alt="Claude">&nbsp;<img src="https://cdn.jsdelivr.net/gh/jsj/agent-icons@ec84fc0fc6f70311a33800a53121c8cac0e5b48b/cursor.svg" width="18" height="18" alt="Cursor">&nbsp;<img src="https://cdn.jsdelivr.net/gh/jsj/agent-icons@ec84fc0fc6f70311a33800a53121c8cac0e5b48b/github-copilot.svg" width="18" height="18" alt="GitHub Copilot">&nbsp;<img src="https://cdn.jsdelivr.net/gh/jsj/agent-icons@ec84fc0fc6f70311a33800a53121c8cac0e5b48b/openai.svg" width="18" height="18" alt="OpenAI">&nbsp;&nbsp;<strong>Copy this prompt to your coding agent</strong></summary>
 
 ```text
 Integrate better-auth-swift with this iOS or macOS app.
@@ -286,7 +286,7 @@ let session = try await client.auth.signInWithApple(
 <h3 align="center">Start now</h3>
 
 <details>
-<summary align="center"><img src="https://raw.githubusercontent.com/jsj/api-emulator-registry/main/.README/agent-icons/claude.svg" width="18" height="18" alt="Claude">&nbsp;<img src="https://raw.githubusercontent.com/jsj/api-emulator-registry/main/.README/agent-icons/cursor.svg" width="18" height="18" alt="Cursor">&nbsp;<img src="https://raw.githubusercontent.com/jsj/api-emulator-registry/main/.README/agent-icons/github-copilot.svg" width="18" height="18" alt="GitHub Copilot">&nbsp;<img src="https://raw.githubusercontent.com/jsj/api-emulator-registry/main/.README/agent-icons/openai.svg" width="18" height="18" alt="OpenAI">&nbsp;&nbsp;<strong>Copy this prompt to your coding agent</strong></summary>
+<summary align="center"><img src="https://cdn.jsdelivr.net/gh/jsj/agent-icons@ec84fc0fc6f70311a33800a53121c8cac0e5b48b/claude.svg" width="18" height="18" alt="Claude">&nbsp;<img src="https://cdn.jsdelivr.net/gh/jsj/agent-icons@ec84fc0fc6f70311a33800a53121c8cac0e5b48b/cursor.svg" width="18" height="18" alt="Cursor">&nbsp;<img src="https://cdn.jsdelivr.net/gh/jsj/agent-icons@ec84fc0fc6f70311a33800a53121c8cac0e5b48b/github-copilot.svg" width="18" height="18" alt="GitHub Copilot">&nbsp;<img src="https://cdn.jsdelivr.net/gh/jsj/agent-icons@ec84fc0fc6f70311a33800a53121c8cac0e5b48b/openai.svg" width="18" height="18" alt="OpenAI">&nbsp;&nbsp;<strong>Copy this prompt to your coding agent</strong></summary>
 
 ```text
 Integrate better-auth-swift with this iOS or macOS app.
