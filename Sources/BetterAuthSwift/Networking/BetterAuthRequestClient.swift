@@ -8,8 +8,6 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
     private let sessionManager: BetterAuthSessionManager
     private let pipeline: BetterAuthHTTPPipeline
     private let requestHooks: [any BetterAuthRequestHook]
-    private let requestBuilder: BetterAuthHTTPRequestBuilder
-    private let retryPolicy: RetryPolicy
 
     init(configuration: BetterAuthConfiguration,
          sessionManager: BetterAuthSessionManager,
@@ -17,10 +15,8 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
          requestHooks: [any BetterAuthRequestHook] = [])
     {
         self.sessionManager = sessionManager
-        self.pipeline = BetterAuthHTTPPipeline(transport: transport)
+        self.pipeline = BetterAuthHTTPPipeline(configuration: configuration, transport: transport)
         self.requestHooks = requestHooks
-        self.requestBuilder = BetterAuthHTTPRequestBuilder(configuration: configuration)
-        self.retryPolicy = configuration.retryPolicy
     }
 
     /// Sends a raw HTTP request. Returns `(Data, HTTPURLResponse)`.
@@ -33,7 +29,8 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                        headers: request.headers,
                        body: request.body,
                        requiresAuthentication: request.requiresAuthentication,
-                       retryOnUnauthorized: request.retryOnUnauthorized)
+                       retryOnUnauthorized: request.retryOnUnauthorized,
+                       allowsTransientRetry: request.allowsTransientRetry)
     }
 
     public func send(path: String,
@@ -41,7 +38,8 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                      headers: [String: String] = [:],
                      body: Data? = nil,
                      requiresAuthentication: Bool = true,
-                     retryOnUnauthorized: Bool = true) async throws -> (Data, HTTPURLResponse)
+                     retryOnUnauthorized: Bool = true,
+                     allowsTransientRetry: Bool = true) async throws -> (Data, HTTPURLResponse)
     {
         var request = try await makeRequest(path: path,
                                             method: method,
@@ -49,7 +47,8 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                                             body: body,
                                             requiresAuthentication: requiresAuthentication)
 
-        let (data, response) = try await execute(preparedRequest(from: request))
+        let (data, response) = try await execute(preparedRequest(from: request),
+                                                 allowsTransientRetry: allowsTransientRetry)
         if response.statusCode == 401, retryOnUnauthorized, requiresAuthentication {
             _ = try await sessionManager.refreshSession()
             request = try await makeRequest(path: path,
@@ -57,8 +56,9 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                                             headers: headers,
                                             body: body,
                                             requiresAuthentication: requiresAuthentication)
-            let retried = try await execute(preparedRequest(from: request))
-            try pipeline.validateSuccess(data: retried.0, response: retried.1)
+            let retried = try await execute(preparedRequest(from: request),
+                                            allowsTransientRetry: allowsTransientRetry)
+            try BetterAuthHTTPResponse.validateSuccess(data: retried.0, response: retried.1)
             return retried
         }
 
@@ -76,6 +76,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                            body: request.body,
                            requiresAuthentication: request.requiresAuthentication,
                            retryOnUnauthorized: request.retryOnUnauthorized,
+                           allowsTransientRetry: request.allowsTransientRetry,
                            decoder: decoder)
     }
 
@@ -85,6 +86,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                                               body: Data? = nil,
                                               requiresAuthentication: Bool = true,
                                               retryOnUnauthorized: Bool = true,
+                                              allowsTransientRetry: Bool = true,
                                               decoder: JSONDecoder = BetterAuthCoding
                                                   .makeDecoder()) async throws -> Response
     {
@@ -93,10 +95,13 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                                               headers: headers,
                                               body: body,
                                               requiresAuthentication: requiresAuthentication,
-                                              retryOnUnauthorized: retryOnUnauthorized)
+                                              retryOnUnauthorized: retryOnUnauthorized,
+                                              allowsTransientRetry: allowsTransientRetry)
 
-        try pipeline.validateSuccess(data: data, response: response)
-        return try decoder.decode(Response.self, from: data)
+        return try BetterAuthHTTPResponse.decode(Response.self,
+                                                 data: data,
+                                                 response: response,
+                                                 decoder: decoder)
     }
 
     /// Sends an `Encodable` body and decodes the JSON response.
@@ -106,6 +111,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                                               body: some Encodable,
                                               requiresAuthentication: Bool = true,
                                               retryOnUnauthorized: Bool = true,
+                                              allowsTransientRetry: Bool = true,
                                               encoder: JSONEncoder = BetterAuthCoding.makeEncoder(),
                                               decoder: JSONDecoder = BetterAuthCoding
                                                   .makeDecoder()) async throws -> Response
@@ -119,6 +125,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                                   body: encoder.encode(body),
                                   requiresAuthentication: requiresAuthentication,
                                   retryOnUnauthorized: retryOnUnauthorized,
+                                  allowsTransientRetry: allowsTransientRetry,
                                   decoder: decoder)
     }
 
@@ -139,7 +146,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                                               requiresAuthentication: requiresAuthentication,
                                               retryOnUnauthorized: retryOnUnauthorized)
 
-        try pipeline.validateSuccess(data: data, response: response)
+        try BetterAuthHTTPResponse.validateSuccess(data: data, response: response)
     }
 
     private func makeRequest(path: String,
@@ -150,18 +157,22 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
     {
         if requiresAuthentication {
             let session = try await sessionManager.validSession()
-            return try requestBuilder.makeRequest(path: path,
-                                                  method: method,
-                                                  headers: headers,
-                                                  body: body,
-                                                  accessToken: session.session.accessToken)
+            return try pipeline.makeRequest(path: path,
+                                            method: method,
+                                            headers: headers,
+                                            body: body,
+                                            accessToken: session.session.accessToken)
         }
 
-        return try requestBuilder.makeRequest(path: path, method: method, headers: headers, body: body)
+        return try pipeline.makeRequest(path: path, method: method, headers: headers, body: body)
     }
 
-    private func execute(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
-        try await pipeline.execute(request, statusValidation: .preserve, retryPolicy: retryPolicy)
+    private func execute(_ request: URLRequest,
+                         allowsTransientRetry: Bool) async throws -> (Data, HTTPURLResponse)
+    {
+        try await pipeline.execute(request,
+                                   statusValidation: .preserve,
+                                   allowsTransientRetry: allowsTransientRetry)
     }
 
     private func preparedRequest(from request: URLRequest) async throws -> URLRequest {

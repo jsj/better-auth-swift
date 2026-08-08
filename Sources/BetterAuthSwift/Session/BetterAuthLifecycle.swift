@@ -39,14 +39,12 @@ import Foundation
 
 @frozen public enum BetterAuthIncomingURL: Sendable, Equatable {
     case genericOAuth(GenericOAuthCallbackRequest)
-    case magicLink(MagicLinkVerifyRequest)
     case verifyEmail(VerifyEmailRequest)
     case unsupported
 }
 
 @frozen public enum BetterAuthHandledURLResult: Sendable, Equatable {
     case genericOAuth(BetterAuthSession)
-    case magicLink(MagicLinkVerificationResult)
     case verifyEmail(VerifyEmailResult)
     case ignored
 }

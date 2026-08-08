@@ -164,7 +164,6 @@ public extension BetterAuthConfiguration {
         public let session: SessionEndpoints
         public let oauth: OAuthEndpoints
         public let passkey: PasskeyEndpoints
-        public let magicLink: MagicLinkEndpoints
         public let emailOTP: EmailOTPEndpoints
         public let phoneOTP: PhoneOTPEndpoints
         public let twoFactor: TwoFactorEndpoints
@@ -174,7 +173,6 @@ public extension BetterAuthConfiguration {
                     session: SessionEndpoints = .init(),
                     oauth: OAuthEndpoints = .init(),
                     passkey: PasskeyEndpoints = .init(),
-                    magicLink: MagicLinkEndpoints = .init(),
                     emailOTP: EmailOTPEndpoints = .init(),
                     phoneOTP: PhoneOTPEndpoints = .init(),
                     twoFactor: TwoFactorEndpoints = .init())
@@ -184,7 +182,6 @@ public extension BetterAuthConfiguration {
             self.session = session
             self.oauth = oauth
             self.passkey = passkey
-            self.magicLink = magicLink
             self.emailOTP = emailOTP
             self.phoneOTP = phoneOTP
             self.twoFactor = twoFactor
@@ -338,18 +335,6 @@ public extension BetterAuthConfiguration {
             self.listPath = listPath
             self.updatePath = updatePath
             self.deletePath = deletePath
-        }
-    }
-
-    struct MagicLinkEndpoints: Sendable {
-        public let signInPath: String
-        public let verifyPath: String
-
-        public init(signInPath: String = "/api/auth/sign-in/magic-link",
-                    verifyPath: String = "/api/auth/magic-link/verify")
-        {
-            self.signInPath = signInPath
-            self.verifyPath = verifyPath
         }
     }
 

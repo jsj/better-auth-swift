@@ -5,10 +5,14 @@ let package = Package(
     name: "better-auth-swift",
     platforms: [
         .iOS(.v17),
-        .macOS(.v14)
+        .macOS(.v14),
+        .watchOS(.v10),
+        .visionOS(.v1),
+        .tvOS(.v17)
     ],
     products: [
         .library(name: "BetterAuth", targets: ["BetterAuth"]),
+        .library(name: "BetterAuthMagicLink", targets: ["BetterAuthMagicLink"]),
         .library(name: "BetterAuthSwiftUI", targets: ["BetterAuthSwiftUI"]),
         .library(name: "BetterAuthOrganization", targets: ["BetterAuthOrganization"])
     ],
@@ -16,6 +20,10 @@ let package = Package(
         .target(
             name: "BetterAuth",
             path: "Sources/BetterAuthSwift"
+        ),
+        .target(
+            name: "BetterAuthMagicLink",
+            dependencies: ["BetterAuth"]
         ),
         .target(
             name: "BetterAuthSwiftUI",
@@ -34,6 +42,10 @@ let package = Package(
             name: "BetterAuthSwiftTests",
             dependencies: ["BetterAuth", "BetterAuthSwiftUI", "BetterAuthTestHelpers"],
             path: "Tests/BetterAuthSwiftTests"
+        ),
+        .testTarget(
+            name: "BetterAuthMagicLinkTests",
+            dependencies: ["BetterAuth", "BetterAuthMagicLink", "BetterAuthTestHelpers"]
         ),
         .testTarget(
             name: "BetterAuthOrganizationTests",

@@ -1,3 +1,4 @@
+import BetterAuth
 import Foundation
 
 public struct MagicLinkRequest: Codable, Sendable, Equatable {
@@ -52,13 +53,6 @@ public enum MagicLinkVerificationResult: Codable, Sendable, Equatable {
             self = .signedIn(session)
             return
         }
-        if let response = try? container.decode(SocialSignInTransportResponse.self),
-           let session = response.materializedSession
-        {
-            self = .signedIn(session)
-            return
-        }
-
         self = try .failure(container.decode(MagicLinkFailure.self))
     }
 

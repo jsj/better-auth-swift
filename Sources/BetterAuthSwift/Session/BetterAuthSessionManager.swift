@@ -288,9 +288,6 @@ actor BetterAuthSessionManager {
         case let .genericOAuth(payload):
             try await .genericOAuth(completeGenericOAuth(payload))
 
-        case let .magicLink(payload):
-            try await .magicLink(verifyMagicLink(payload))
-
         case let .verifyEmail(payload):
             try await .verifyEmail(verifyEmail(payload))
 
@@ -305,9 +302,6 @@ actor BetterAuthSessionManager {
             switch result {
             case .genericOAuth:
                 logger?.info("OAuth callback handled")
-
-            case let .magicLink(result):
-                logger?.info("Magic link callback handled: \(result)")
 
             case let .verifyEmail(result):
                 logger?.info("Verify email callback handled: \(result)")

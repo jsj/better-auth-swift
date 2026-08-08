@@ -16,6 +16,13 @@ The package currently supports:
 
 - iOS 17+
 - macOS 14+
+- watchOS 10+
+- visionOS 1+
+- tvOS 17+
+
+Platform support means that every public package product compiles and that core
+HTTP and session behavior is available. A system authentication experience can
+still depend on framework capabilities that differ by platform.
 - Swift 6 mode
 
 Before `1.0.0`, removal of a supported OS, Swift, or Xcode version requires a minor release.

@@ -137,6 +137,28 @@ struct OrganizationTests {
     }
 
     @Test
+    func deleteOrganizationRejectsMissingStatus() async throws {
+        let transport = MockTransport { request in
+            try expect(request.url?.path == "/api/auth/organization/delete")
+            return try response(for: request, statusCode: 200, data: encodeJSON(["message": "deleted"]))
+        }
+
+        let client = try makeClient(transport: transport)
+        _ = try await client.auth.restoreSession()
+        let manager = OrganizationManager(client: client)
+
+        do {
+            _ = try await manager.deleteOrganization(organizationId: "org-1")
+            Issue.record("Expected BetterAuthError.invalidResponse")
+        } catch let error as BetterAuthError {
+            guard case .invalidResponse = error else {
+                Issue.record("Expected BetterAuthError.invalidResponse but got \(error)")
+                return
+            }
+        }
+    }
+
+    @Test
     func inviteMemberEncodesPayload() async throws {
         let invitation = OrganizationInvitation(id: "inv-1",
                                                 organizationId: "org-1",

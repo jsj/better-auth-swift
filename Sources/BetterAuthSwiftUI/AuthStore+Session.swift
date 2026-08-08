@@ -9,22 +9,22 @@ public extension AuthStore {
     }
 
     func bootstrap() async {
-        isLoading = true
+        let identifier = beginOperation()
         launchState = .restoring
-        defer { isLoading = false }
+        defer { endOperation(identifier) }
         do {
+            try Task.checkCancellation()
             let result = try await sessionAuth.restoreSessionOnLaunch()
-            lastError = nil
-            lastUnderlyingError = nil
             lastRestoreResult = result
             applyRestoreResult(result)
+            recordSuccess(for: identifier)
+        } catch is CancellationError {
+            return
         } catch {
             lastRestoreResult = nil
             session = nil
             launchState = .failed
-            lastError = normalizeError(error)
-            lastUnderlyingError = error
-            statusMessage = error.localizedDescription
+            recordFailure(error, for: identifier)
         }
     }
 

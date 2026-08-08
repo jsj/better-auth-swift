@@ -4,6 +4,9 @@
 
 - iOS 17+
 - macOS 14+
+- watchOS 10+
+- visionOS 1+
+- tvOS 17+
 - Xcode 16+
 - Swift 6
 
@@ -24,6 +27,7 @@ Then choose the products you need:
     name: "YourApp",
     dependencies: [
         .product(name: "BetterAuth", package: "better-auth-swift"),
+        .product(name: "BetterAuthMagicLink", package: "better-auth-swift"),
         .product(name: "BetterAuthSwiftUI", package: "better-auth-swift"),
         .product(name: "BetterAuthOrganization", package: "better-auth-swift")
     ]
@@ -31,6 +35,7 @@ Then choose the products you need:
 ```
 
 Use `BetterAuth` for the core SDK. Add `BetterAuthSwiftUI` for the observable `AuthStore`.
+If you use the Magic Link plugin, add `BetterAuthMagicLink`.
 If you use the organization plugin, add `BetterAuthOrganization`.
 
 ## Xcode

@@ -29,10 +29,6 @@ public extension BetterAuthAuthClient {
         BetterAuthOAuthClient(auth: self)
     }
 
-    var magicLinks: BetterAuthMagicLinkClient {
-        BetterAuthMagicLinkClient(auth: self)
-    }
-
     var emailOTP: BetterAuthEmailOTPClient {
         BetterAuthEmailOTPClient(auth: self)
     }
@@ -253,24 +249,6 @@ public struct BetterAuthOAuthClient: Sendable {
     @discardableResult
     public func complete(_ payload: GenericOAuthCallbackRequest) async throws -> BetterAuthSession {
         try await auth.completeGenericOAuth(payload)
-    }
-}
-
-public struct BetterAuthMagicLinkClient: Sendable {
-    private let auth: BetterAuthAuthClient
-
-    init(auth: BetterAuthAuthClient) {
-        self.auth = auth
-    }
-
-    @discardableResult
-    public func request(_ payload: MagicLinkRequest) async throws -> Bool {
-        try await auth.requestMagicLink(payload)
-    }
-
-    @discardableResult
-    public func verify(_ payload: MagicLinkVerifyRequest) async throws -> MagicLinkVerificationResult {
-        try await auth.verifyMagicLink(payload)
     }
 }
 

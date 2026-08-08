@@ -82,7 +82,9 @@ If app targets share credentials through an access group, use `BetterAuthConfigu
 ### `endpoints`
 
 If your Better Auth deployment uses custom routes, override the endpoint paths.
-The endpoints are grouped by feature: `auth`, `user`, `session`, `oauth`, `passkey`, `magicLink`, `emailOTP`, `phoneOTP`, and `twoFactor`.
+The core endpoints are grouped by feature: `auth`, `user`, `session`, `oauth`, `passkey`, `emailOTP`, `phoneOTP`, and `twoFactor`.
+
+Optional Plugin modules own their endpoint configuration. For example, use `BetterAuthMagicLinkEndpoints` for custom Magic Link routes.
 
 ### `auth`
 

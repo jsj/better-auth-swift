@@ -1,8 +1,12 @@
-import BetterAuth
 import Foundation
 
+enum ExampleAuthMethod: String {
+    case emailPassword, usernamePassword, magicLink, emailOTP, phoneOTP
+    case apple, anonymous, passkey, twoFactor
+}
+
 enum AuthOption: Identifiable {
-    case authMethod(AuthMethod)
+    case authMethod(ExampleAuthMethod)
     case emailVerification
     case profile
     case sessionManagement

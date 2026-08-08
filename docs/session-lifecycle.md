@@ -105,7 +105,14 @@ let parsed = await client.auth.parseIncomingURL(url)
 let handled = try await client.auth.lifecycle.handleIncomingURL(url)
 ```
 
-The URL helpers cover OAuth callbacks, generic OAuth callbacks, magic links, and email/OTP verification callbacks configured through the SDK.
+The core URL helpers cover OAuth and email-verification callbacks.
+
+The Magic Link plugin owns Magic Link URLs:
+
+```swift
+let magicLinks = try client.requireMagicLinks()
+let handled = try await magicLinks.handleIncomingURL(url)
+```
 
 ## Persistence
 

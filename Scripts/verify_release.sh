@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 REQUIRE_LIVE_CONTRACTS=0
+SKIP_PLATFORM_BUILDS=0
 VERSION=""
 
 usage() {
@@ -12,6 +13,7 @@ Usage: Scripts/verify_release.sh [--version vMAJOR.MINOR.PATCH] [--require-live-
 Runs the release verification gates:
   - swift build -c release
   - swift test --enable-swift-testing
+  - public product builds for each supported Apple platform
   - public symbol graph guard for the BetterAuth API surface
   - swiftformat . --lint --config .swiftformat
   - swiftlint --config .swiftlint.yml --strict
@@ -19,6 +21,9 @@ Runs the release verification gates:
 
 Use --require-live-contracts for release candidates where the live Better Auth
 contract suite must run rather than be skipped.
+
+Use --skip-platform-builds only when a separate CI system runs the equivalent
+Apple-platform compilation gates for the same commit.
 USAGE
 }
 
@@ -34,6 +39,10 @@ while [ "$#" -gt 0 ]; do
       ;;
     --require-live-contracts)
       REQUIRE_LIVE_CONTRACTS=1
+      shift
+      ;;
+    --skip-platform-builds)
+      SKIP_PLATFORM_BUILDS=1
       shift
       ;;
     -h|--help)
@@ -68,6 +77,24 @@ swift build -c release
 echo "Running package tests..."
 swift test --enable-swift-testing
 
+echo "Building public documentation..."
+"$ROOT/Scripts/generate_xcodeproj.sh"
+for scheme in BetterAuth BetterAuthMagicLink BetterAuthSwiftUI BetterAuthOrganization; do
+  xcodebuild docbuild \
+    -project "$ROOT/better-auth-swift.xcodeproj" \
+    -scheme "$scheme" \
+    -destination 'generic/platform=iOS' \
+    -derivedDataPath "$ROOT/.build/release-docc" \
+    CODE_SIGNING_ALLOWED=NO \
+    >/tmp/better-auth-swift-docc-"$scheme".log
+done
+
+if [ "$SKIP_PLATFORM_BUILDS" -eq 1 ]; then
+  echo "Skipping Apple-platform builds; an equivalent CI gate is required."
+else
+  "$ROOT/Scripts/verify_platform_builds.sh"
+fi
+
 echo "Checking public symbol surface..."
 swift package dump-symbol-graph --minimum-access-level public >/tmp/better-auth-swift-symbolgraph.log
 SYMBOL_GRAPH="$(find .build -path '*/symbolgraph/BetterAuth.symbols.json' -type f -print | head -n 1)"
@@ -84,6 +111,17 @@ fi
 
 if ! grep -q "BetterAuthAuthClient" "$SYMBOL_GRAPH"; then
   echo "BetterAuthAuthClient is missing from the public BetterAuth symbol graph." >&2
+  exit 1
+fi
+
+MAGIC_LINK_SYMBOL_GRAPH="$(find .build -path '*/symbolgraph/BetterAuthMagicLink.symbols.json' -type f -print | head -n 1)"
+if [ -z "$MAGIC_LINK_SYMBOL_GRAPH" ]; then
+  echo "Could not find the BetterAuthMagicLink public symbol graph." >&2
+  exit 1
+fi
+
+if ! grep -q "BetterAuthMagicLinkClient" "$MAGIC_LINK_SYMBOL_GRAPH"; then
+  echo "BetterAuthMagicLinkClient is missing from the BetterAuthMagicLink public symbol graph." >&2
   exit 1
 fi
 

@@ -1,5 +1,6 @@
 import AuthenticationServices
 import BetterAuth
+import BetterAuthMagicLink
 import Foundation
 import Observation
 
@@ -86,7 +87,8 @@ final class AuthViewModel {
         let resolvedClient = client ?? BetterAuthClient(baseURL: configuration.apiBaseURL,
                                                         storage: .init(key: "better-auth.example.session",
                                                                        service: "BetterAuthExample"),
-                                                        callbackURLSchemes: ["betterauth"])
+                                                        callbackURLSchemes: ["betterauth"],
+                                                        modules: [BetterAuthMagicLinkModule()])
         self.client = resolvedClient
         service = AuthService(client: resolvedClient)
         statusMessage = configuration.statusMessage
@@ -203,7 +205,7 @@ final class AuthViewModel {
         await perform {
             let result = try await service.handleIncomingURL(url)
             switch result {
-            case let .genericOAuth(restoredSession):
+            case let .core(.genericOAuth(restoredSession)):
                 session = restoredSession
                 launchState = .authenticated(restoredSession)
                 statusMessage = "OAuth completed"
@@ -215,14 +217,14 @@ final class AuthViewModel {
                 }
                 statusMessage = "Magic link handled"
 
-            case let .verifyEmail(verificationResult):
+            case let .core(.verifyEmail(verificationResult)):
                 if case let .signedIn(restoredSession) = verificationResult {
                     session = restoredSession
                     launchState = .authenticated(restoredSession)
                 }
                 statusMessage = "Verification handled"
 
-            case .ignored:
+            case .core(.ignored):
                 statusMessage = "Ignored URL"
             }
         }
@@ -244,9 +246,13 @@ final class AuthViewModel {
     // MARK: - Apple
 
     func prepareAppleRequest(_ request: ASAuthorizationAppleIDRequest) {
-        let context = AppleSignInSupport.makeContext()
-        currentAppleContext = context
-        AppleSignInBridge.configure(request, context: context)
+        do {
+            let context = try AppleSignInSupport.makeContext()
+            currentAppleContext = context
+            AppleSignInBridge.configure(request, context: context)
+        } catch {
+            statusMessage = error.localizedDescription
+        }
     }
 
     func handleAppleResult(_ result: Result<ASAuthorization, Error>) async {
