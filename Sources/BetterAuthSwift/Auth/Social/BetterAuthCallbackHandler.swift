@@ -25,17 +25,6 @@ struct BetterAuthCallbackHandler {
             return .genericOAuth(.init(providerId: providerId, code: code, state: state, issuer: issuer))
         }
 
-        if path.hasSuffix(endpoints.magicLink.verifyPath),
-           let token = queryItems.first(where: { $0.name == "token" })?.value
-        {
-            return .magicLink(.init(token: token,
-                                    callbackURL: queryItems.first(where: { $0.name == "callbackURL" })?.value,
-                                    newUserCallbackURL: queryItems.first(where: { $0.name == "newUserCallbackURL" })?
-                                        .value,
-                                    errorCallbackURL: queryItems.first(where: { $0.name == "errorCallbackURL" })?
-                                        .value))
-        }
-
         if path.hasSuffix(endpoints.user.verifyEmailPath),
            let token = queryItems.first(where: { $0.name == "token" })?.value
         {

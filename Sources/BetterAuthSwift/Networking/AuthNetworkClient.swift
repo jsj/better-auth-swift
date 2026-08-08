@@ -1,20 +1,19 @@
 import Foundation
 
 struct AuthNetworkClient {
-    let baseURL: URL
-    let transport: BetterAuthTransport
-    let retryPolicy: RetryPolicy
-    let requestOrigin: String?
-    let timeoutInterval: TimeInterval
+    private let pipeline: BetterAuthHTTPPipeline
 
-    private var pipeline: BetterAuthHTTPPipeline {
-        BetterAuthHTTPPipeline(transport: transport)
-    }
-
-    private var requestBuilder: BetterAuthHTTPRequestBuilder {
-        BetterAuthHTTPRequestBuilder(baseURL: baseURL,
-                                     requestOrigin: requestOrigin,
-                                     timeoutInterval: timeoutInterval)
+    init(baseURL: URL,
+         transport: BetterAuthTransport,
+         retryPolicy: RetryPolicy,
+         requestOrigin: String?,
+         timeoutInterval: TimeInterval)
+    {
+        pipeline = BetterAuthHTTPPipeline(requestBuilder: BetterAuthHTTPRequestBuilder(baseURL: baseURL,
+                                                                                       requestOrigin: requestOrigin,
+                                                                                       timeoutInterval: timeoutInterval),
+                                          transport: transport,
+                                          retryPolicy: retryPolicy)
     }
 
     func post<Response: Decodable>(path: String,
@@ -51,10 +50,10 @@ struct AuthNetworkClient {
                                   queryItems: [URLQueryItem],
                                   accessToken: String?) async throws -> Response
     {
-        let request = try requestBuilder.makeRequest(path: path,
-                                                     method: "GET",
-                                                     accessToken: accessToken,
-                                                     queryItems: queryItems)
+        let request = try pipeline.makeRequest(path: path,
+                                               method: "GET",
+                                               accessToken: accessToken,
+                                               queryItems: queryItems)
         return try await execute(request)
     }
 
@@ -64,7 +63,7 @@ struct AuthNetworkClient {
                               method: String,
                               accessToken: String?) throws -> URLRequest
     {
-        try requestBuilder.makeRequest(path: path, method: method, accessToken: accessToken)
+        try pipeline.makeRequest(path: path, method: method, accessToken: accessToken)
     }
 
     private func buildRequest(path: String,
@@ -79,15 +78,11 @@ struct AuthNetworkClient {
     }
 
     private func execute<Response: Decodable>(_ request: URLRequest) async throws -> Response {
-        try await pipeline.executeDecoding(request,
-                                           decoder: BetterAuthCoding.makeDecoder(),
-                                           retryPolicy: retryPolicy)
+        try await pipeline.executeDecoding(request, decoder: BetterAuthCoding.makeDecoder())
     }
 
     private func execute(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
-        try await pipeline.execute(request,
-                                   statusValidation: .validateSuccess,
-                                   retryPolicy: retryPolicy)
+        try await pipeline.execute(request, statusValidation: .validateSuccess)
     }
 }
 
@@ -99,24 +94,61 @@ enum BetterAuthHTTPStatusValidation: Equatable {
 }
 
 struct BetterAuthHTTPPipeline {
+    let requestBuilder: BetterAuthHTTPRequestBuilder
     let transport: BetterAuthTransport
+    let retryPolicy: RetryPolicy
+
+    init(configuration: BetterAuthConfiguration,
+         transport: BetterAuthTransport)
+    {
+        self.init(requestBuilder: BetterAuthHTTPRequestBuilder(configuration: configuration),
+                  transport: transport,
+                  retryPolicy: configuration.retryPolicy)
+    }
+
+    init(requestBuilder: BetterAuthHTTPRequestBuilder,
+         transport: BetterAuthTransport,
+         retryPolicy: RetryPolicy)
+    {
+        self.requestBuilder = requestBuilder
+        self.transport = transport
+        self.retryPolicy = retryPolicy
+    }
+
+    func makeRequest(path: String,
+                     method: String,
+                     headers: [String: String] = [:],
+                     body: Data? = nil,
+                     accessToken: String? = nil,
+                     queryItems: [URLQueryItem] = []) throws -> URLRequest
+    {
+        try requestBuilder.makeRequest(path: path,
+                                       method: method,
+                                       headers: headers,
+                                       body: body,
+                                       accessToken: accessToken,
+                                       queryItems: queryItems)
+    }
 
     func executeDecoding<Response: Decodable>(_ request: URLRequest,
-                                              decoder: JSONDecoder = BetterAuthCoding.makeDecoder(),
-                                              retryPolicy: RetryPolicy = .none) async throws -> Response
+                                              decoder: JSONDecoder = BetterAuthCoding
+                                                  .makeDecoder()) async throws -> Response
     {
-        let (data, _) = try await execute(request,
-                                          statusValidation: .validateSuccess,
-                                          retryPolicy: retryPolicy)
-        return try decoder.decode(Response.self, from: data)
+        let (data, response) = try await execute(request, statusValidation: .validateSuccess)
+        return try BetterAuthHTTPResponse.decode(Response.self,
+                                                 data: data,
+                                                 response: response,
+                                                 decoder: decoder)
     }
 
     func execute(_ request: URLRequest,
                  statusValidation: BetterAuthHTTPStatusValidation = .validateSuccess,
-                 retryPolicy: RetryPolicy = .none) async throws -> (Data, HTTPURLResponse)
+                 allowsTransientRetry: Bool = true) async throws
+        -> (Data, HTTPURLResponse)
     {
+        let retryLimit = allowsTransientRetry ? retryPolicy.maxRetries : 0
         var lastError: Error?
-        for attempt in 0 ... retryPolicy.maxRetries {
+        for attempt in 0 ... retryLimit {
             if attempt > 0 {
                 let delay = retryPolicy.delay(for: attempt)
                 try await Task.sleep(for: .seconds(delay))
@@ -126,18 +158,18 @@ struct BetterAuthHTTPPipeline {
                 guard let httpResponse = response as? HTTPURLResponse else {
                     throw BetterAuthError.invalidResponse
                 }
-                if retryPolicy.isRetryable(statusCode: httpResponse.statusCode), attempt < retryPolicy.maxRetries {
+                if retryPolicy.isRetryable(statusCode: httpResponse.statusCode), attempt < retryLimit {
                     lastError = ErrorParsing.parse(statusCode: httpResponse.statusCode, data: data)
                     continue
                 }
                 if statusValidation == .validateSuccess {
-                    try validateSuccess(data: data, response: httpResponse)
+                    try BetterAuthHTTPResponse.validateSuccess(data: data, response: httpResponse)
                 }
                 return (data, httpResponse)
             } catch let error as BetterAuthError {
                 throw error
             } catch {
-                if retryPolicy.isRetryable(error: error), attempt < retryPolicy.maxRetries {
+                if retryPolicy.isRetryable(error: error), attempt < retryLimit {
                     lastError = error
                     continue
                 }
@@ -146,10 +178,21 @@ struct BetterAuthHTTPPipeline {
         }
         throw lastError ?? BetterAuthError.invalidResponse
     }
+}
 
-    func validateSuccess(data: Data, response: HTTPURLResponse) throws {
+enum BetterAuthHTTPResponse {
+    static func validateSuccess(data: Data, response: HTTPURLResponse) throws {
         guard (200 ..< 300).contains(response.statusCode) else {
             throw ErrorParsing.parse(statusCode: response.statusCode, data: data)
         }
+    }
+
+    static func decode<Response: Decodable>(_ type: Response.Type,
+                                            data: Data,
+                                            response: HTTPURLResponse,
+                                            decoder: JSONDecoder) throws -> Response
+    {
+        try validateSuccess(data: data, response: response)
+        return try decoder.decode(type, from: data)
     }
 }

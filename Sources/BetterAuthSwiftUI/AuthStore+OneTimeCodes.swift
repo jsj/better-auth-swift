@@ -2,27 +2,6 @@ import BetterAuth
 import Foundation
 
 public extension AuthStore {
-    // MARK: - Magic Link
-
-    func requestMagicLink(_ payload: MagicLinkRequest) async {
-        await perform {
-            _ = try await oneTimeCodeAuth.requestMagicLink(payload)
-            statusMessage = "Magic link sent"
-        }
-    }
-
-    func verifyMagicLink(_ payload: MagicLinkVerifyRequest) async {
-        await perform {
-            let result = try await oneTimeCodeAuth.verifyMagicLink(payload)
-            if case let .signedIn(session) = result {
-                applyAuthStateChange(AuthStateChange(event: .signedIn,
-                                                     session: session,
-                                                     transition: .init(phase: .authenticated)))
-            }
-            statusMessage = "Magic link verified"
-        }
-    }
-
     // MARK: - Email OTP
 
     func requestEmailOTP(_ payload: EmailOTPRequest) async {

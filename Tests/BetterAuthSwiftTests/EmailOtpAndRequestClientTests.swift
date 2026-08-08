@@ -4,7 +4,7 @@ import Testing
 @testable import BetterAuth
 @testable import BetterAuthSwiftUI
 
-struct EmailOtpMagicLinkAndRequestClientTests {
+struct EmailOtpAndRequestClientTests {
     @Test
     func requestClientEncodesDatesAsISO8601() async throws {
         struct DatePayload: Encodable {

@@ -45,6 +45,20 @@ extension BetterAuthSessionManager {
         updateAutoRefresh(for: session)
     }
 
+    func applyPluginSessionOutcome(_ outcome: BetterAuthPluginSessionOutcome) async throws -> BetterAuthSession {
+        let result: BetterAuthSessionOutcome = switch outcome {
+        case let .signedIn(session):
+            .signedIn(session)
+
+        case let .token(token, fallbackUser):
+            .token(token: token, fallbackUser: fallbackUser)
+        }
+        let session = try await BetterAuthSessionResultHandler(relay: makeRelay(), materializer: makeMaterializer())
+            .appliedSession(from: result)
+        updateAutoRefresh(for: session)
+        return session
+    }
+
     // MARK: - Session Refresh
 
     /// Refreshes the current session with the backend. Deduplicates concurrent calls.

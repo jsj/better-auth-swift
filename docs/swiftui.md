@@ -74,7 +74,6 @@ Use the namespaced API for new UI code:
 
 ```swift
 await authStore.email.signIn(.init(email: email, password: password))
-await authStore.magicLinks.request(.init(email: email))
 let passkeys = try await authStore.passkeys.list()
 let sessions = try await authStore.sessions.list()
 ```
@@ -86,7 +85,6 @@ Available namespaces:
 - Sign in with Apple
 - social sign-in and generic OAuth
 - anonymous sign-in and upgrade flows
-- magic links
 - email OTP
 - phone OTP
 - two-factor flows
@@ -96,3 +94,6 @@ Available namespaces:
 - session and device-session management
 
 If you want lower-level control or a non-SwiftUI architecture, use `BetterAuth` directly.
+
+Magic Link is an optional Plugin module. Call `client.requireMagicLinks()` from a SwiftUI task.
+`AuthStore` observes the session change after successful verification.

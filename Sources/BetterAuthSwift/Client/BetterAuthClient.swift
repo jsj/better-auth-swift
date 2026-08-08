@@ -34,6 +34,11 @@ public struct BetterAuthClient: BetterAuthModuleSupporting, Sendable {
                 eventEmitter: AuthEventEmitter = AuthEventEmitter(),
                 modules: [any BetterAuthModule] = [])
     {
+        do {
+            try BetterAuthModuleRegistry.validate(modules)
+        } catch {
+            preconditionFailure(String(describing: error))
+        }
         self.configuration = configuration
         let resolvedStore = sessionStore ?? Self.makeSessionStore(storage: configuration.storage)
         let sessionManager = BetterAuthSessionManager(configuration: configuration,
@@ -49,6 +54,7 @@ public struct BetterAuthClient: BetterAuthModuleSupporting, Sendable {
                                                    transport: transport)
         let resolvedModules = BetterAuthModuleRegistry.build(configuration: configuration,
                                                              authFeatures: BetterAuthAuthFeatures(sessionLifecycle: auth,
+                                                                                                  sessionOutcomes: auth,
                                                                                                   primaryAuth: auth,
                                                                                                   oauthAuth: auth,
                                                                                                   oneTimeCodeAuth: auth,

@@ -16,6 +16,9 @@ Apple apps can use native authentication without a hosted identity vendor.
 
 The package currently targets iOS 17+, macOS 14+, and Swift 6 mode.
 
+ADR 0002 supersedes this platform list after the package added watchOS,
+visionOS, and tvOS support. The modern platform-floor decision remains active.
+
 ## Decision
 
 Keep the modern platform floor:

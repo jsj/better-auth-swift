@@ -386,6 +386,60 @@ struct SessionPersistenceAndFetchTests {
         #expect(store.statusMessage == "Invalid credentials.")
     }
 
+    @Test @MainActor
+    func authStoreRemainsLoadingUntilEveryConcurrentOperationFinishes() async throws {
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
+                             sessionStore: InMemorySessionStore(),
+                             transport: MockTransport { request in emptyResponse(for: request) })
+        let store = AuthStore(client: client)
+        let gate = AuthOperationGate()
+
+        let first = Task { @MainActor in
+            await store.perform { await gate.wait(for: "first") }
+        }
+        await waitUntil { store.operationState == .inFlight(count: 1) }
+
+        let second = Task { @MainActor in
+            await store.perform { await gate.wait(for: "second") }
+        }
+        await waitUntil { store.operationState == .inFlight(count: 2) }
+
+        await gate.release("first")
+        await first.value
+        #expect(store.operationState == .inFlight(count: 1))
+        #expect(store.isLoading)
+
+        await gate.release("second")
+        await second.value
+        #expect(store.operationState == .idle)
+        #expect(!store.isLoading)
+    }
+
+    @Test @MainActor
+    func authStoreCancellationDoesNotReplaceVisibleErrorState() async throws {
+        let client =
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
+                             sessionStore: InMemorySessionStore(),
+                             transport: MockTransport { request in emptyResponse(for: request) })
+        let store = AuthStore(client: client)
+        store.statusMessage = "Keep this message"
+
+        let task = Task { @MainActor in
+            await store.perform {
+                try await Task.sleep(for: .seconds(30))
+            }
+        }
+        await waitUntil { store.isLoading }
+        task.cancel()
+        await task.value
+
+        #expect(store.operationState == .idle)
+        #expect(store.statusMessage == "Keep this message")
+        #expect(store.lastError == nil)
+        #expect(store.lastUnderlyingError == nil)
+    }
+
     @Test
     func configurationSupportsNestedAuthAndNetworkingOptions() throws {
         let configuration = BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
@@ -442,5 +496,27 @@ struct SessionPersistenceAndFetchTests {
 
         #expect(await client.auth.currentSession() == nil)
         #expect(try store.loadSession(for: "test-key") == nil)
+    }
+}
+
+private actor AuthOperationGate {
+    private var waiting: [String: CheckedContinuation<Void, Never>] = [:]
+    private var released: Set<String> = []
+
+    func wait(for identifier: String) async {
+        if released.remove(identifier) != nil {
+            return
+        }
+        await withCheckedContinuation { continuation in
+            waiting[identifier] = continuation
+        }
+    }
+
+    func release(_ identifier: String) {
+        if let continuation = waiting.removeValue(forKey: identifier) {
+            continuation.resume()
+        } else {
+            released.insert(identifier)
+        }
     }
 }

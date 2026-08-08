@@ -106,14 +106,6 @@ public extension AuthStore {
                                                      transition: .init(phase: .authenticated)))
                 statusMessage = "OAuth completed"
 
-            case let .magicLink(verificationResult):
-                if case let .signedIn(restoredSession) = verificationResult {
-                    applyAuthStateChange(AuthStateChange(event: .signedIn,
-                                                         session: restoredSession,
-                                                         transition: .init(phase: .authenticated)))
-                }
-                statusMessage = "Magic link handled"
-
             case let .verifyEmail(verificationResult):
                 if case let .signedIn(restoredSession) = verificationResult {
                     applyAuthStateChange(AuthStateChange(event: .signedIn,

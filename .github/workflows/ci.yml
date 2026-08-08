@@ -35,7 +35,7 @@ jobs:
         uses: oven-sh/setup-bun@v2
 
       - name: Install release tools
-        run: brew install swiftformat swiftlint
+        run: brew install swiftformat swiftlint tuist
 
       - name: Install worker dependencies
         run: |
@@ -49,7 +49,8 @@ jobs:
           npm --prefix examples/cf-workers-uikit/worker run typecheck
 
       - name: Run release verifier
-        run: Scripts/verify_release.sh
+        # Xcode Cloud performs the Apple-platform compilation gates.
+        run: Scripts/verify_release.sh --skip-platform-builds
 
       - name: Run local live contracts
         run: Scripts/run_local_contracts.sh

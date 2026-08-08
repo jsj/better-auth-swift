@@ -67,10 +67,6 @@ public extension AuthStore {
         AuthStoreOAuthNamespace(store: self)
     }
 
-    var magicLinks: AuthStoreMagicLinkNamespace {
-        AuthStoreMagicLinkNamespace(store: self)
-    }
-
     var emailOTP: AuthStoreEmailOTPNamespace {
         AuthStoreEmailOTPNamespace(store: self)
     }
@@ -262,23 +258,6 @@ public struct AuthStoreOAuthNamespace {
 
     public func handleIncomingURL(_ url: URL) async {
         await store.handleIncomingURL(url)
-    }
-}
-
-@MainActor
-public struct AuthStoreMagicLinkNamespace {
-    private let store: AuthStore
-
-    init(store: AuthStore) {
-        self.store = store
-    }
-
-    public func request(_ payload: MagicLinkRequest) async {
-        await store.requestMagicLink(payload)
-    }
-
-    public func verify(_ payload: MagicLinkVerifyRequest) async {
-        await store.verifyMagicLink(payload)
     }
 }
 

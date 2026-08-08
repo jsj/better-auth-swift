@@ -22,6 +22,18 @@ public protocol BetterAuthSessionFetching: Sendable {
     func fetchCurrentSession() async throws -> BetterAuthSession
 }
 
+/// A session result decoded by an optional Better Auth Plugin module.
+public enum BetterAuthPluginSessionOutcome: Sendable, Equatable {
+    case signedIn(BetterAuthSession)
+    case token(String, fallbackUser: BetterAuthSession.User)
+}
+
+/// Applies a Plugin module result to the shared session lifecycle.
+public protocol BetterAuthSessionOutcomeApplying: Sendable {
+    @discardableResult
+    func applySessionOutcome(_ outcome: BetterAuthPluginSessionOutcome) async throws -> BetterAuthSession
+}
+
 public protocol BetterAuthPrimaryAuthPerforming: Sendable {
     func signUpWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult
     func signInWithEmail(_ payload: EmailSignInRequest) async throws -> BetterAuthSession
@@ -48,8 +60,6 @@ public protocol BetterAuthOAuthPerforming: Sendable {
 }
 
 public protocol BetterAuthOneTimeCodePerforming: Sendable {
-    func requestMagicLink(_ payload: MagicLinkRequest) async throws -> Bool
-    func verifyMagicLink(_ payload: MagicLinkVerifyRequest) async throws -> MagicLinkVerificationResult
     func requestEmailOTP(_ payload: EmailOTPRequest) async throws -> Bool
     func signInWithEmailOTP(_ payload: EmailOTPSignInRequest) async throws -> BetterAuthSession
     func verifyEmailOTP(_ payload: EmailOTPVerifyRequest) async throws -> EmailOTPVerifyResult

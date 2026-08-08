@@ -2,6 +2,12 @@ import BetterAuth
 import Foundation
 import Observation
 
+/// The aggregate state of authentication operations started through ``AuthStore``.
+public enum AuthOperationState: Sendable, Equatable {
+    case idle
+    case inFlight(count: Int)
+}
+
 /// Observable SwiftUI state wrapper around ``BetterAuthClient``.
 ///
 /// Provides `session`, `isLoading`, and `statusMessage` for the UI.
@@ -15,8 +21,16 @@ public final class AuthStore {
     public internal(set) var launchState: AuthLaunchState = .idle
     /// The last detailed restore outcome returned by the core SDK.
     public internal(set) var lastRestoreResult: BetterAuthRestoreResult?
-    /// `true` while any auth operation is in flight.
-    public internal(set) var isLoading = false
+    /// The aggregate state of all auth operations in flight.
+    public internal(set) var operationState: AuthOperationState = .idle
+    /// `true` while one or more auth operations are in flight.
+    public var isLoading: Bool {
+        if case .inFlight = operationState {
+            return true
+        }
+        return false
+    }
+
     /// Human-readable status or error message from the last operation.
     public internal(set) var statusMessage: String?
     /// Structured error captured from the last failed operation.
@@ -33,6 +47,8 @@ public final class AuthStore {
     let accountAuth: any BetterAuthAccountPerforming
     let sessionAdministration: any BetterAuthSessionAdministrating
     private let authStateObservation = AuthStateObservation()
+    private var activeOperationIdentifiers: Set<UUID> = []
+    private var latestOperationIdentifier: UUID?
 
     public init(client: some BetterAuthClientProtocol) {
         sessionAuth = client.authSessionLifecycle
@@ -126,40 +142,45 @@ public final class AuthStore {
     }
 
     func perform(_ operation: () async throws -> Void) async {
-        isLoading = true
-        defer { isLoading = false }
+        let identifier = beginOperation()
+        defer { endOperation(identifier) }
         do {
             try Task.checkCancellation()
             try await operation()
-            lastError = nil
-            lastUnderlyingError = nil
+            recordSuccess(for: identifier)
+        } catch is CancellationError {
+            return
         } catch {
-            lastError = normalizeError(error)
-            lastUnderlyingError = error
-            statusMessage = error.localizedDescription
+            recordFailure(error, for: identifier)
         }
     }
 
     func perform(status successStatus: String, _ operation: () async throws -> Void) async {
-        await perform {
+        let identifier = beginOperation()
+        defer { endOperation(identifier) }
+        do {
+            try Task.checkCancellation()
             try await operation()
-            statusMessage = successStatus
+            recordSuccess(status: successStatus, for: identifier)
+        } catch is CancellationError {
+            return
+        } catch {
+            recordFailure(error, for: identifier)
         }
     }
 
     func performThrowing<T: Sendable>(_ operation: () async throws -> T) async throws -> T {
-        isLoading = true
-        defer { isLoading = false }
+        let identifier = beginOperation()
+        defer { endOperation(identifier) }
         do {
             try Task.checkCancellation()
             let result = try await operation()
-            lastError = nil
-            lastUnderlyingError = nil
+            recordSuccess(for: identifier)
             return result
+        } catch is CancellationError {
+            throw CancellationError()
         } catch {
-            lastError = normalizeError(error)
-            lastUnderlyingError = error
-            statusMessage = error.localizedDescription
+            recordFailure(error, for: identifier)
             throw error
         }
     }
@@ -167,21 +188,68 @@ public final class AuthStore {
     func performThrowing<T: Sendable>(status successStatus: String,
                                       _ operation: () async throws -> T) async throws -> T
     {
-        try await performThrowing {
+        let identifier = beginOperation()
+        defer { endOperation(identifier) }
+        do {
+            try Task.checkCancellation()
             let result = try await operation()
-            statusMessage = successStatus
+            recordSuccess(status: successStatus, for: identifier)
             return result
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            recordFailure(error, for: identifier)
+            throw error
         }
     }
 
     func performThrowing<T: Sendable>(status successStatus: (T) -> String,
                                       _ operation: () async throws -> T) async throws -> T
     {
-        try await performThrowing {
+        let identifier = beginOperation()
+        defer { endOperation(identifier) }
+        do {
+            try Task.checkCancellation()
             let result = try await operation()
-            statusMessage = successStatus(result)
+            recordSuccess(status: successStatus(result), for: identifier)
             return result
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            recordFailure(error, for: identifier)
+            throw error
         }
+    }
+
+    func beginOperation() -> UUID {
+        let identifier = UUID()
+        activeOperationIdentifiers.insert(identifier)
+        latestOperationIdentifier = identifier
+        operationState = .inFlight(count: activeOperationIdentifiers.count)
+        return identifier
+    }
+
+    func endOperation(_ identifier: UUID) {
+        activeOperationIdentifiers.remove(identifier)
+        operationState = activeOperationIdentifiers.isEmpty
+            ? .idle
+            : .inFlight(count: activeOperationIdentifiers.count)
+    }
+
+    func recordSuccess(status: String? = nil, for identifier: UUID) {
+        guard latestOperationIdentifier == identifier else { return }
+        lastError = nil
+        lastUnderlyingError = nil
+        if let status {
+            statusMessage = status
+        }
+    }
+
+    func recordFailure(_ error: any Error, for identifier: UUID) {
+        guard latestOperationIdentifier == identifier else { return }
+        lastError = normalizeError(error)
+        lastUnderlyingError = error
+        statusMessage = error.localizedDescription
     }
 
     func normalizeError(_ error: Error) -> BetterAuthError? {

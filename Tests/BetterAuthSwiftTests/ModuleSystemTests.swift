@@ -6,6 +6,26 @@ import Testing
 @Suite("Module system")
 struct ModuleSystemTests {
     @Test
+    func moduleRegistryRejectsDuplicateIdentifiers() {
+        struct ProbeRuntime: BetterAuthModuleRuntime {
+            let moduleIdentifier: String
+        }
+
+        struct ProbeModule: BetterAuthModule {
+            let moduleIdentifier: String
+
+            func configure(context _: BetterAuthModuleContext) -> BetterAuthModuleRuntime {
+                ProbeRuntime(moduleIdentifier: moduleIdentifier)
+            }
+        }
+
+        #expect(throws: BetterAuthDuplicateModuleIdentifierError(identifier: "duplicate")) {
+            try BetterAuthModuleRegistry.validate([ProbeModule(moduleIdentifier: "duplicate"),
+                                                   ProbeModule(moduleIdentifier: "duplicate")])
+        }
+    }
+
+    @Test
     func emptyModuleRegistryReportsNoModules() {
         let registry = BetterAuthModuleRegistry()
 

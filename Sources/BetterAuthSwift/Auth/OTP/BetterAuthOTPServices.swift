@@ -8,28 +8,6 @@ struct BetterAuthOneTimeCodeService {
         BetterAuthSessionResultHandler(relay: relay, materializer: materializer)
     }
 
-    func requestMagicLink(_ payload: MagicLinkRequest) async throws -> Bool {
-        let response: BetterAuthStatusResponse = try await context.network
-            .post(path: context.configuration.endpoints.magicLink.signInPath,
-                  body: payload,
-                  accessToken: nil)
-        return response.status
-    }
-
-    func verifyMagicLink(_ payload: MagicLinkVerifyRequest) async throws -> MagicLinkVerificationResult {
-        let result: MagicLinkVerificationResult = try await context.network
-            .get(path: context.configuration.endpoints.magicLink.verifyPath,
-                 queryItems: [URLQueryItem(name: "token", value: payload.token),
-                              URLQueryItem(name: "callbackURL", value: payload.callbackURL),
-                              URLQueryItem(name: "newUserCallbackURL", value: payload.newUserCallbackURL),
-                              URLQueryItem(name: "errorCallbackURL", value: payload.errorCallbackURL)],
-                 accessToken: nil)
-        if case let .signedIn(session) = result {
-            try await sessionResults.apply(.signedIn(session))
-        }
-        return result
-    }
-
     func requestEmailOTP(_ payload: EmailOTPRequest) async throws -> Bool {
         let response: EmailOTPRequestResponse = try await context.network
             .post(path: context.configuration.endpoints.emailOTP.requestPath,

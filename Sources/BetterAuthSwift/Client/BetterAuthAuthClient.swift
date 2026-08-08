@@ -124,6 +124,13 @@ public struct BetterAuthAuthClient: Sendable {
     }
 }
 
+extension BetterAuthAuthClient: BetterAuthSessionOutcomeApplying {
+    @discardableResult
+    public func applySessionOutcome(_ outcome: BetterAuthPluginSessionOutcome) async throws -> BetterAuthSession {
+        try await sessionManager.applyPluginSessionOutcome(outcome)
+    }
+}
+
 public extension BetterAuthAuthClient {
     @discardableResult
     func signUpWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult {
@@ -243,16 +250,6 @@ public extension BetterAuthAuthClient {
 }
 
 public extension BetterAuthAuthClient {
-    @discardableResult
-    func requestMagicLink(_ payload: MagicLinkRequest) async throws -> Bool {
-        try await sessionManager.requestMagicLink(payload)
-    }
-
-    @discardableResult
-    func verifyMagicLink(_ payload: MagicLinkVerifyRequest) async throws -> MagicLinkVerificationResult {
-        try await sessionManager.verifyMagicLink(payload)
-    }
-
     @discardableResult
     func requestEmailOTP(_ payload: EmailOTPRequest) async throws -> Bool {
         try await sessionManager.requestEmailOTP(payload)

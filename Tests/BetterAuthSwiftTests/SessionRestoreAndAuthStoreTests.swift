@@ -59,7 +59,7 @@ struct SessionRestoreAndAuthStoreTests {
     }
 
     @Test
-    func parseIncomingURLRecognizesOAuthMagicLinkAndVerifyEmailRoutes() async throws {
+    func parseIncomingURLRecognizesOAuthAndVerifyEmailRoutes() async throws {
         let manager =
             BetterAuthSessionManager(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                             callbackURLSchemes: ["betterauth"]),
@@ -73,12 +73,6 @@ struct SessionRestoreAndAuthStoreTests {
         #expect(await manager.parseIncomingURL(oauthURL)
             == .genericOAuth(.init(providerId: "fixture-generic", code: "fixture-code", state: "fixture-state",
                                    issuer: "https://issuer.example.com")))
-
-        let magicURL =
-            try #require(URL(string: "https://example.com/api/auth/magic-link/verify?token=magic-token&callbackURL=betterauth://magic/success&errorCallbackURL=betterauth://magic/error"))
-        #expect(await manager.parseIncomingURL(magicURL)
-            == .magicLink(.init(token: "magic-token", callbackURL: "betterauth://magic/success",
-                                errorCallbackURL: "betterauth://magic/error")))
 
         let verifyEmailURL = try #require(URL(string: "https://example.com/api/auth/verify-email?token=verify-token"))
         #expect(await manager.parseIncomingURL(verifyEmailURL) == .verifyEmail(.init(token: "verify-token")))
@@ -216,87 +210,6 @@ struct SessionRestoreAndAuthStoreTests {
         #expect(authStore.lastRestoreResult == .restored(stored, source: .keychain, refresh: .deferred))
         #expect(authStore.launchState == .recoverableFailure(stored))
         #expect(authStore.statusMessage == "Session restored. Refresh deferred.")
-    }
-
-    @Test @MainActor
-    func authStoreHandleIncomingURLMaterializesSession() async throws {
-        let verifiedSession = BetterAuthSession(session: .init(id: "magic-session",
-                                                               userId: "user-magic",
-                                                               accessToken: "magic-token",
-                                                               expiresAt: Date().addingTimeInterval(3600)),
-                                                user: .init(id: "user-magic", email: "magic@example.com",
-                                                            name: "Magic User"))
-
-        let authStore =
-            AuthStore(client: BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
-                                               sessionStore: InMemorySessionStore(),
-                                               transport: MockTransport { request in
-                                                   try expect(request.url?
-                                                       .path == "/api/auth/magic-link/verify")
-                                                   return try response(for: request,
-                                                                       statusCode: 200,
-                                                                       data: encodeJSON(SocialSignInTransportResponse(redirect: false,
-                                                                                                                      token: verifiedSession
-                                                                                                                          .session
-                                                                                                                          .accessToken,
-                                                                                                                      user: verifiedSession
-                                                                                                                          .user,
-                                                                                                                      session: verifiedSession)))
-                                               }))
-
-        let url = try #require(URL(string: "https://example.com/api/auth/magic-link/verify?token=magic-token-value"))
-        await authStore.handleIncomingURL(url)
-
-        #expect(authStore.session?.session.id == verifiedSession.session.id)
-        #expect(authStore.session?.session.accessToken == verifiedSession.session.accessToken)
-        #expect(authStore.session?.user.email == verifiedSession.user.email)
-        #expect(secondsBetween(authStore.session?.session.expiresAt, verifiedSession.session.expiresAt) <= 1)
-
-        guard case let .authenticated(launchSession) = authStore.launchState else {
-            Issue.record("Expected authenticated launch state")
-            return
-        }
-        #expect(launchSession.session.id == verifiedSession.session.id)
-        #expect(launchSession.session.accessToken == verifiedSession.session.accessToken)
-        #expect(launchSession.user.email == verifiedSession.user.email)
-        #expect(secondsBetween(launchSession.session.expiresAt, verifiedSession.session.expiresAt) <= 1)
-        #expect(authStore.statusMessage == "Magic link handled")
-    }
-
-    @Test @MainActor
-    func authStoreVerifyMagicLinkMaterializesLaunchState() async throws {
-        let verifiedSession = BetterAuthSession(session: .init(id: "magic-session-direct",
-                                                               userId: "user-magic",
-                                                               accessToken: "magic-token-direct",
-                                                               expiresAt: Date().addingTimeInterval(3600)),
-                                                user: .init(id: "user-magic", email: "magic@example.com",
-                                                            name: "Magic User"))
-
-        let authStore =
-            AuthStore(client: BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
-                                               sessionStore: InMemorySessionStore(),
-                                               transport: MockTransport { request in
-                                                   try expect(request.url?.path == "/api/auth/magic-link/verify")
-                                                   return try response(for: request,
-                                                                       statusCode: 200,
-                                                                       data: encodeJSON(SocialSignInTransportResponse(redirect: false,
-                                                                                                                      token: verifiedSession
-                                                                                                                          .session
-                                                                                                                          .accessToken,
-                                                                                                                      user: verifiedSession
-                                                                                                                          .user,
-                                                                                                                      session: verifiedSession)))
-                                               }))
-
-        await authStore.verifyMagicLink(.init(token: "magic-token-direct"))
-
-        #expect(authStore.session?.session.id == verifiedSession.session.id)
-        guard case let .authenticated(launchSession) = authStore.launchState else {
-            Issue.record("Expected authenticated launch state")
-            return
-        }
-        #expect(launchSession.session.id == verifiedSession.session.id)
-        #expect(authStore.statusMessage == "Magic link verified")
     }
 
     @Test @MainActor

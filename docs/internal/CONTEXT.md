@@ -9,7 +9,8 @@ The SDK provides native Apple interfaces, reliable sessions, and backend portabi
 
 ## Domain terms
 
-- **Apple client**: An iOS or macOS app using the Swift package products.
+- **Apple client**: An app for iOS, macOS, watchOS, visionOS, or tvOS that uses
+  the Swift package products.
 - **Better Auth backend**: Any HTTP-reachable Better Auth deployment that exposes
   routes compatible with the SDK's configured endpoint catalog.
 - **Cloudflare Workers reference backend**: The example Better Auth deployment
@@ -22,6 +23,12 @@ The SDK provides native Apple interfaces, reliable sessions, and backend portabi
   passkeys, anonymous auth, or two-factor auth.
 - **Plugin module**: A Swift package product or runtime module that maps a
   Better Auth server plugin into a typed Swift client surface.
+- **Session outcome**: A result from an Auth flow that core applies to session
+  storage and Auth state. Examples include a signed-in session, a token with a
+  fallback user, an updated user, or sign-out.
+- **Auth operation**: One invocation of an Auth flow from the SwiftUI Adapter.
+  Each invocation has independent in-flight, success, failure, and cancellation
+  state.
 - **Request pipeline**: URL resolution, auth attachment, request hooks, retry
   policy, status validation, decoding, and session refresh retry behavior.
 - **Backend contract**: The wire-level behavior the SDK expects from a Better
@@ -40,3 +47,8 @@ The SDK provides native Apple interfaces, reliable sessions, and backend portabi
 - Keep auth behavior in core modules and SwiftUI view state in SwiftUI modules.
 - Treat each public API added before `1.0` as a possible long-term promise.
 - Reduce or change broad surfaces before you tag `1.0`.
+- Use namespaced Auth flows as the canonical public Interface.
+- Keep Plugin module session mutation behind the core Session outcome Seam.
+- Treat platform support as a compilation and core behavior promise. Do not
+  imply that each system authentication user experience exists on every
+  platform.

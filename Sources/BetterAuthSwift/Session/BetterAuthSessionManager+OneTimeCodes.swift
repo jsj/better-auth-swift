@@ -1,20 +1,6 @@
 import Foundation
 
 extension BetterAuthSessionManager {
-    // MARK: - Magic Link
-
-    @discardableResult
-    func requestMagicLink(_ payload: MagicLinkRequest) async throws -> Bool {
-        try await throttleAuthOperation("requestMagicLink")
-        return try await makeOneTimeCodeService().requestMagicLink(payload)
-    }
-
-    @discardableResult
-    func verifyMagicLink(_ payload: MagicLinkVerifyRequest) async throws -> MagicLinkVerificationResult {
-        try await throttleAuthOperation("verifyMagicLink")
-        return try await makeOneTimeCodeService().verifyMagicLink(payload)
-    }
-
     // MARK: - Email OTP
 
     @discardableResult

@@ -1,5 +1,11 @@
 import BetterAuth
+import BetterAuthMagicLink
 import Foundation
+
+enum HandledAuthURLResult {
+    case core(BetterAuthHandledURLResult)
+    case magicLink(MagicLinkVerificationResult)
+}
 
 struct AuthService {
     private let client: BetterAuthClient
@@ -39,8 +45,8 @@ struct AuthService {
             }
         }
 
-        if path.hasSuffix(client.configuration.endpoints.magicLink.verifyPath),
-           queryItems.first(where: { $0.name == "token" })?.value != nil
+        if let magicLinks = try? client.requireMagicLinks(),
+           magicLinks.verificationRequest(from: url) != nil
         {
             return true
         }
@@ -54,8 +60,14 @@ struct AuthService {
         return false
     }
 
-    func handleIncomingURL(_ url: URL) async throws -> BetterAuthHandledURLResult {
-        try await client.auth.handleIncomingURL(url)
+    func handleIncomingURL(_ url: URL) async throws -> HandledAuthURLResult {
+        if let magicLinks = try? client.requireMagicLinks(),
+           let result = try await magicLinks.handleIncomingURL(url)
+        {
+            return .magicLink(result)
+        }
+        let result = try await client.auth.handleIncomingURL(url)
+        return .core(result)
     }
 
     func signOut(remotely: Bool) async throws {
@@ -95,11 +107,11 @@ struct AuthService {
     }
 
     func requestMagicLink(_ request: MagicLinkRequest) async throws {
-        _ = try await client.auth.requestMagicLink(request)
+        _ = try await client.requireMagicLinks().request(request)
     }
 
     func verifyMagicLink(_ request: MagicLinkVerifyRequest) async throws -> MagicLinkVerificationResult {
-        try await client.auth.verifyMagicLink(request)
+        try await client.requireMagicLinks().verify(request)
     }
 
     func requestEmailOTP(_ request: EmailOTPRequest) async throws {

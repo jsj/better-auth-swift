@@ -33,6 +33,7 @@ public protocol BetterAuthAuthStateListener: Sendable {
 
 public struct BetterAuthAuthFeatures: Sendable {
     public let sessionLifecycle: any BetterAuthSessionLifecycle & BetterAuthSessionFetching
+    public let sessionOutcomes: any BetterAuthSessionOutcomeApplying
     public let primaryAuth: any BetterAuthPrimaryAuthPerforming
     public let oauthAuth: any BetterAuthOAuthPerforming
     public let oneTimeCodeAuth: any BetterAuthOneTimeCodePerforming
@@ -42,6 +43,7 @@ public struct BetterAuthAuthFeatures: Sendable {
     public let sessionAdministration: any BetterAuthSessionAdministrating
 
     public init(sessionLifecycle: any BetterAuthSessionLifecycle & BetterAuthSessionFetching,
+                sessionOutcomes: any BetterAuthSessionOutcomeApplying,
                 primaryAuth: any BetterAuthPrimaryAuthPerforming,
                 oauthAuth: any BetterAuthOAuthPerforming,
                 oneTimeCodeAuth: any BetterAuthOneTimeCodePerforming,
@@ -51,6 +53,7 @@ public struct BetterAuthAuthFeatures: Sendable {
                 sessionAdministration: any BetterAuthSessionAdministrating)
     {
         self.sessionLifecycle = sessionLifecycle
+        self.sessionOutcomes = sessionOutcomes
         self.primaryAuth = primaryAuth
         self.oauthAuth = oauthAuth
         self.oneTimeCodeAuth = oneTimeCodeAuth
@@ -134,9 +137,22 @@ public struct BetterAuthModuleRegistry: Sendable {
     }
 }
 
+public struct BetterAuthDuplicateModuleIdentifierError: Error, Sendable, Equatable, CustomStringConvertible {
+    public let identifier: String
+
+    public init(identifier: String) {
+        self.identifier = identifier
+    }
+
+    public var description: String {
+        "Better Auth module identifier '\(identifier)' is registered more than once."
+    }
+}
+
 public struct BetterAuthModuleContext: BetterAuthClientProtocol, Sendable {
     public let configuration: BetterAuthConfiguration
     public let authSessionLifecycle: any BetterAuthSessionLifecycle & BetterAuthSessionFetching
+    public let sessionOutcomes: any BetterAuthSessionOutcomeApplying
     public let primaryAuth: any BetterAuthPrimaryAuthPerforming
     public let oauthAuth: any BetterAuthOAuthPerforming
     public let oneTimeCodeAuth: any BetterAuthOneTimeCodePerforming
@@ -154,6 +170,7 @@ public struct BetterAuthModuleContext: BetterAuthClientProtocol, Sendable {
     {
         self.configuration = configuration
         self.authSessionLifecycle = authFeatures.sessionLifecycle
+        self.sessionOutcomes = authFeatures.sessionOutcomes
         self.primaryAuth = authFeatures.primaryAuth
         self.oauthAuth = authFeatures.oauthAuth
         self.oneTimeCodeAuth = authFeatures.oneTimeCodeAuth
@@ -167,6 +184,13 @@ public struct BetterAuthModuleContext: BetterAuthClientProtocol, Sendable {
 }
 
 public extension BetterAuthModuleRegistry {
+    static func validate(_ modules: [any BetterAuthModule]) throws {
+        var identifiers: Set<String> = []
+        for module in modules where !identifiers.insert(module.moduleIdentifier).inserted {
+            throw BetterAuthDuplicateModuleIdentifierError(identifier: module.moduleIdentifier)
+        }
+    }
+
     static func build(configuration: BetterAuthConfiguration,
                       authFeatures: BetterAuthAuthFeatures,
                       requestsPerformer: any BetterAuthRequestPerforming,

@@ -8,11 +8,17 @@ PROJECT="$ROOT/better-auth-swift.xcodeproj"
 OUTPUT_DIR="${1:-$ROOT/build/xcframeworks}"
 DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-$ROOT/.build/xcode-derived-data}"
 ARCHIVE_ROOT="$ROOT/.build/archives"
-SCHEMES=("BetterAuth" "BetterAuthSwiftUI" "BetterAuthOrganization")
+SCHEMES=("BetterAuth" "BetterAuthMagicLink" "BetterAuthSwiftUI" "BetterAuthOrganization")
 PLATFORMS=(
   "ios|generic/platform=iOS"
   "ios-simulator|generic/platform=iOS Simulator"
   "macos|generic/platform=macOS"
+  "watchos|generic/platform=watchOS"
+  "watchos-simulator|generic/platform=watchOS Simulator"
+  "visionos|generic/platform=visionOS"
+  "visionos-simulator|generic/platform=visionOS Simulator"
+  "tvos|generic/platform=tvOS"
+  "tvos-simulator|generic/platform=tvOS Simulator"
 )
 
 rm -rf "$OUTPUT_DIR" "$ARCHIVE_ROOT"

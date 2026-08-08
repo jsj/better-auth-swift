@@ -10,7 +10,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Swift-6-orange.svg" alt="Swift 6" />
-  <img src="https://img.shields.io/badge/platforms-iOS%2017%2B%20%7C%20macOS%2014%2B-blue.svg" alt="Platforms" />
+  <img src="https://img.shields.io/badge/platforms-iOS%2017%2B%20%7C%20macOS%2014%2B%20%7C%20watchOS%2010%2B%20%7C%20visionOS%201%2B%20%7C%20tvOS%2017%2B-blue.svg" alt="Platforms" />
   <img src="https://img.shields.io/badge/SwiftPM-supported-brightgreen.svg" alt="SwiftPM" />
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
 </p>
@@ -19,7 +19,7 @@
 <summary align="center"><img src="https://cdn.jsdelivr.net/gh/jsj/agent-icons@ec84fc0fc6f70311a33800a53121c8cac0e5b48b/claude.svg" width="18" height="18" alt="Claude">&nbsp;<img src="https://cdn.jsdelivr.net/gh/jsj/agent-icons@ec84fc0fc6f70311a33800a53121c8cac0e5b48b/cursor.svg" width="18" height="18" alt="Cursor">&nbsp;<img src="https://cdn.jsdelivr.net/gh/jsj/agent-icons@ec84fc0fc6f70311a33800a53121c8cac0e5b48b/github-copilot.svg" width="18" height="18" alt="GitHub Copilot">&nbsp;<img src="https://cdn.jsdelivr.net/gh/jsj/agent-icons@ec84fc0fc6f70311a33800a53121c8cac0e5b48b/openai.svg" width="18" height="18" alt="OpenAI">&nbsp;&nbsp;<strong>Copy this prompt to your coding agent</strong></summary>
 
 ```text
-Integrate better-auth-swift with this iOS or macOS app.
+Use Better Auth from iOS, macOS, watchOS, visionOS, or tvOS.
 
 Before you change files, inspect these parts of the repository:
 - The current authentication flow
@@ -80,7 +80,7 @@ Report these results:
 | **Apple Sign In** | Native credential exchange (no web redirect) |
 | **Social / OAuth** | Social sign in, generic OAuth initiation + completion |
 | **Anonymous** | Anonymous sign in, upgrade to permanent account |
-| **Magic Link** | Request and verify magic links |
+| **Magic Link** | Request and verify magic links (optional plugin module) |
 | **Email OTP** | Request, sign in, and verify email OTP codes |
 | **Phone OTP** | Request, sign in, and verify phone OTP codes |
 | **Passkeys** | Register, authenticate, list, update, delete |
@@ -98,6 +98,9 @@ Report these results:
 
 - iOS 17+
 - macOS 14+
+- watchOS 10+
+- visionOS 1+
+- tvOS 17+
 - Xcode 16+
 - Swift 6
 
@@ -117,19 +120,41 @@ dependencies: [
 ]
 ```
 
-The package provides three products:
+The package provides four products:
 
 | Product | Use case |
 |---------|----------|
 | `BetterAuth` | Core SDK — session, auth flows, authenticated requests |
+| `BetterAuthMagicLink` | Magic Link plugin — requests, verification, incoming URLs |
 | `BetterAuthSwiftUI` | Observable `AuthStore` for SwiftUI apps |
-| `BetterAuthOrganization` | Organization plugin — teams, members, invitations |
+| `BetterAuthOrganization` | Organization plugin — members, roles, invitations |
+
+### Magic Link plugin
+
+Add `BetterAuthMagicLink` only if the backend uses the Better Auth Magic Link plugin.
+
+```swift
+import BetterAuth
+import BetterAuthMagicLink
+
+let client = BetterAuthClient(
+    configuration: BetterAuthConfiguration(
+        baseURL: URL(string: "https://auth.example.com")!,
+        callbackURLSchemes: ["your-app"]
+    ),
+    modules: [BetterAuthMagicLinkModule()]
+)
+
+let magicLinks = try client.requireMagicLinks()
+try await magicLinks.request(.init(email: "person@example.com"))
+```
 
 ```swift
 .target(
     name: "YourApp",
     dependencies: [
         .product(name: "BetterAuth", package: "better-auth-swift"),
+        .product(name: "BetterAuthMagicLink", package: "better-auth-swift"),
         .product(name: "BetterAuthSwiftUI", package: "better-auth-swift"),
         .product(name: "BetterAuthOrganization", package: "better-auth-swift")
     ]
@@ -260,7 +285,7 @@ let client = BetterAuthClient(
 ## Apple Sign In
 
 ```swift
-let session = try await client.auth.signInWithApple(
+let session = try await client.auth.apple.signIn(
     AppleNativeSignInPayload(
         token: identityToken,
         nonce: rawNonce,
@@ -289,7 +314,7 @@ let session = try await client.auth.signInWithApple(
 <summary align="center"><img src="https://cdn.jsdelivr.net/gh/jsj/agent-icons@ec84fc0fc6f70311a33800a53121c8cac0e5b48b/claude.svg" width="18" height="18" alt="Claude">&nbsp;<img src="https://cdn.jsdelivr.net/gh/jsj/agent-icons@ec84fc0fc6f70311a33800a53121c8cac0e5b48b/cursor.svg" width="18" height="18" alt="Cursor">&nbsp;<img src="https://cdn.jsdelivr.net/gh/jsj/agent-icons@ec84fc0fc6f70311a33800a53121c8cac0e5b48b/github-copilot.svg" width="18" height="18" alt="GitHub Copilot">&nbsp;<img src="https://cdn.jsdelivr.net/gh/jsj/agent-icons@ec84fc0fc6f70311a33800a53121c8cac0e5b48b/openai.svg" width="18" height="18" alt="OpenAI">&nbsp;&nbsp;<strong>Copy this prompt to your coding agent</strong></summary>
 
 ```text
-Integrate better-auth-swift with this iOS or macOS app.
+Use Better Auth from iOS, macOS, watchOS, visionOS, or tvOS.
 
 Before you change files, inspect these parts of the repository:
 - The current authentication flow
