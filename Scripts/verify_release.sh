@@ -64,7 +64,7 @@ if [ -n "$VERSION" ] && [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0
   exit 2
 fi
 
-for tool in swift swiftformat swiftlint; do
+for tool in swift swiftformat swiftlint tuist; do
   if ! command -v "$tool" >/dev/null 2>&1; then
     echo "$tool is required for release verification." >&2
     exit 127

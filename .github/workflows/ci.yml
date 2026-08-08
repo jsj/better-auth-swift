@@ -35,7 +35,7 @@ jobs:
         uses: oven-sh/setup-bun@v2
 
       - name: Install release tools
-        run: brew install swiftformat swiftlint
+        run: brew install swiftformat swiftlint tuist
 
       - name: Install worker dependencies
         run: |
