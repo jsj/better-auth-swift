@@ -316,7 +316,7 @@ struct BetterAuthPasskeyService {
     }
 
     func authenticateWithPasskey(_ payload: PasskeyAuthenticationRequest) async throws -> BetterAuthSession {
-        let response: SocialSignInTransportResponse = try await context.network
+        let response: BetterAuthSessionTransportResponse = try await context.network
             .post(path: context.configuration.endpoints.passkey.authenticatePath,
                   body: payload,
                   accessToken: nil)

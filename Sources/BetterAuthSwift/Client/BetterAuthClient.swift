@@ -55,8 +55,7 @@ public struct BetterAuthClient: BetterAuthModuleSupporting, Sendable {
         let resolvedModules = BetterAuthModuleRegistry.build(configuration: configuration,
                                                              authFeatures: BetterAuthAuthFeatures(sessionLifecycle: auth,
                                                                                                   sessionOutcomes: auth,
-                                                                                                  primaryAuth: auth,
-                                                                                                  oauthAuth: auth,
+                                                                                                  authOperationThrottle: auth,
                                                                                                   oneTimeCodeAuth: auth,
                                                                                                   twoFactorAuth: auth,
                                                                                                   passkeyAuth: auth,
@@ -107,14 +106,6 @@ public struct BetterAuthClient: BetterAuthModuleSupporting, Sendable {
 
 public extension BetterAuthClient {
     var authSessionLifecycle: any BetterAuthSessionLifecycle & BetterAuthSessionFetching {
-        auth
-    }
-
-    var primaryAuth: any BetterAuthPrimaryAuthPerforming {
-        auth
-    }
-
-    var oauthAuth: any BetterAuthOAuthPerforming {
         auth
     }
 

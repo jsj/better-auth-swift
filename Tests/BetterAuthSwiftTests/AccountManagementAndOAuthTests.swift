@@ -1,10 +1,27 @@
+import BetterAuthAnonymous
+import BetterAuthAppleSignIn
+import BetterAuthEmailPassword
+import BetterAuthSocialOAuth
 import BetterAuthTestHelpers
 import Foundation
 import Testing
 @testable import BetterAuth
 @testable import BetterAuthSwiftUI
 
+private typealias EmailSignUpRequest = BetterAuthEmailPassword.EmailSignUpRequest
+private typealias EmailSignInRequest = BetterAuthEmailPassword.EmailSignInRequest
+private typealias AppleNativeSignInPayload = BetterAuthAppleSignIn.AppleNativeSignInPayload
+private typealias GenericOAuthSignInRequest = BetterAuthSocialOAuth.GenericOAuthSignInRequest
+private typealias GenericOAuthCallbackRequest = BetterAuthSocialOAuth.GenericOAuthCallbackRequest
+private typealias GenericOAuthAuthorizationResponse = BetterAuthSocialOAuth.GenericOAuthAuthorizationResponse
+private typealias LinkedAccount = BetterAuthSocialOAuth.LinkedAccount
+
 struct AccountManagementAndOAuthTests {
+    private var authModules: [any BetterAuthModule] {
+        [BetterAuthAnonymousModule(), BetterAuthAppleSignInModule(),
+         BetterAuthEmailPasswordModule(), BetterAuthSocialOAuthModule()]
+    }
+
     @Test
     func anonymousSignInMaterializesAndPersistsNativeSession() async throws {
         let transport = SequencedMockTransport([.response(statusCode: 200, jsonObject: ["token": "anon-token",
@@ -27,15 +44,16 @@ struct AccountManagementAndOAuthTests {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: store,
-                             transport: transport)
+                             transport: transport,
+                             modules: authModules)
 
-        let session = try await client.auth.signInAnonymously()
+        let session = try await client.requireAnonymous().signIn()
         #expect(session.user.id == "anon-user")
         #expect(session.session.accessToken == "anon-token")
         #expect(await client.auth.currentSession() == session)
         #expect(try store.loadSession(for: "better-auth.session") == session)
 
-        let deleted = try await client.auth.deleteAnonymousUser()
+        let deleted = try await client.requireAnonymous().deleteUser()
         #expect(deleted == true)
         #expect(await client.auth.currentSession() == nil)
         #expect(try store.loadSession(for: "better-auth.session") == nil)
@@ -62,10 +80,11 @@ struct AccountManagementAndOAuthTests {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: store,
-                             transport: transport)
+                             transport: transport,
+                             modules: authModules)
 
         do {
-            _ = try await client.auth.signInAnonymously()
+            _ = try await client.requireAnonymous().signIn()
             Issue.record("Expected anonymous sign-in to reject mismatched materialized user")
         } catch let error as BetterAuthError {
             guard case .invalidResponse = error else {
@@ -98,7 +117,8 @@ struct AccountManagementAndOAuthTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key")),
                              sessionStore: store,
-                             transport: transport)
+                             transport: transport,
+                             modules: authModules)
         try await client.auth.applyRestoredSession(session)
 
         let result = try await client.auth.deleteUser()
@@ -123,7 +143,8 @@ struct AccountManagementAndOAuthTests {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
-                             transport: transport)
+                             transport: transport,
+                             modules: authModules)
         try await client.auth.applyRestoredSession(session)
 
         let result = try await client.auth.deleteUser(DeleteUserRequest(callbackURL: "https://example.com/deleted",
@@ -143,7 +164,8 @@ struct AccountManagementAndOAuthTests {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
-                             transport: transport)
+                             transport: transport,
+                             modules: authModules)
         try await client.auth.applyRestoredSession(session)
 
         let location = SourceLocation(fileID: #fileID, filePath: #filePath, line: #line + 1, column: #column)
@@ -158,24 +180,6 @@ struct AccountManagementAndOAuthTests {
     }
 
     // MARK: - Anonymous Upgrade
-
-    @Test
-    func upgradeAnonymousWithEmailRequiresExistingSession() async throws {
-        let client =
-            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
-                             sessionStore: InMemorySessionStore(),
-                             transport: MockTransport { request in emptyResponse(for: request) })
-
-        let location = SourceLocation(fileID: #fileID, filePath: #filePath, line: #line + 1, column: #column)
-        do {
-            _ = try await client.auth.upgradeAnonymousWithEmail(EmailSignUpRequest(email: "user@example.com",
-                                                                                   password: "password123",
-                                                                                   name: "Test"))
-            Issue.record("Expected BetterAuthError.missingSession", sourceLocation: location)
-        } catch BetterAuthError.missingSession {
-            // expected
-        }
-    }
 
     @Test
     func upgradeAnonymousWithEmailPersistsUpgradedSession() async throws {
@@ -199,12 +203,13 @@ struct AccountManagementAndOAuthTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key")),
                              sessionStore: store,
-                             transport: transport)
+                             transport: transport,
+                             modules: authModules)
         try await client.auth.applyRestoredSession(anonSession)
 
-        let result = try await client.auth.upgradeAnonymousWithEmail(EmailSignUpRequest(email: "real@example.com",
-                                                                                        password: "password123",
-                                                                                        name: "Real User"))
+        let result = try await client.requireEmailPassword().signUp(EmailSignUpRequest(email: "real@example.com",
+                                                                                       password: "password123",
+                                                                                       name: "Real User"))
         if case let .signedIn(session) = result {
             #expect(session.user.email == "real@example.com")
             #expect(session.session.accessToken == "upgraded-token")
@@ -237,11 +242,12 @@ struct AccountManagementAndOAuthTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key")),
                              sessionStore: store,
-                             transport: transport)
+                             transport: transport,
+                             modules: authModules)
         try await client.auth.applyRestoredSession(anonSession)
 
-        let session = try await client.auth.upgradeAnonymousWithApple(AppleNativeSignInPayload(token: "apple-id-token",
-                                                                                               nonce: "nonce"))
+        let session = try await client.requireAppleSignIn().signIn(AppleNativeSignInPayload(token: "apple-id-token",
+                                                                                            nonce: "nonce"))
         #expect(session.user.email == "apple@example.com")
         #expect(session.session.accessToken == "apple-token")
         #expect(try store.loadSession(for: "test-key")?.user.email == "apple@example.com")
@@ -280,10 +286,11 @@ struct AccountManagementAndOAuthTests {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
-                             transport: transport)
+                             transport: transport,
+                             modules: authModules)
         try await client.auth.applyRestoredSession(session)
 
-        let result = try await client.auth.reauthenticate(password: "correct-password")
+        let result = try await client.requireEmailPassword().reauthenticate(password: "correct-password")
         #expect(result == true)
     }
 
@@ -307,10 +314,11 @@ struct AccountManagementAndOAuthTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key")),
                              sessionStore: store,
-                             transport: transport)
+                             transport: transport,
+                             modules: authModules)
         try await client.auth.applyRestoredSession(originalSession)
 
-        _ = try await client.auth.reauthenticate(password: "correct-password")
+        _ = try await client.requireEmailPassword().reauthenticate(password: "correct-password")
 
         let current = await client.auth.currentSession()
         #expect(current?.session.accessToken == "original-token")
@@ -335,11 +343,12 @@ struct AccountManagementAndOAuthTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     retryPolicy: RetryPolicy.none),
                              sessionStore: InMemorySessionStore(),
-                             transport: transport)
+                             transport: transport,
+                             modules: authModules)
         try await client.auth.applyRestoredSession(session)
 
         do {
-            _ = try await client.auth.reauthenticate(password: "correct-password")
+            _ = try await client.requireEmailPassword().reauthenticate(password: "correct-password")
             Issue.record("Expected revoke failure to fail closed")
         } catch let BetterAuthError.requestFailed(statusCode, _, _, _) {
             #expect(statusCode == 500)
@@ -358,12 +367,13 @@ struct AccountManagementAndOAuthTests {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
-                             transport: transport)
+                             transport: transport,
+                             modules: authModules)
         try await client.auth.applyRestoredSession(session)
 
         let location = SourceLocation(fileID: #fileID, filePath: #filePath, line: #line + 1, column: #column)
         do {
-            _ = try await client.auth.reauthenticate(password: "wrong-password")
+            _ = try await client.requireEmailPassword().reauthenticate(password: "wrong-password")
             Issue.record("Expected BetterAuthError.requestFailed", sourceLocation: location)
         } catch let BetterAuthError.requestFailed(statusCode, _, _, _) {
             #expect(statusCode == 401, sourceLocation: location)
@@ -407,18 +417,20 @@ struct AccountManagementAndOAuthTests {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: store,
-                             transport: transport)
+                             transport: transport,
+                             modules: authModules)
 
-        let authURL = try await client.auth.beginGenericOAuth(GenericOAuthSignInRequest(providerId: "fixture-generic",
-                                                                                        callbackURL: "betterauth://oauth/success",
-                                                                                        disableRedirect: true))
+        let authURL = try await client.requireSocialOAuth()
+            .begin(GenericOAuthSignInRequest(providerId: "fixture-generic",
+                                             callbackURL: "betterauth://oauth/success",
+                                             disableRedirect: true))
         #expect(authURL.redirect == false)
         #expect(authURL.url.contains("fixture-oauth.example.com"))
 
-        let session = try await client.auth
-            .completeGenericOAuth(GenericOAuthCallbackRequest(providerId: "fixture-generic",
-                                                              code: "fixture-code",
-                                                              state: "fixture-state"))
+        let session = try await client.requireSocialOAuth()
+            .complete(GenericOAuthCallbackRequest(providerId: "fixture-generic",
+                                                  code: "fixture-code",
+                                                  state: "fixture-state"))
         #expect(session.session.accessToken == "oauth-token")
         #expect(session.user.email == "oauth@example.com")
         #expect(await client.auth.currentSession() == session)
@@ -427,11 +439,8 @@ struct AccountManagementAndOAuthTests {
 
     @Test
     func genericOAuthCompletionUsesConfiguredCallbackTemplate() async throws {
-        let endpoints = BetterAuthConfiguration
-            .Endpoints(oauth: .init(genericOAuthCallbackPath: "/api/auth/custom-oauth/{providerId}/complete"))
         let client =
-            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
-                                                                    endpoints: endpoints),
+            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
                              transport: MockTransport { request in
                                  try expect(request.url?.path == "/api/auth/custom-oauth/fixture-generic/complete")
@@ -442,12 +451,13 @@ struct AccountManagementAndOAuthTests {
                                                                                                        accessToken: "oauth-token"),
                                                                                         user: .init(id: "oauth-user",
                                                                                                     email: "oauth@example.com"))))
-                             })
+                             },
+                             modules: [BetterAuthSocialOAuthModule(endpoints: .init(genericCallbackPath: "/api/auth/custom-oauth/{providerId}/complete"))])
 
-        let session = try await client.auth
-            .completeGenericOAuth(GenericOAuthCallbackRequest(providerId: "fixture-generic",
-                                                              code: "fixture-code",
-                                                              state: "fixture-state"))
+        let session = try await client.requireSocialOAuth()
+            .complete(GenericOAuthCallbackRequest(providerId: "fixture-generic",
+                                                  code: "fixture-code",
+                                                  state: "fixture-state"))
 
         #expect(session.session.accessToken == "oauth-token")
     }
@@ -471,13 +481,14 @@ struct AccountManagementAndOAuthTests {
                                      .value(forHTTPHeaderField: "Authorization") == "Bearer current-token")
                                  return try response(for: request, statusCode: 200,
                                                      data: encodeJSON(linkedAccounts))
-                             })
+                             },
+                             modules: authModules)
 
         try await client.auth.updateSession(BetterAuthSession(session: .init(id: "current-session", userId: "user-1",
                                                                              accessToken: "current-token"),
                                                               user: .init(id: "user-1", email: "linked@example.com")))
 
-        let result = try await client.auth.listLinkedAccounts()
+        let result = try await client.requireSocialOAuth().listLinkedAccounts()
         #expect(result.count == linkedAccounts.count)
         #expect(result.first?.id == linkedAccounts.first?.id)
         #expect(result.first?.providerId == linkedAccounts.first?.providerId)
@@ -504,15 +515,16 @@ struct AccountManagementAndOAuthTests {
                                                      statusCode: 200,
                                                      data: encodeJSON(GenericOAuthAuthorizationResponse(url: "https://fixture-oauth.example.com/oauth/authorize?state=link-state",
                                                                                                         redirect: true)))
-                             })
+                             },
+                             modules: authModules)
 
         try await client.auth.updateSession(BetterAuthSession(session: .init(id: "current-session", userId: "user-1",
                                                                              accessToken: "current-token"),
                                                               user: .init(id: "user-1", email: "linked@example.com")))
 
-        let result = try await client.auth.linkGenericOAuth(GenericOAuthSignInRequest(providerId: "fixture-generic",
-                                                                                      callbackURL: "betterauth://oauth/success",
-                                                                                      disableRedirect: true))
+        let result = try await client.requireSocialOAuth().link(GenericOAuthSignInRequest(providerId: "fixture-generic",
+                                                                                          callbackURL: "betterauth://oauth/success",
+                                                                                          disableRedirect: true))
 
         #expect(result.redirect == true)
         #expect(result.url.contains("link-state"))
@@ -546,14 +558,15 @@ struct AccountManagementAndOAuthTests {
                                      .value == "fixture-state")
                                  return try response(for: request, statusCode: 200,
                                                      data: encodeJSON(reconciledSession))
-                             })
+                             },
+                             modules: authModules)
 
         try await client.auth.updateSession(existingSession)
 
-        let session = try await client.auth
-            .completeGenericOAuth(GenericOAuthCallbackRequest(providerId: "fixture-generic",
-                                                              code: "fixture-code",
-                                                              state: "fixture-state"))
+        let session = try await client.requireSocialOAuth()
+            .complete(GenericOAuthCallbackRequest(providerId: "fixture-generic",
+                                                  code: "fixture-code",
+                                                  state: "fixture-state"))
 
         #expect(session == reconciledSession)
         #expect(await client.auth.currentSession() == reconciledSession)

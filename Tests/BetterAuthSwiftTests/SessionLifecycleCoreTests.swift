@@ -1,3 +1,4 @@
+import BetterAuthAppleSignIn
 import BetterAuthTestHelpers
 import Foundation
 import Testing
@@ -167,22 +168,6 @@ struct SessionLifecycleCoreTests {
     func pkceThrowsWhenSecureRandomFails() throws {
         do {
             _ = try PKCEFlow.generateCodeVerifier { _ in OSStatus(-1) }
-            Issue.record("Expected secure random failure")
-        } catch BetterAuthError.randomBytesUnavailable {
-            return
-        }
-    }
-
-    @Test
-    func appleNonceUsesCompleteAlphabetAndThrowsWhenSecureRandomFails() throws {
-        let nonce = try AppleSignInSupport.randomNonce(length: 1) { buffer in
-            buffer[0] = UInt8(35)
-            return errSecSuccess
-        }
-        #expect(nonce == "Z")
-
-        do {
-            _ = try AppleSignInSupport.randomNonce { _ in OSStatus(-1) }
             Issue.record("Expected secure random failure")
         } catch BetterAuthError.randomBytesUnavailable {
             return

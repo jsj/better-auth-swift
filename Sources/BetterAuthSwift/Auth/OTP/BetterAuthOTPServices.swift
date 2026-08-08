@@ -17,7 +17,7 @@ struct BetterAuthOneTimeCodeService {
     }
 
     func signInWithEmailOTP(_ payload: EmailOTPSignInRequest) async throws -> BetterAuthSession {
-        let response: SocialSignInTransportResponse = try await context.network
+        let response: BetterAuthSessionTransportResponse = try await context.network
             .post(path: context.configuration.endpoints.emailOTP.signInPath,
                   body: payload,
                   accessToken: nil)

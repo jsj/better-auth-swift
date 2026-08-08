@@ -12,18 +12,6 @@ extension BetterAuthSessionManager {
         try await makeSessionAdministrationService().getJWKS()
     }
 
-    // MARK: - Linked Accounts
-
-    func listLinkedAccounts() async throws -> [LinkedAccount] {
-        try await makeProfileService().listLinkedAccounts(accessToken: state.currentSession?.session.accessToken)
-    }
-
-    @discardableResult
-    func linkSocialAccount(_ payload: LinkSocialAccountRequest) async throws -> LinkSocialAccountResponse {
-        try await makeProfileService().linkSocialAccount(payload,
-                                                         accessToken: state.currentSession?.session.accessToken)
-    }
-
     // MARK: - Passkeys
 
     func passkeyRegistrationOptions(_ request: PasskeyRegistrationOptionsRequest = .init()) async throws

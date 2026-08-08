@@ -79,7 +79,7 @@ swift test --enable-swift-testing
 
 echo "Building public documentation..."
 "$ROOT/Scripts/generate_xcodeproj.sh"
-for scheme in BetterAuth BetterAuthMagicLink BetterAuthSwiftUI BetterAuthOrganization; do
+for scheme in BetterAuth BetterAuthEmailPassword BetterAuthUsername BetterAuthAnonymous BetterAuthSocialOAuth BetterAuthAppleSignIn BetterAuthMagicLink BetterAuthSwiftUI BetterAuthOrganization; do
   xcodebuild docbuild \
     -project "$ROOT/better-auth-swift.xcodeproj" \
     -scheme "$scheme" \
@@ -113,6 +113,28 @@ if ! grep -q "BetterAuthAuthClient" "$SYMBOL_GRAPH"; then
   echo "BetterAuthAuthClient is missing from the public BetterAuth symbol graph." >&2
   exit 1
 fi
+
+for extracted_symbol in EmailSignUpRequest UsernameSignInRequest SocialSignInRequest AppleNativeSignInPayload; do
+  if grep -q "$extracted_symbol" "$SYMBOL_GRAPH"; then
+    echo "$extracted_symbol leaked back into the public BetterAuth symbol graph." >&2
+    exit 1
+  fi
+done
+
+for module_check in \
+  "BetterAuthEmailPassword:BetterAuthEmailPasswordClient" \
+  "BetterAuthUsername:BetterAuthUsernameClient" \
+  "BetterAuthAnonymous:BetterAuthAnonymousClient" \
+  "BetterAuthSocialOAuth:BetterAuthSocialOAuthClient" \
+  "BetterAuthAppleSignIn:BetterAuthAppleSignInClient"; do
+  module_name="${module_check%%:*}"
+  expected_symbol="${module_check#*:}"
+  module_graph="$(find .build -path "*/symbolgraph/$module_name.symbols.json" -type f -print | head -n 1)"
+  if [ -z "$module_graph" ] || ! grep -q "$expected_symbol" "$module_graph"; then
+    echo "$expected_symbol is missing from the $module_name public symbol graph." >&2
+    exit 1
+  fi
+done
 
 MAGIC_LINK_SYMBOL_GRAPH="$(find .build -path '*/symbolgraph/BetterAuthMagicLink.symbols.json' -type f -print | head -n 1)"
 if [ -z "$MAGIC_LINK_SYMBOL_GRAPH" ]; then

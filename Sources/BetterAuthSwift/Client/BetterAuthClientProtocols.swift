@@ -101,8 +101,6 @@ public extension BetterAuthRequestPerforming {
 public protocol BetterAuthClientProtocol: Sendable {
     var configuration: BetterAuthConfiguration { get }
     var authSessionLifecycle: any BetterAuthSessionLifecycle & BetterAuthSessionFetching { get }
-    var primaryAuth: any BetterAuthPrimaryAuthPerforming { get }
-    var oauthAuth: any BetterAuthOAuthPerforming { get }
     var oneTimeCodeAuth: any BetterAuthOneTimeCodePerforming { get }
     var twoFactorAuth: any BetterAuthTwoFactorPerforming { get }
     var passkeyAuth: any BetterAuthPasskeyPerforming { get }

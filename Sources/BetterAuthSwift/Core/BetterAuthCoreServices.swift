@@ -67,24 +67,6 @@ struct BetterAuthSessionRefreshService {
     }
 }
 
-struct BetterAuthAuthFlowService {
-    let configuration: BetterAuthConfiguration
-    let network: any BetterAuthTransporting
-
-    func beginGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws -> GenericOAuthAuthorizationResponse {
-        try await network.post(path: configuration.endpoints.oauth.genericOAuthSignInPath, body: payload,
-                               accessToken: nil)
-    }
-
-    func linkGenericOAuth(_ payload: GenericOAuthSignInRequest,
-                          accessToken: String?) async throws -> GenericOAuthAuthorizationResponse
-    {
-        try await network.post(path: configuration.endpoints.oauth.genericOAuthLinkPath,
-                               body: payload,
-                               accessToken: accessToken)
-    }
-}
-
 struct BetterAuthUserAccountService {
     let configuration: BetterAuthConfiguration
     let network: any BetterAuthTransporting

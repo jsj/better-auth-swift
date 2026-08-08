@@ -1,3 +1,4 @@
+import BetterAuth
 import Foundation
 
 public struct AppleNativeSignInPayload: Codable, Sendable, Equatable {

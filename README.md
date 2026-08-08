@@ -12,6 +12,7 @@
   <img src="https://img.shields.io/badge/Swift-6-orange.svg" alt="Swift 6" />
   <img src="https://img.shields.io/badge/platforms-iOS%2017%2B%20%7C%20macOS%2014%2B%20%7C%20watchOS%2010%2B%20%7C%20visionOS%201%2B%20%7C%20tvOS%2017%2B-blue.svg" alt="Platforms" />
   <img src="https://img.shields.io/badge/SwiftPM-supported-brightgreen.svg" alt="SwiftPM" />
+  <a href="https://swiftpackageindex.com/jsj/better-auth-swift/documentation"><img src="https://img.shields.io/badge/DocC-hosted-blue.svg" alt="Hosted DocC documentation" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
 </p>
 
@@ -75,11 +76,11 @@ Report these results:
 
 | Category | Supported features |
 |----------|-----------------|
-| **Email + Password** | Sign up, sign in, password reset, password change |
-| **Username** | Username sign in, availability check |
-| **Apple Sign In** | Native credential exchange (no web redirect) |
-| **Social / OAuth** | Social sign in, generic OAuth initiation + completion |
-| **Anonymous** | Anonymous sign in, upgrade to permanent account |
+| **Email + Password** | Sign up, sign in, password reset, reauthentication (optional module) |
+| **Username** | Username sign in and availability check (optional module) |
+| **Apple Sign In** | Native credential exchange with no web redirect (optional module) |
+| **Social / OAuth** | Social sign in, generic OAuth, and account linking (optional module) |
+| **Anonymous** | Anonymous sign in and deletion (optional module) |
 | **Magic Link** | Request and verify magic links (optional plugin module) |
 | **Email OTP** | Request, sign in, and verify email OTP codes |
 | **Phone OTP** | Request, sign in, and verify phone OTP codes |
@@ -120,11 +121,16 @@ dependencies: [
 ]
 ```
 
-The package provides four products:
+The package provides a small core plus optional products:
 
 | Product | Use case |
 |---------|----------|
-| `BetterAuth` | Core SDK — session, auth flows, authenticated requests |
+| `BetterAuth` | Core SDK — sessions, account lifecycle, OTP, passkeys, and authenticated requests |
+| `BetterAuthEmailPassword` | Email sign-up, sign-in, password reset, and reauthentication |
+| `BetterAuthUsername` | Username availability and sign-in |
+| `BetterAuthAnonymous` | Anonymous sign-in and deletion |
+| `BetterAuthSocialOAuth` | Social providers, generic OAuth, and account linking |
+| `BetterAuthAppleSignIn` | Native Sign in with Apple credential exchange |
 | `BetterAuthMagicLink` | Magic Link plugin — requests, verification, incoming URLs |
 | `BetterAuthSwiftUI` | Observable `AuthStore` for SwiftUI apps |
 | `BetterAuthOrganization` | Organization plugin — members, roles, invitations |
@@ -154,6 +160,11 @@ try await magicLinks.request(.init(email: "person@example.com"))
     name: "YourApp",
     dependencies: [
         .product(name: "BetterAuth", package: "better-auth-swift"),
+        .product(name: "BetterAuthEmailPassword", package: "better-auth-swift"),
+        .product(name: "BetterAuthUsername", package: "better-auth-swift"),
+        .product(name: "BetterAuthAnonymous", package: "better-auth-swift"),
+        .product(name: "BetterAuthSocialOAuth", package: "better-auth-swift"),
+        .product(name: "BetterAuthAppleSignIn", package: "better-auth-swift"),
         .product(name: "BetterAuthMagicLink", package: "better-auth-swift"),
         .product(name: "BetterAuthSwiftUI", package: "better-auth-swift"),
         .product(name: "BetterAuthOrganization", package: "better-auth-swift")
@@ -165,9 +176,21 @@ try await magicLinks.request(.init(email: "person@example.com"))
 
 ```swift
 import BetterAuth
+import BetterAuthAnonymous
+import BetterAuthAppleSignIn
+import BetterAuthEmailPassword
+import BetterAuthSocialOAuth
+import BetterAuthUsername
 
 let client = BetterAuthClient(
-    baseURL: URL(string: "https://your-api.example.com")!
+    baseURL: URL(string: "https://your-api.example.com")!,
+    modules: [
+        BetterAuthEmailPasswordModule(),
+        BetterAuthUsernameModule(),
+        BetterAuthAnonymousModule(),
+        BetterAuthSocialOAuthModule(),
+        BetterAuthAppleSignInModule()
+    ]
 )
 ```
 
@@ -190,15 +213,15 @@ case .cleared:
 
 ```swift
 // Email + password
-let session = try await client.auth.email.signIn(
+let session = try await client.requireEmailPassword().signIn(
     EmailSignInRequest(email: "user@example.com", password: "password")
 )
 
 // Apple native sign in
-let session = try await client.auth.apple.signIn(payload)
+let session = try await client.requireAppleSignIn().signIn(payload)
 
 // Anonymous (upgrade later)
-let session = try await client.auth.anonymous.signIn()
+let session = try await client.requireAnonymous().signIn()
 ```
 
 ### Make authenticated requests
@@ -285,7 +308,7 @@ let client = BetterAuthClient(
 ## Apple Sign In
 
 ```swift
-let session = try await client.auth.apple.signIn(
+let session = try await client.requireAppleSignIn().signIn(
     AppleNativeSignInPayload(
         token: identityToken,
         nonce: rawNonce,

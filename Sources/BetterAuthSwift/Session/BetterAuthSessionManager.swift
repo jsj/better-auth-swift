@@ -15,7 +15,6 @@ actor BetterAuthSessionManager {
     let state: BetterAuthSessionState
     let sessionService: BetterAuthSessionService
     let refreshService: BetterAuthSessionRefreshService
-    let authFlowService: BetterAuthAuthFlowService
     let userAccountService: BetterAuthUserAccountService
     let callbackHandler: BetterAuthCallbackHandler
     let context: BetterAuthSessionContext
@@ -25,14 +24,12 @@ actor BetterAuthSessionManager {
     var autoRefreshTask: Task<Void, Never>?
     var cachedRelay: BetterAuthSessionEventRelay?
     var cachedMaterializer: BetterAuthSessionMaterializer?
-    var cachedPrimaryAuthService: BetterAuthPrimaryAuthService?
     var cachedProfileService: BetterAuthProfileService?
     var cachedPasskeyService: BetterAuthPasskeyService?
     var cachedOneTimeCodeService: BetterAuthOneTimeCodeService?
     var cachedTwoFactorService: BetterAuthTwoFactorService?
     var cachedSessionAdministrationService: BetterAuthSessionAdministrationService?
     var cachedSessionBootstrapService: BetterAuthSessionBootstrapService?
-    var cachedOAuthService: BetterAuthOAuthService?
 
     func makeRelay() -> BetterAuthSessionEventRelay {
         if let cachedRelay {
@@ -53,17 +50,6 @@ actor BetterAuthSessionManager {
         let materializer = BetterAuthSessionMaterializer(context: context)
         cachedMaterializer = materializer
         return materializer
-    }
-
-    func makePrimaryAuthService() -> BetterAuthPrimaryAuthService {
-        if let cachedPrimaryAuthService {
-            return cachedPrimaryAuthService
-        }
-        let service = BetterAuthPrimaryAuthService(context: context,
-                                                   relay: makeRelay(),
-                                                   materializer: makeMaterializer())
-        cachedPrimaryAuthService = service
-        return service
     }
 
     func makeProfileService() -> BetterAuthProfileService {
@@ -128,15 +114,6 @@ actor BetterAuthSessionManager {
         return service
     }
 
-    func makeOAuthService() -> BetterAuthOAuthService {
-        if let cachedOAuthService {
-            return cachedOAuthService
-        }
-        let service = BetterAuthOAuthService(context: context, relay: makeRelay())
-        cachedOAuthService = service
-        return service
-    }
-
     func throttleAuthOperation(_ operation: String) async throws {
         guard let policy = configuration.auth.throttlePolicy else { return }
         try await authThrottle.check(operation: operation, policy: policy)
@@ -160,7 +137,6 @@ actor BetterAuthSessionManager {
         self.state = BetterAuthSessionState(eventEmitter: eventEmitter)
         self.sessionService = BetterAuthSessionService(configuration: configuration, sessionStore: sessionStore)
         self.refreshService = BetterAuthSessionRefreshService(configuration: configuration, network: self.network)
-        self.authFlowService = BetterAuthAuthFlowService(configuration: configuration, network: self.network)
         self.userAccountService = BetterAuthUserAccountService(configuration: configuration, network: self.network)
         self.callbackHandler = BetterAuthCallbackHandler(baseURL: configuration.baseURL,
                                                          endpoints: configuration.endpoints,
@@ -169,7 +145,6 @@ actor BetterAuthSessionManager {
                                                 state: self.state,
                                                 sessionService: self.sessionService,
                                                 refreshService: self.refreshService,
-                                                authFlowService: self.authFlowService,
                                                 userAccountService: self.userAccountService,
                                                 callbackHandler: self.callbackHandler,
                                                 network: self.network,
@@ -285,9 +260,6 @@ actor BetterAuthSessionManager {
 
     func handleIncomingURL(_ url: URL) async throws -> BetterAuthHandledURLResult {
         switch parseIncomingURL(url) {
-        case let .genericOAuth(payload):
-            try await .genericOAuth(completeGenericOAuth(payload))
-
         case let .verifyEmail(payload):
             try await .verifyEmail(verifyEmail(payload))
 
@@ -300,9 +272,6 @@ actor BetterAuthSessionManager {
         do {
             let result = try await handleIncomingURL(url)
             switch result {
-            case .genericOAuth:
-                logger?.info("OAuth callback handled")
-
             case let .verifyEmail(result):
                 logger?.info("Verify email callback handled: \(result)")
 
@@ -401,8 +370,6 @@ struct RevokeSessionRequest: Encodable {
 
 extension BetterAuthSessionManager: BetterAuthSessionLifecycle,
     BetterAuthSessionFetching,
-    BetterAuthPrimaryAuthPerforming,
-    BetterAuthOAuthPerforming,
     BetterAuthOneTimeCodePerforming,
     BetterAuthTwoFactorPerforming,
     BetterAuthPasskeyPerforming,

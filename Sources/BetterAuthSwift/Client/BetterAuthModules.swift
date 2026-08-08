@@ -34,8 +34,7 @@ public protocol BetterAuthAuthStateListener: Sendable {
 public struct BetterAuthAuthFeatures: Sendable {
     public let sessionLifecycle: any BetterAuthSessionLifecycle & BetterAuthSessionFetching
     public let sessionOutcomes: any BetterAuthSessionOutcomeApplying
-    public let primaryAuth: any BetterAuthPrimaryAuthPerforming
-    public let oauthAuth: any BetterAuthOAuthPerforming
+    public let authOperationThrottle: any BetterAuthAuthOperationThrottling
     public let oneTimeCodeAuth: any BetterAuthOneTimeCodePerforming
     public let twoFactorAuth: any BetterAuthTwoFactorPerforming
     public let passkeyAuth: any BetterAuthPasskeyPerforming
@@ -44,8 +43,7 @@ public struct BetterAuthAuthFeatures: Sendable {
 
     public init(sessionLifecycle: any BetterAuthSessionLifecycle & BetterAuthSessionFetching,
                 sessionOutcomes: any BetterAuthSessionOutcomeApplying,
-                primaryAuth: any BetterAuthPrimaryAuthPerforming,
-                oauthAuth: any BetterAuthOAuthPerforming,
+                authOperationThrottle: any BetterAuthAuthOperationThrottling,
                 oneTimeCodeAuth: any BetterAuthOneTimeCodePerforming,
                 twoFactorAuth: any BetterAuthTwoFactorPerforming,
                 passkeyAuth: any BetterAuthPasskeyPerforming,
@@ -54,8 +52,7 @@ public struct BetterAuthAuthFeatures: Sendable {
     {
         self.sessionLifecycle = sessionLifecycle
         self.sessionOutcomes = sessionOutcomes
-        self.primaryAuth = primaryAuth
-        self.oauthAuth = oauthAuth
+        self.authOperationThrottle = authOperationThrottle
         self.oneTimeCodeAuth = oneTimeCodeAuth
         self.twoFactorAuth = twoFactorAuth
         self.passkeyAuth = passkeyAuth
@@ -149,12 +146,23 @@ public struct BetterAuthDuplicateModuleIdentifierError: Error, Sendable, Equatab
     }
 }
 
+public struct BetterAuthModuleNotRegisteredError: LocalizedError, Sendable, Equatable {
+    public let identifier: String
+
+    public init(identifier: String) {
+        self.identifier = identifier
+    }
+
+    public var errorDescription: String? {
+        "Register the Better Auth module '\(identifier)' when you create BetterAuthClient."
+    }
+}
+
 public struct BetterAuthModuleContext: BetterAuthClientProtocol, Sendable {
     public let configuration: BetterAuthConfiguration
     public let authSessionLifecycle: any BetterAuthSessionLifecycle & BetterAuthSessionFetching
     public let sessionOutcomes: any BetterAuthSessionOutcomeApplying
-    public let primaryAuth: any BetterAuthPrimaryAuthPerforming
-    public let oauthAuth: any BetterAuthOAuthPerforming
+    public let authOperationThrottle: any BetterAuthAuthOperationThrottling
     public let oneTimeCodeAuth: any BetterAuthOneTimeCodePerforming
     public let twoFactorAuth: any BetterAuthTwoFactorPerforming
     public let passkeyAuth: any BetterAuthPasskeyPerforming
@@ -171,8 +179,7 @@ public struct BetterAuthModuleContext: BetterAuthClientProtocol, Sendable {
         self.configuration = configuration
         self.authSessionLifecycle = authFeatures.sessionLifecycle
         self.sessionOutcomes = authFeatures.sessionOutcomes
-        self.primaryAuth = authFeatures.primaryAuth
-        self.oauthAuth = authFeatures.oauthAuth
+        self.authOperationThrottle = authFeatures.authOperationThrottle
         self.oneTimeCodeAuth = authFeatures.oneTimeCodeAuth
         self.twoFactorAuth = authFeatures.twoFactorAuth
         self.passkeyAuth = authFeatures.passkeyAuth

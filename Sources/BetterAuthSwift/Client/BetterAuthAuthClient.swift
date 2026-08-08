@@ -133,94 +133,8 @@ extension BetterAuthAuthClient: BetterAuthSessionOutcomeApplying {
 
 public extension BetterAuthAuthClient {
     @discardableResult
-    func signUpWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult {
-        try await sessionManager.signUpWithEmail(payload)
-    }
-
-    @discardableResult
-    func signInWithEmail(_ payload: EmailSignInRequest) async throws -> BetterAuthSession {
-        try await sessionManager.signInWithEmail(payload)
-    }
-
-    func isUsernameAvailable(_ payload: UsernameAvailabilityRequest) async throws -> Bool {
-        try await sessionManager.isUsernameAvailable(payload)
-    }
-
-    @discardableResult
-    func signInWithUsername(_ payload: UsernameSignInRequest) async throws -> BetterAuthSession {
-        try await sessionManager.signInWithUsername(payload)
-    }
-
-    @discardableResult
-    func signInWithApple(_ payload: AppleNativeSignInPayload) async throws -> BetterAuthSession {
-        try await sessionManager.signInWithApple(payload)
-    }
-
-    @discardableResult
-    func signInWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult {
-        try await sessionManager.signInWithSocial(payload)
-    }
-
-    @discardableResult
-    func signInAnonymously() async throws -> BetterAuthSession {
-        try await sessionManager.signInAnonymously()
-    }
-
-    @discardableResult
-    func deleteAnonymousUser() async throws -> Bool {
-        try await sessionManager.deleteAnonymousUser()
-    }
-
-    @discardableResult
     func deleteUser(_ payload: DeleteUserRequest = .init()) async throws -> Bool {
         try await sessionManager.deleteUser(payload)
-    }
-
-    @discardableResult
-    func upgradeAnonymousWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult {
-        try await sessionManager.upgradeAnonymousWithEmail(payload)
-    }
-
-    @discardableResult
-    func upgradeAnonymousWithApple(_ payload: AppleNativeSignInPayload) async throws -> BetterAuthSession {
-        try await sessionManager.upgradeAnonymousWithApple(payload)
-    }
-
-    @discardableResult
-    func upgradeAnonymousWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult {
-        try await sessionManager.upgradeAnonymousWithSocial(payload)
-    }
-
-    @discardableResult
-    func reauthenticate(password: String) async throws -> Bool {
-        try await sessionManager.reauthenticate(password: password)
-    }
-
-    func beginGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws
-        -> GenericOAuthAuthorizationResponse
-    {
-        try await sessionManager.beginGenericOAuth(payload)
-    }
-
-    func linkGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws
-        -> GenericOAuthAuthorizationResponse
-    {
-        try await sessionManager.linkGenericOAuth(payload)
-    }
-
-    @discardableResult
-    func completeGenericOAuth(_ payload: GenericOAuthCallbackRequest) async throws -> BetterAuthSession {
-        try await sessionManager.completeGenericOAuth(payload)
-    }
-
-    @discardableResult
-    func requestPasswordReset(_ payload: ForgotPasswordRequest) async throws -> Bool {
-        try await sessionManager.requestPasswordReset(payload)
-    }
-
-    @discardableResult
-    func resetPassword(_ payload: ResetPasswordRequest) async throws -> Bool {
-        try await sessionManager.resetPassword(payload)
     }
 
     @discardableResult
@@ -325,15 +239,6 @@ public extension BetterAuthAuthClient {
         try await sessionManager.getJWKS()
     }
 
-    func listLinkedAccounts() async throws -> [LinkedAccount] {
-        try await sessionManager.listLinkedAccounts()
-    }
-
-    @discardableResult
-    func linkSocialAccount(_ payload: LinkSocialAccountRequest) async throws -> LinkSocialAccountResponse {
-        try await sessionManager.linkSocialAccount(payload)
-    }
-
     func passkeyRegistrationOptions(_ request: PasskeyRegistrationOptionsRequest = .init()) async throws
         -> PasskeyRegistrationOptions
     {
@@ -407,10 +312,14 @@ public extension BetterAuthAuthClient {
 
 extension BetterAuthAuthClient: BetterAuthSessionLifecycle,
     BetterAuthSessionFetching,
-    BetterAuthPrimaryAuthPerforming,
-    BetterAuthOAuthPerforming,
     BetterAuthOneTimeCodePerforming,
     BetterAuthTwoFactorPerforming,
     BetterAuthPasskeyPerforming,
     BetterAuthAccountPerforming,
-    BetterAuthSessionAdministrating {}
+    BetterAuthSessionAdministrating,
+    BetterAuthAuthOperationThrottling
+{
+    public func checkAuthOperation(_ operation: String) async throws {
+        try await sessionManager.throttleAuthOperation(operation)
+    }
+}

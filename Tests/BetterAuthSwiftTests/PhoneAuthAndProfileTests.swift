@@ -1,3 +1,4 @@
+import BetterAuthAppleSignIn
 import BetterAuthTestHelpers
 import Foundation
 import Testing
@@ -144,7 +145,6 @@ struct PhoneAuthAndProfileTests {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key"),
-                                                                    endpoints: .init(auth: .init(nativeAppleSignInPath: "/api/auth/apple/native")),
                                                                     requestOrigin: "app://snoozy"),
                              sessionStore: store,
                              transport: MockTransport { request in
@@ -155,8 +155,9 @@ struct PhoneAuthAndProfileTests {
                                  try expect(request.value(forHTTPHeaderField: "Authorization") == nil)
                                  try expect(request.value(forHTTPHeaderField: "Origin") == "app://snoozy")
 
-                                 let payload = try JSONDecoder().decode(AppleNativeSignInPayload.self,
-                                                                        from: try #require(request.httpBody))
+                                 let payload = try JSONDecoder()
+                                     .decode(BetterAuthAppleSignIn.AppleNativeSignInPayload.self,
+                                             from: try #require(request.httpBody))
                                  try expect(payload.token == "identity-token")
                                  try expect(payload.nonce == "raw-nonce")
                                  try expect(payload.authorizationCode == "auth-code")
@@ -166,14 +167,15 @@ struct PhoneAuthAndProfileTests {
 
                                  return try response(for: request, statusCode: 200,
                                                      data: encodeJSON(signedInSession))
-                             })
+                             },
+                             modules: [BetterAuthAppleSignInModule()])
 
-        let session = try await client.auth.signInWithApple(.init(token: "identity-token",
-                                                                  nonce: "raw-nonce",
-                                                                  authorizationCode: "auth-code",
-                                                                  email: "apple@example.com",
-                                                                  givenName: "Apple",
-                                                                  familyName: "User"))
+        let session = try await client.requireAppleSignIn().signIn(.init(token: "identity-token",
+                                                                         nonce: "raw-nonce",
+                                                                         authorizationCode: "auth-code",
+                                                                         email: "apple@example.com",
+                                                                         givenName: "Apple",
+                                                                         familyName: "User"))
 
         #expect(session.session.id == signedInSession.session.id)
         #expect(session.session.accessToken == signedInSession.session.accessToken)
@@ -206,14 +208,14 @@ struct PhoneAuthAndProfileTests {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key"),
-                                                                    endpoints: .init(auth: .init(nativeAppleSignInPath: "/api/auth/apple/native")),
                                                                     requestOrigin: "app://snoozy"),
                              sessionStore: store,
                              transport: MockTransport { request in
                                  try expect(request.url?.path == "/api/auth/apple/native")
                                  try expect(request.value(forHTTPHeaderField: "Origin") == "app://snoozy")
-                                 let payload = try JSONDecoder().decode(AppleNativeSignInPayload.self,
-                                                                        from: try #require(request.httpBody))
+                                 let payload = try JSONDecoder()
+                                     .decode(BetterAuthAppleSignIn.AppleNativeSignInPayload.self,
+                                             from: try #require(request.httpBody))
                                  try expect(payload.token == "repeat-identity-token")
                                  try expect(payload.nonce == "repeat-raw-nonce")
                                  try expect(payload.email == nil)
@@ -222,10 +224,11 @@ struct PhoneAuthAndProfileTests {
                                  try expect(payload.authorizationCode == nil)
                                  return try response(for: request, statusCode: 200,
                                                      data: encodeJSON(signedInSession))
-                             })
+                             },
+                             modules: [BetterAuthAppleSignInModule()])
 
-        let session = try await client.auth.signInWithApple(.init(token: "repeat-identity-token",
-                                                                  nonce: "repeat-raw-nonce"))
+        let session = try await client.requireAppleSignIn().signIn(.init(token: "repeat-identity-token",
+                                                                         nonce: "repeat-raw-nonce"))
 
         #expect(session.session.id == signedInSession.session.id)
         #expect(session.session.accessToken == signedInSession.session.accessToken)
@@ -257,24 +260,24 @@ struct PhoneAuthAndProfileTests {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key"),
-                                                                    endpoints: .init(auth: .init(nativeAppleSignInPath: "/api/auth/custom-apple/native",
-                                                                                                 socialSignInPath: "/api/auth/sign-in/social")),
                                                                     requestOrigin: "app://snoozy"),
                              sessionStore: store,
                              transport: MockTransport { request in
                                  try expect(request.url?.path == "/api/auth/custom-apple/native")
-                                 let payload = try JSONDecoder().decode(AppleNativeSignInPayload.self,
-                                                                        from: try #require(request.httpBody))
+                                 let payload = try JSONDecoder()
+                                     .decode(BetterAuthAppleSignIn.AppleNativeSignInPayload.self,
+                                             from: try #require(request.httpBody))
                                  try expect(payload.token == "identity-token")
                                  return try response(for: request, statusCode: 200,
                                                      data: encodeJSON(signedInSession))
-                             })
+                             },
+                             modules: [BetterAuthAppleSignInModule(endpoints: .init(signInPath: "/api/auth/custom-apple/native"))])
 
-        let session = try await client.auth.signInWithApple(.init(token: "identity-token",
-                                                                  nonce: "raw-nonce",
-                                                                  email: "apple@example.com",
-                                                                  givenName: "Apple",
-                                                                  familyName: "User"))
+        let session = try await client.requireAppleSignIn().signIn(.init(token: "identity-token",
+                                                                         nonce: "raw-nonce",
+                                                                         email: "apple@example.com",
+                                                                         givenName: "Apple",
+                                                                         familyName: "User"))
 
         #expect(session.session.id == signedInSession.session.id)
         #expect(session.session.accessToken == signedInSession.session.accessToken)

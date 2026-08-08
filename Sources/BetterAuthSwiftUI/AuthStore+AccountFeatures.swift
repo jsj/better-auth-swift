@@ -93,26 +93,6 @@ public extension AuthStore {
         }
     }
 
-    // MARK: - Linked Accounts
-
-    @discardableResult
-    func listLinkedAccounts() async throws -> [LinkedAccount] {
-        try await performThrowing {
-            let accounts = try await accountAuth.listLinkedAccounts()
-            statusMessage = "Linked accounts loaded"
-            return accounts
-        }
-    }
-
-    @discardableResult
-    func linkSocialAccount(_ payload: LinkSocialAccountRequest) async throws -> LinkSocialAccountResponse {
-        try await performThrowing {
-            let response = try await accountAuth.linkSocialAccount(payload)
-            statusMessage = "Social account linked"
-            return response
-        }
-    }
-
     // MARK: - Sessions
 
     @discardableResult

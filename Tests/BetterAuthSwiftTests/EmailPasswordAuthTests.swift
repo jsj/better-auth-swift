@@ -1,37 +1,22 @@
+import BetterAuthEmailPassword
 import BetterAuthTestHelpers
+import BetterAuthUsername
 import Foundation
 import Testing
 @testable import BetterAuth
 @testable import BetterAuthSwiftUI
 
+private typealias EmailSignUpRequest = BetterAuthEmailPassword.EmailSignUpRequest
+private typealias EmailSignInRequest = BetterAuthEmailPassword.EmailSignInRequest
+private typealias EmailSignUpResult = BetterAuthEmailPassword.EmailSignUpResult
+private typealias VerificationHeldEmailSignUp = BetterAuthEmailPassword.VerificationHeldEmailSignUp
+private typealias SuccessfulEmailSignUp = BetterAuthEmailPassword.SuccessfulEmailSignUp
+private typealias UsernameAvailabilityRequest = BetterAuthUsername.UsernameAvailabilityRequest
+private typealias UsernameAvailabilityResponse = BetterAuthUsername.UsernameAvailabilityResponse
+
 struct EmailPasswordAuthTests {
-    @Test
-    func optionalAuthThrottlePreventsImmediateRepeatedSignIn() async throws {
-        let signedIn = BetterAuthSession(session: .init(id: "session-1",
-                                                        userId: "user-1",
-                                                        accessToken: "token"),
-                                         user: .init(id: "user-1", email: "test@example.com"))
-        let requests = Locked(0)
-        let client =
-            BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
-                                                                    auth: .init(throttlePolicy: .init(minimumInterval: 60))),
-                             sessionStore: InMemorySessionStore(),
-                             transport: MockTransport { request in
-                                 requests.withLock { $0 += 1 }
-                                 try expect(request.url?.path == "/api/auth/email/sign-in")
-                                 return try response(for: request, statusCode: 200, data: encodeJSON(signedIn))
-                             })
-
-        _ = try await client.auth.signInWithEmail(.init(email: "test@example.com", password: "password123"))
-
-        do {
-            _ = try await client.auth.signInWithEmail(.init(email: "test@example.com", password: "password123"))
-            Issue.record("Expected client-side throttle to reject repeated sign-in")
-        } catch let error as BetterAuthError {
-            #expect(error.isRateLimited)
-            #expect(error.authErrorCode == .tooManyRequests)
-        }
-        #expect(requests.withLock { $0 } == 1)
+    private var authModules: [any BetterAuthModule] {
+        [BetterAuthEmailPasswordModule(), BetterAuthUsernameModule()]
     }
 
     @Test
@@ -52,10 +37,12 @@ struct EmailPasswordAuthTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key")),
                              sessionStore: store,
-                             transport: transport)
+                             transport: transport,
+                             modules: authModules)
 
-        let result = try await client.auth.signUpWithEmail(.init(email: "signup@example.com", password: "password123",
-                                                                 name: "Sign Up User"))
+        let result = try await client.requireEmailPassword().signUp(.init(email: "signup@example.com",
+                                                                          password: "password123",
+                                                                          name: "Sign Up User"))
         guard case let .signedIn(session) = result else {
             Issue.record("Expected session-bearing sign-up result")
             return
@@ -94,10 +81,12 @@ struct EmailPasswordAuthTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key")),
                              sessionStore: store,
-                             transport: transport)
+                             transport: transport,
+                             modules: authModules)
 
-        let result = try await client.auth.signUpWithEmail(.init(email: "held@example.com", password: "password123",
-                                                                 name: "Held User"))
+        let result = try await client.requireEmailPassword().signUp(.init(email: "held@example.com",
+                                                                          password: "password123",
+                                                                          name: "Held User"))
 
         guard case let .verificationHeld(held) = result else {
             Issue.record("Expected verification-held sign-up result")
@@ -127,10 +116,12 @@ struct EmailPasswordAuthTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key")),
                              sessionStore: store,
-                             transport: transport)
+                             transport: transport,
+                             modules: authModules)
 
-        let result = try await client.auth.signUpWithEmail(.init(email: "signed-up@example.com",
-                                                                 password: "password123", name: "Signed Up User"))
+        let result = try await client.requireEmailPassword().signUp(.init(email: "signed-up@example.com",
+                                                                          password: "password123",
+                                                                          name: "Signed Up User"))
 
         guard case let .signedUp(signedUp) = result else {
             Issue.record("Expected signed-up result when auto sign-in is disabled")
@@ -158,11 +149,12 @@ struct EmailPasswordAuthTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key")),
                              sessionStore: store,
-                             transport: transport)
+                             transport: transport,
+                             modules: authModules)
 
-        let result = try await client.auth.signUpWithEmail(EmailSignUpRequest(email: "duplicate@example.com",
-                                                                              password: "password123",
-                                                                              name: "Duplicate User"))
+        let result = try await client.requireEmailPassword().signUp(EmailSignUpRequest(email: "duplicate@example.com",
+                                                                                       password: "password123",
+                                                                                       name: "Duplicate User"))
 
         guard case let .signedUp(signedUp) = result else {
             Issue.record("Expected enumeration-safe signed-up result for duplicate email")
@@ -193,9 +185,11 @@ struct EmailPasswordAuthTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key")),
                              sessionStore: store,
-                             transport: transport)
+                             transport: transport,
+                             modules: authModules)
 
-        let session = try await client.auth.signInWithEmail(.init(email: "signin@example.com", password: "password123"))
+        let session = try await client.requireEmailPassword().signIn(.init(email: "signin@example.com",
+                                                                           password: "password123"))
         #expect(session.session.id == signedInSession.session.id)
         #expect(session.session.accessToken == signedInSession.session.accessToken)
         #expect(session.user.email == signedInSession.user.email)
@@ -227,12 +221,13 @@ struct EmailPasswordAuthTests {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
-                             transport: transport)
+                             transport: transport,
+                             modules: authModules)
 
         let location = SourceLocation(fileID: #fileID, filePath: #filePath, line: #line + 1, column: #column)
         do {
-            _ = try await client.auth.signInWithEmail(EmailSignInRequest(email: "unverified@example.com",
-                                                                         password: "password123"))
+            _ = try await client.requireEmailPassword().signIn(EmailSignInRequest(email: "unverified@example.com",
+                                                                                  password: "password123"))
             Issue.record("Expected BetterAuthError.requestFailed", sourceLocation: location)
         } catch let BetterAuthError.requestFailed(statusCode, _, _, response) {
             #expect(statusCode == 403, sourceLocation: location)
@@ -265,12 +260,13 @@ struct EmailPasswordAuthTests {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
-                             transport: transport)
+                             transport: transport,
+                             modules: authModules)
 
-        let unavailable = try await client.auth.isUsernameAvailable(.init(username: "PRIORITY_USER"))
+        let unavailable = try await client.requireUsername().isAvailable(.init(username: "PRIORITY_USER"))
         #expect(unavailable == false)
 
-        let available = try await client.auth.isUsernameAvailable(.init(username: "fresh_user"))
+        let available = try await client.requireUsername().isAvailable(.init(username: "fresh_user"))
         #expect(available == true)
     }
 
@@ -295,9 +291,10 @@ struct EmailPasswordAuthTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key")),
                              sessionStore: store,
-                             transport: transport)
+                             transport: transport,
+                             modules: authModules)
 
-        let session = try await client.auth.signInWithUsername(.init(username: "Custom_User", password: "password123"))
+        let session = try await client.requireUsername().signIn(.init(username: "Custom_User", password: "password123"))
         #expect(session.session.id == signedInSession.session.id)
         #expect(session.session.accessToken == signedInSession.session.accessToken)
         #expect(session.user.email == signedInSession.user.email)
@@ -328,13 +325,14 @@ struct EmailPasswordAuthTests {
                              sessionStore: InMemorySessionStore(),
                              transport: SequencedMockTransport([.response(statusCode: 401,
                                                                           jsonObject: ["code": "INVALID_USERNAME_OR_PASSWORD",
-                                                                                       "message": "Invalid username or password"])]))
+                                                                                       "message": "Invalid username or password"])]),
+                             modules: authModules)
 
         await assertRequestFailedJSON(statusCode: 401, expectedJSON: ["code": "INVALID_USERNAME_OR_PASSWORD",
                                                                       "message": "Invalid username or password"],
                                       operation: {
-                                          _ = try await client.auth.signInWithUsername(.init(username: "missing_user",
-                                                                                             password: "wrong-password"))
+                                          _ = try await client.requireUsername().signIn(.init(username: "missing_user",
+                                                                                              password: "wrong-password"))
                                       })
     }
 
@@ -363,12 +361,13 @@ struct EmailPasswordAuthTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key")),
                              sessionStore: store,
-                             transport: transport)
+                             transport: transport,
+                             modules: authModules)
 
-        let result = try await client.auth.signUpWithEmail(.init(email: "username-signup@example.com",
-                                                                 password: "password123",
-                                                                 name: "Username Sign Up",
-                                                                 username: "Custom_User"))
+        let result = try await client.requireEmailPassword().signUp(.init(email: "username-signup@example.com",
+                                                                          password: "password123",
+                                                                          name: "Username Sign Up",
+                                                                          username: "Custom_User"))
 
         guard case let .signedIn(session) = result else {
             Issue.record("Expected username sign-up to materialize a session")
@@ -417,7 +416,8 @@ struct EmailPasswordAuthTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key")),
                              sessionStore: store,
-                             transport: transport)
+                             transport: transport,
+                             modules: authModules)
 
         try await client.auth.updateSession(existingSession)
         let result = try await client.auth.updateUser(.init(name: "Updated Name", username: "Priority_User",
@@ -442,7 +442,8 @@ struct EmailPasswordAuthTests {
                              sessionStore: InMemorySessionStore(),
                              transport: SequencedMockTransport([.response(statusCode: 400,
                                                                           jsonObject: ["code": "USERNAME_IS_ALREADY_TAKEN",
-                                                                                       "message": "Username is already taken"])]))
+                                                                                       "message": "Username is already taken"])]),
+                             modules: authModules)
 
         try await client.auth.updateSession(BetterAuthSession(session: .init(id: "existing-session",
                                                                              userId: "user-username",

@@ -38,13 +38,11 @@ import Foundation
 }
 
 @frozen public enum BetterAuthIncomingURL: Sendable, Equatable {
-    case genericOAuth(GenericOAuthCallbackRequest)
     case verifyEmail(VerifyEmailRequest)
     case unsupported
 }
 
 @frozen public enum BetterAuthHandledURLResult: Sendable, Equatable {
-    case genericOAuth(BetterAuthSession)
     case verifyEmail(VerifyEmailResult)
     case ignored
 }

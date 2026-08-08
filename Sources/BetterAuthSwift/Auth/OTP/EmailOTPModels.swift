@@ -70,7 +70,7 @@ public enum EmailOTPVerifyResult: Codable, Sendable, Equatable {
             self = .signedIn(session)
             return
         }
-        if let response = try? container.decode(SocialSignInTransportResponse.self),
+        if let response = try? container.decode(BetterAuthSessionTransportResponse.self),
            let session = response.materializedSession
         {
             self = .signedIn(session)

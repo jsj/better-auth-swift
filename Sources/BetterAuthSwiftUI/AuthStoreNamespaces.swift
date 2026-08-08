@@ -43,30 +43,6 @@ public extension AuthStore {
         AuthStoreLifecycleNamespace(store: self)
     }
 
-    var email: AuthStoreEmailNamespace {
-        AuthStoreEmailNamespace(store: self)
-    }
-
-    var username: AuthStoreUsernameNamespace {
-        AuthStoreUsernameNamespace(store: self)
-    }
-
-    var apple: AuthStoreAppleNamespace {
-        AuthStoreAppleNamespace(store: self)
-    }
-
-    var social: AuthStoreSocialNamespace {
-        AuthStoreSocialNamespace(store: self)
-    }
-
-    var anonymous: AuthStoreAnonymousNamespace {
-        AuthStoreAnonymousNamespace(store: self)
-    }
-
-    var oauth: AuthStoreOAuthNamespace {
-        AuthStoreOAuthNamespace(store: self)
-    }
-
     var emailOTP: AuthStoreEmailOTPNamespace {
         AuthStoreEmailOTPNamespace(store: self)
     }
@@ -122,142 +98,6 @@ public struct AuthStoreLifecycleNamespace {
 
     public func shutdown() {
         store.shutdown()
-    }
-}
-
-@MainActor
-public struct AuthStoreEmailNamespace {
-    private let store: AuthStore
-
-    init(store: AuthStore) {
-        self.store = store
-    }
-
-    @discardableResult
-    public func signUp(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult {
-        try await store.signUpWithEmail(payload)
-    }
-
-    public func signIn(_ payload: EmailSignInRequest) async {
-        await store.signInWithEmail(payload)
-    }
-
-    public func requestPasswordReset(_ payload: ForgotPasswordRequest) async {
-        await store.requestPasswordReset(payload)
-    }
-
-    public func resetPassword(_ payload: ResetPasswordRequest) async {
-        await store.resetPassword(payload)
-    }
-}
-
-@MainActor
-public struct AuthStoreUsernameNamespace {
-    private let store: AuthStore
-
-    init(store: AuthStore) {
-        self.store = store
-    }
-
-    @discardableResult
-    public func isAvailable(_ payload: UsernameAvailabilityRequest) async throws -> Bool {
-        try await store.isUsernameAvailable(payload)
-    }
-
-    public func signIn(_ payload: UsernameSignInRequest) async {
-        await store.signInWithUsername(payload)
-    }
-}
-
-@MainActor
-public struct AuthStoreAppleNamespace {
-    private let store: AuthStore
-
-    init(store: AuthStore) {
-        self.store = store
-    }
-
-    public func signIn(_ payload: AppleNativeSignInPayload) async {
-        await store.signInWithApple(payload)
-    }
-}
-
-@MainActor
-public struct AuthStoreSocialNamespace {
-    private let store: AuthStore
-
-    init(store: AuthStore) {
-        self.store = store
-    }
-
-    @discardableResult
-    public func signIn(_ payload: SocialSignInRequest) async throws -> SocialSignInResult {
-        try await store.signInWithSocial(payload)
-    }
-
-    @discardableResult
-    public func linkAccount(_ payload: LinkSocialAccountRequest) async throws -> LinkSocialAccountResponse {
-        try await store.linkSocialAccount(payload)
-    }
-
-    public func listLinkedAccounts() async throws -> [LinkedAccount] {
-        try await store.listLinkedAccounts()
-    }
-}
-
-@MainActor
-public struct AuthStoreAnonymousNamespace {
-    private let store: AuthStore
-
-    init(store: AuthStore) {
-        self.store = store
-    }
-
-    public func signIn() async {
-        await store.signInAnonymously()
-    }
-
-    public func deleteUser() async {
-        await store.deleteAnonymousUser()
-    }
-
-    @discardableResult
-    public func upgradeWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult {
-        try await store.upgradeAnonymousWithEmail(payload)
-    }
-
-    public func upgradeWithApple(_ payload: AppleNativeSignInPayload) async {
-        await store.upgradeAnonymousWithApple(payload)
-    }
-
-    @discardableResult
-    public func upgradeWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult {
-        try await store.upgradeAnonymousWithSocial(payload)
-    }
-}
-
-@MainActor
-public struct AuthStoreOAuthNamespace {
-    private let store: AuthStore
-
-    init(store: AuthStore) {
-        self.store = store
-    }
-
-    public func begin(_ payload: GenericOAuthSignInRequest) async throws -> GenericOAuthAuthorizationResponse {
-        try await store.beginGenericOAuth(payload)
-    }
-
-    public func link(_ payload: GenericOAuthSignInRequest) async throws -> GenericOAuthAuthorizationResponse {
-        try await store.linkGenericOAuth(payload)
-    }
-
-    public func complete(_ payload: GenericOAuthCallbackRequest) async {
-        await store.completeGenericOAuth(payload)
-    }
-
-    public func handleIncomingURL(_ url: URL) async {
-        await store.handleIncomingURL(url)
     }
 }
 
@@ -410,11 +250,6 @@ public struct AuthStoreAccountNamespace {
 
     public func deleteUser(_ payload: DeleteUserRequest = .init()) async {
         await store.deleteUser(payload)
-    }
-
-    @discardableResult
-    public func reauthenticate(password: String) async throws -> Bool {
-        try await store.reauthenticate(password: password)
     }
 }
 

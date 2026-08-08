@@ -1,4 +1,5 @@
 import BetterAuth
+import BetterAuthEmailPassword
 import BetterAuthTestHelpers
 import Foundation
 import Testing
@@ -33,9 +34,11 @@ struct SmokeTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "namespace-smoke-key")),
                              sessionStore: InMemorySessionStore(),
-                             transport: transport)
+                             transport: transport,
+                             modules: [BetterAuthEmailPasswordModule()])
 
-        let session = try await client.auth.email.signIn(.init(email: "user@example.com", password: "password123"))
+        let session = try await client.requireEmailPassword()
+            .signIn(BetterAuthEmailPassword.EmailSignInRequest(email: "user@example.com", password: "password123"))
         #expect(session.session.accessToken == "token-1")
         let current = await client.auth.lifecycle.current()
         #expect(current?.session.id == signedInSession.session.id)
@@ -72,9 +75,11 @@ struct SmokeTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "smoke-key")),
                              sessionStore: store,
-                             transport: transport)
+                             transport: transport,
+                             modules: [BetterAuthEmailPasswordModule()])
 
-        let signedIn = try await client.auth.signInWithEmail(.init(email: "user@example.com", password: "password123"))
+        let signedIn = try await client.requireEmailPassword()
+            .signIn(BetterAuthEmailPassword.EmailSignInRequest(email: "user@example.com", password: "password123"))
         #expect(signedIn.session.accessToken == "token-1")
 
         let restored = try #require(try await client.auth.loadStoredSession())

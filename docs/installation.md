@@ -27,6 +27,11 @@ Then choose the products you need:
     name: "YourApp",
     dependencies: [
         .product(name: "BetterAuth", package: "better-auth-swift"),
+        .product(name: "BetterAuthEmailPassword", package: "better-auth-swift"),
+        .product(name: "BetterAuthUsername", package: "better-auth-swift"),
+        .product(name: "BetterAuthAnonymous", package: "better-auth-swift"),
+        .product(name: "BetterAuthSocialOAuth", package: "better-auth-swift"),
+        .product(name: "BetterAuthAppleSignIn", package: "better-auth-swift"),
         .product(name: "BetterAuthMagicLink", package: "better-auth-swift"),
         .product(name: "BetterAuthSwiftUI", package: "better-auth-swift"),
         .product(name: "BetterAuthOrganization", package: "better-auth-swift")
@@ -35,6 +40,7 @@ Then choose the products you need:
 ```
 
 Use `BetterAuth` for the core SDK. Add `BetterAuthSwiftUI` for the observable `AuthStore`.
+Add only the authentication products that your backend enables. Register each matching module when you create the client.
 If you use the Magic Link plugin, add `BetterAuthMagicLink`.
 If you use the organization plugin, add `BetterAuthOrganization`.
 
@@ -47,9 +53,17 @@ Then select the products that your target needs.
 
 ```swift
 import BetterAuth
+import BetterAuthAppleSignIn
+import BetterAuthEmailPassword
+import BetterAuthUsername
 
 let client = BetterAuthClient(
-    baseURL: URL(string: "https://your-api.example.com")!
+    baseURL: URL(string: "https://your-api.example.com")!,
+    modules: [
+        BetterAuthEmailPasswordModule(),
+        BetterAuthUsernameModule(),
+        BetterAuthAppleSignInModule()
+    ]
 )
 ```
 

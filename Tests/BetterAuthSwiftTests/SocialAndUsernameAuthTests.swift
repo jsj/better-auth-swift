@@ -1,3 +1,5 @@
+import BetterAuthEmailPassword
+import BetterAuthSocialOAuth
 import BetterAuthTestHelpers
 import Foundation
 import Testing
@@ -5,6 +7,13 @@ import Testing
 @testable import BetterAuthSwiftUI
 
 struct SocialAndUsernameAuthTests {
+    private typealias SocialSignInRequest = BetterAuthSocialOAuth.SocialSignInRequest
+    private typealias GenericOAuthSignInRequest = BetterAuthSocialOAuth.GenericOAuthSignInRequest
+    private typealias LinkSocialAccountRequest = BetterAuthSocialOAuth.LinkSocialAccountRequest
+    private typealias LinkSocialAccountResponse = BetterAuthSocialOAuth.LinkSocialAccountResponse
+    private typealias SocialIDTokenPayload = BetterAuthSocialOAuth.SocialIDTokenPayload
+    private typealias ForgotPasswordRequest = BetterAuthEmailPassword.ForgotPasswordRequest
+    private typealias ResetPasswordRequest = BetterAuthEmailPassword.ResetPasswordRequest
     @Test
     func typedAuthProviderIDsPreserveWireValues() throws {
         let social = SocialSignInRequest(provider: .google,
@@ -44,14 +53,16 @@ struct SocialAndUsernameAuthTests {
                                                      data: encodeJSON(LinkSocialAccountResponse(url: "",
                                                                                                 redirect: false,
                                                                                                 status: true)))
-                             })
+                             },
+                             modules: [BetterAuthSocialOAuthModule()])
 
         try await client.auth.updateSession(BetterAuthSession(session: .init(id: "current-session", userId: "user-1",
                                                                              accessToken: "current-token"),
                                                               user: .init(id: "user-1", email: "linked@example.com")))
 
-        let result = try await client.auth.linkSocialAccount(LinkSocialAccountRequest(provider: "google",
-                                                                                      idToken: SocialIDTokenPayload(token: "valid-google-token")))
+        let result = try await client.requireSocialOAuth()
+            .linkAccount(LinkSocialAccountRequest(provider: "google",
+                                                  idToken: SocialIDTokenPayload(token: "valid-google-token")))
 
         #expect(result.redirect == false)
         #expect(result.status == true)
@@ -66,7 +77,8 @@ struct SocialAndUsernameAuthTests {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
-                             transport: transport)
+                             transport: transport,
+                             modules: [BetterAuthSocialOAuthModule()])
 
         try await client.auth.updateSession(BetterAuthSession(session: .init(id: "current-session", userId: "user-1",
                                                                              accessToken: "current-token"),
@@ -74,8 +86,9 @@ struct SocialAndUsernameAuthTests {
 
         let location = SourceLocation(fileID: #fileID, filePath: #filePath, line: #line + 1, column: #column)
         do {
-            _ = try await client.auth.linkSocialAccount(LinkSocialAccountRequest(provider: "google",
-                                                                                 idToken: SocialIDTokenPayload(token: "cross-user-token")))
+            _ = try await client.requireSocialOAuth()
+                .linkAccount(LinkSocialAccountRequest(provider: "google",
+                                                      idToken: SocialIDTokenPayload(token: "cross-user-token")))
             Issue.record("Expected BetterAuthError.requestFailed", sourceLocation: location)
         } catch let BetterAuthError.requestFailed(statusCode, _, _, response) {
             #expect(statusCode == 401, sourceLocation: location)
@@ -94,7 +107,8 @@ struct SocialAndUsernameAuthTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key")),
                              sessionStore: store,
-                             transport: transport)
+                             transport: transport,
+                             modules: [BetterAuthEmailPasswordModule()])
 
         let current = BetterAuthSession(session: .init(id: "current-session", userId: "user-1",
                                                        accessToken: "current-token"),
@@ -165,10 +179,12 @@ struct SocialAndUsernameAuthTests {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
-                             transport: transport)
+                             transport: transport,
+                             modules: [BetterAuthEmailPasswordModule()])
 
-        let status = try await client.auth.requestPasswordReset(ForgotPasswordRequest(email: "reset@example.com",
-                                                                                      redirectTo: "https://app.example.com/reset"))
+        let status = try await client.requireEmailPassword()
+            .requestPasswordReset(ForgotPasswordRequest(email: "reset@example.com",
+                                                        redirectTo: "https://app.example.com/reset"))
 
         #expect(status)
     }
@@ -188,10 +204,11 @@ struct SocialAndUsernameAuthTests {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
-                             transport: transport)
+                             transport: transport,
+                             modules: [BetterAuthEmailPasswordModule()])
 
-        let status = try await client.auth.resetPassword(ResetPasswordRequest(token: "reset-token",
-                                                                              newPassword: "new-password-123"))
+        let status = try await client.requireEmailPassword()
+            .resetPassword(ResetPasswordRequest(token: "reset-token", newPassword: "new-password-123"))
 
         #expect(status)
     }
@@ -267,11 +284,13 @@ struct SocialAndUsernameAuthTests {
             try expect(request.url?.query == "token=verify-token")
             return try response(for: request,
                                 statusCode: 200,
-                                data: encodeJSON(SocialSignInTransportResponse(redirect: false,
-                                                                               token: verifiedSession.session
-                                                                                   .accessToken,
-                                                                               user: verifiedSession.user,
-                                                                               session: verifiedSession)))
+                                data: encodeJSON(BetterAuthSocialOAuth.SocialSignInTransportResponse(redirect: false,
+                                                                                                     token: verifiedSession
+                                                                                                         .session
+                                                                                                         .accessToken,
+                                                                                                     user: verifiedSession
+                                                                                                         .user,
+                                                                                                     session: verifiedSession)))
         }
 
         let store = InMemorySessionStore()

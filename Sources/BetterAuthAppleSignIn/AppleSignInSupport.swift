@@ -1,3 +1,4 @@
+import BetterAuth
 import CryptoKit
 import Foundation
 

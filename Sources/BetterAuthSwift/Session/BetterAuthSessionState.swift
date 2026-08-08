@@ -34,29 +34,8 @@ public protocol BetterAuthSessionOutcomeApplying: Sendable {
     func applySessionOutcome(_ outcome: BetterAuthPluginSessionOutcome) async throws -> BetterAuthSession
 }
 
-public protocol BetterAuthPrimaryAuthPerforming: Sendable {
-    func signUpWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult
-    func signInWithEmail(_ payload: EmailSignInRequest) async throws -> BetterAuthSession
-    func requestPasswordReset(_ payload: ForgotPasswordRequest) async throws -> Bool
-    func resetPassword(_ payload: ResetPasswordRequest) async throws -> Bool
-    func isUsernameAvailable(_ payload: UsernameAvailabilityRequest) async throws -> Bool
-    func signInWithUsername(_ payload: UsernameSignInRequest) async throws -> BetterAuthSession
-    func signInWithApple(_ payload: AppleNativeSignInPayload) async throws -> BetterAuthSession
-    func signInWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult
-    func signInAnonymously() async throws -> BetterAuthSession
-    func deleteAnonymousUser() async throws -> Bool
-    func deleteUser(_ payload: DeleteUserRequest) async throws -> Bool
-    func upgradeAnonymousWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult
-    func upgradeAnonymousWithApple(_ payload: AppleNativeSignInPayload) async throws -> BetterAuthSession
-    func upgradeAnonymousWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult
-    func reauthenticate(password: String) async throws -> Bool
-}
-
-public protocol BetterAuthOAuthPerforming: Sendable {
-    func beginGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws -> GenericOAuthAuthorizationResponse
-    func linkGenericOAuth(_ payload: GenericOAuthSignInRequest) async throws -> GenericOAuthAuthorizationResponse
-    func completeGenericOAuth(_ payload: GenericOAuthCallbackRequest) async throws -> BetterAuthSession
-    func handleIncomingURL(_ url: URL) async throws -> BetterAuthHandledURLResult
+public protocol BetterAuthAuthOperationThrottling: Sendable {
+    func checkAuthOperation(_ operation: String) async throws
 }
 
 public protocol BetterAuthOneTimeCodePerforming: Sendable {
@@ -90,13 +69,12 @@ public protocol BetterAuthPasskeyPerforming: Sendable {
 }
 
 public protocol BetterAuthAccountPerforming: Sendable {
+    func deleteUser(_ payload: DeleteUserRequest) async throws -> Bool
     func sendVerificationEmail(_ payload: SendVerificationEmailRequest) async throws -> Bool
     func verifyEmail(_ payload: VerifyEmailRequest) async throws -> VerifyEmailResult
     func changeEmail(_ payload: ChangeEmailRequest) async throws -> Bool
     func updateUser(_ payload: UpdateUserRequest) async throws -> UpdateUserResponse
     func changePassword(_ payload: ChangePasswordRequest) async throws -> ChangePasswordResponse
-    func listLinkedAccounts() async throws -> [LinkedAccount]
-    func linkSocialAccount(_ payload: LinkSocialAccountRequest) async throws -> LinkSocialAccountResponse
 }
 
 public protocol BetterAuthSessionAdministrating: Sendable {

@@ -1,3 +1,4 @@
+import BetterAuthSocialOAuth
 import BetterAuthTestHelpers
 import Foundation
 import Testing
@@ -191,13 +192,14 @@ struct PasskeyLifecycleTests {
                                                             name: "Passkey User"))
         let protectedPayload = ProtectedResponse(email: "passkey@example.com")
         let transport = SequencedMockTransport([.response(statusCode: 200,
-                                                          encodable: SocialSignInTransportResponse(redirect: false,
-                                                                                                   token: signedInSession
-                                                                                                       .session
-                                                                                                       .accessToken,
-                                                                                                   user: signedInSession
-                                                                                                       .user,
-                                                                                                   session: signedInSession)),
+                                                          encodable: BetterAuthSocialOAuth
+                                                              .SocialSignInTransportResponse(redirect: false,
+                                                                                             token: signedInSession
+                                                                                                 .session
+                                                                                                 .accessToken,
+                                                                                             user: signedInSession
+                                                                                                 .user,
+                                                                                             session: signedInSession)),
                                                 .response(statusCode: 200, encodable: protectedPayload)])
 
         let store = InMemorySessionStore()
@@ -277,14 +279,16 @@ struct PasskeyLifecycleTests {
             try expect(request.url?.path == "/api/auth/sign-in/social")
             try expect(request.httpMethod == "POST")
             try expect(request.value(forHTTPHeaderField: "Origin") == "app://snoozy")
-            let payload = try JSONDecoder().decode(SocialSignInRequest.self, from: try #require(request.httpBody))
+            let payload = try JSONDecoder().decode(BetterAuthSocialOAuth.SocialSignInRequest.self,
+                                                   from: try #require(request.httpBody))
             try expect(payload.provider == "google")
             try expect(payload.disableRedirect == true)
 
             return try response(for: request,
                                 statusCode: 200,
-                                data: encodeJSON(SocialAuthorizationResponse(url: "https://accounts.google.com/o/oauth2/v2/auth?state=test",
-                                                                             redirect: false)))
+                                data: encodeJSON(BetterAuthSocialOAuth
+                                    .SocialAuthorizationResponse(url: "https://accounts.google.com/o/oauth2/v2/auth?state=test",
+                                                                 redirect: false)))
         }
 
         let store = InMemorySessionStore()
@@ -292,10 +296,11 @@ struct PasskeyLifecycleTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     requestOrigin: "app://snoozy"),
                              sessionStore: store,
-                             transport: transport)
+                             transport: transport,
+                             modules: [BetterAuthSocialOAuthModule()])
 
-        let result = try await client.auth.signInWithSocial(SocialSignInRequest(provider: "google",
-                                                                                disableRedirect: true))
+        let result = try await client.requireSocialOAuth()
+            .signIn(BetterAuthSocialOAuth.SocialSignInRequest(provider: "google", disableRedirect: true))
 
         guard case let .authorizationURL(authURL) = result else {
             Issue.record("Expected authorization URL result")

@@ -59,7 +59,7 @@ struct SessionRestoreAndAuthStoreTests {
     }
 
     @Test
-    func parseIncomingURLRecognizesOAuthAndVerifyEmailRoutes() async throws {
+    func parseIncomingURLRecognizesVerifyEmailRoute() async throws {
         let manager =
             BetterAuthSessionManager(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                             callbackURLSchemes: ["betterauth"]),
@@ -68,39 +68,12 @@ struct SessionRestoreAndAuthStoreTests {
                                          emptyResponse(for: request)
                                      })
 
-        let oauthURL =
-            try #require(URL(string: "betterauth://host/oauth2/callback/fixture-generic?code=fixture-code&state=fixture-state&iss=https://issuer.example.com"))
-        #expect(await manager.parseIncomingURL(oauthURL)
-            == .genericOAuth(.init(providerId: "fixture-generic", code: "fixture-code", state: "fixture-state",
-                                   issuer: "https://issuer.example.com")))
-
         let verifyEmailURL = try #require(URL(string: "https://example.com/api/auth/verify-email?token=verify-token"))
         #expect(await manager.parseIncomingURL(verifyEmailURL) == .verifyEmail(.init(token: "verify-token")))
 
         let untrustedURL =
             try #require(URL(string: "evil://host/oauth2/callback/fixture-generic?code=fixture-code&state=fixture-state"))
         #expect(await manager.parseIncomingURL(untrustedURL) == .unsupported)
-    }
-
-    @Test
-    func genericOAuthCallbackPathUsesConfiguredTemplate() async throws {
-        let endpoints = BetterAuthConfiguration
-            .Endpoints(oauth: .init(genericOAuthCallbackPath: "/api/auth/custom-oauth/{providerId}/complete"))
-        let manager =
-            BetterAuthSessionManager(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
-                                                                            endpoints: endpoints,
-                                                                            callbackURLSchemes: ["betterauth"]),
-                                     sessionStore: InMemorySessionStore(),
-                                     transport: MockTransport { request in
-                                         Issue.record("Transport should not be used while parsing incoming URL")
-                                         return emptyResponse(for: request)
-                                     })
-
-        let oauthURL =
-            try #require(URL(string: "betterauth://host/api/auth/custom-oauth/fixture-generic/complete?code=fixture-code&state=fixture-state"))
-
-        #expect(await manager.parseIncomingURL(oauthURL)
-            == .genericOAuth(.init(providerId: "fixture-generic", code: "fixture-code", state: "fixture-state")))
     }
 
     @Test @MainActor
@@ -161,30 +134,6 @@ struct SessionRestoreAndAuthStoreTests {
     }
 
     @Test @MainActor
-    func authStoreEmailNamespaceUsesExistingSessionPipeline() async throws {
-        let signedIn = BetterAuthSession(session: .init(id: "session-email-namespace",
-                                                        userId: "user-email-namespace",
-                                                        accessToken: "token"),
-                                         user: .init(id: "user-email-namespace", email: "email@example.com"))
-        let authStore =
-            AuthStore(client: BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
-                                               sessionStore: InMemorySessionStore(),
-                                               transport: MockTransport { request in
-                                                   try expect(request.url?.path == "/api/auth/email/sign-in")
-                                                   return try response(for: request,
-                                                                       statusCode: 200,
-                                                                       data: encodeJSON(signedIn))
-                                               }))
-
-        await authStore.email.signIn(.init(email: "email@example.com", password: "password123"))
-
-        await waitUntil { authStore.session?.session.id == signedIn.session.id }
-        #expect(authStore.viewState.session == signedIn)
-        #expect(authStore.viewState.launchState == .authenticated(signedIn))
-        #expect(authStore.statusMessage == "Signed in")
-    }
-
-    @Test @MainActor
     func authStoreBootstrapSurfacesRecoverableFailureForDeferredRefresh() async throws {
         let stored = BetterAuthSession(session: .init(id: "session-1",
                                                       userId: "user-1",
@@ -228,13 +177,7 @@ struct SessionRestoreAndAuthStoreTests {
                                                    try expect(request.url?.path == "/api/auth/email-otp/verify-email")
                                                    return try response(for: request,
                                                                        statusCode: 200,
-                                                                       data: encodeJSON(SocialSignInTransportResponse(redirect: false,
-                                                                                                                      token: verifiedSession
-                                                                                                                          .session
-                                                                                                                          .accessToken,
-                                                                                                                      user: verifiedSession
-                                                                                                                          .user,
-                                                                                                                      session: verifiedSession)))
+                                                                       data: encodeJSON(verifiedSession))
                                                }))
 
         await authStore.verifyEmailOTP(.init(email: "otp@example.com", otp: "123456"))

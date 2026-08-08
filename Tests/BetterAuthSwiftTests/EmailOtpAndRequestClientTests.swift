@@ -59,14 +59,7 @@ struct EmailOtpAndRequestClientTests {
                                                 user: .init(id: "user-otp", email: "otp@example.com", name: "OTP User"))
 
         let protectedPayload = ProtectedResponse(email: "otp@example.com")
-        let transport = SequencedMockTransport([.response(statusCode: 200,
-                                                          encodable: SocialSignInTransportResponse(redirect: false,
-                                                                                                   token: signedInSession
-                                                                                                       .session
-                                                                                                       .accessToken,
-                                                                                                   user: signedInSession
-                                                                                                       .user,
-                                                                                                   session: signedInSession)),
+        let transport = SequencedMockTransport([.response(statusCode: 200, encodable: signedInSession),
                                                 .response(statusCode: 200, encodable: protectedPayload)])
 
         let store = InMemorySessionStore()
@@ -228,13 +221,7 @@ struct EmailOtpAndRequestClientTests {
                                                                     storage: .init(key: "test-key")),
                              sessionStore: store,
                              transport: SequencedMockTransport([.response(statusCode: 200,
-                                                                          encodable: SocialSignInTransportResponse(redirect: false,
-                                                                                                                   token: verifiedSession
-                                                                                                                       .session
-                                                                                                                       .accessToken,
-                                                                                                                   user: verifiedSession
-                                                                                                                       .user,
-                                                                                                                   session: verifiedSession))]))
+                                                                          encodable: verifiedSession)]))
 
         let result = try await client.auth.verifyEmailOTP(.init(email: "otp@example.com", otp: "654321"))
 

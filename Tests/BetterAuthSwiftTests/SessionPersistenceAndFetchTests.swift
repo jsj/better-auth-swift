@@ -1,3 +1,4 @@
+import BetterAuthEmailPassword
 import BetterAuthTestHelpers
 import Foundation
 import Security
@@ -212,7 +213,8 @@ struct SessionPersistenceAndFetchTests {
                              sessionStore: store,
                              transport: MockTransport { request in
                                  emptyResponse(for: request)
-                             })
+                             },
+                             modules: [BetterAuthEmailPasswordModule()])
 
         let restored = try await client.auth.loadStoredSession()
 
@@ -242,7 +244,8 @@ struct SessionPersistenceAndFetchTests {
                              sessionStore: store,
                              transport: MockTransport { request in
                                  emptyResponse(for: request)
-                             })
+                             },
+                             modules: [BetterAuthEmailPasswordModule()])
 
         let restored = try await client.auth.loadStoredSession()
 
@@ -263,9 +266,10 @@ struct SessionPersistenceAndFetchTests {
                                  try expect(request.url?.path == "/api/auth/email/sign-in")
                                  return try response(for: request, statusCode: 200, data: encodeJSON(signedIn))
                              },
-                             eventEmitter: emitter)
+                             eventEmitter: emitter,
+                             modules: [BetterAuthEmailPasswordModule()])
 
-        try await client.auth.signInWithEmail(.init(email: "test@example.com", password: "password123"))
+        try await client.requireEmailPassword().signIn(.init(email: "test@example.com", password: "password123"))
         var iterator = client.auth.authStateChanges.makeAsyncIterator()
         let stateChange = await iterator.next()
 
@@ -324,7 +328,8 @@ struct SessionPersistenceAndFetchTests {
                                  try expect(request.url?.path == "/api/auth/email/sign-in")
                                  return try response(for: request, statusCode: 200, data: encodeJSON(signedIn))
                              },
-                             eventEmitter: emitter)
+                             eventEmitter: emitter,
+                             modules: [BetterAuthEmailPasswordModule()])
 
         let recorder = Locked<AuthStateChange?>(nil)
         let registration = emitter.on { change in
@@ -332,7 +337,7 @@ struct SessionPersistenceAndFetchTests {
         }
         defer { registration.remove() }
 
-        try await client.auth.signInWithEmail(.init(email: "test@example.com", password: "password123"))
+        _ = try await client.requireEmailPassword().signIn(.init(email: "test@example.com", password: "password123"))
         try await waitForCondition { recorder.withLock { $0 } != nil }
         let observed = recorder.withLock { $0 }
         #expect(observed?.event == .signedIn)
@@ -350,11 +355,12 @@ struct SessionPersistenceAndFetchTests {
                              transport: MockTransport { request in
                                  try expect(request.url?.path == "/api/auth/email/sign-in")
                                  return try response(for: request, statusCode: 200, data: encodeJSON(signedIn))
-                             })
+                             },
+                             modules: [BetterAuthEmailPasswordModule()])
         let store = AuthStore(client: client)
 
         _ = store
-        try await client.auth.signInWithEmail(.init(email: "test@example.com", password: "password123"))
+        _ = try await client.requireEmailPassword().signIn(.init(email: "test@example.com", password: "password123"))
         await waitUntil { store.session == signedIn }
         #expect(store.session == signedIn)
         #expect(store.launchState == .authenticated(signedIn))
@@ -375,10 +381,13 @@ struct SessionPersistenceAndFetchTests {
                                  return response(for: request,
                                                  statusCode: 401,
                                                  data: Data(#"{"message":"nope","code":"INVALID_CREDENTIALS"}"#.utf8))
-                             })
+                             },
+                             modules: [BetterAuthEmailPasswordModule()])
         let store = AuthStore(client: client)
 
-        await store.signInWithEmail(.init(email: "test@example.com", password: "wrong"))
+        await store.perform {
+            _ = try await client.requireEmailPassword().signIn(.init(email: "test@example.com", password: "wrong"))
+        }
 
         let error = try #require(store.lastError)
         #expect(error.statusCode == 401)
@@ -391,7 +400,8 @@ struct SessionPersistenceAndFetchTests {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
-                             transport: MockTransport { request in emptyResponse(for: request) })
+                             transport: MockTransport { request in emptyResponse(for: request) },
+                             modules: [BetterAuthEmailPasswordModule()])
         let store = AuthStore(client: client)
         let gate = AuthOperationGate()
 
@@ -421,7 +431,8 @@ struct SessionPersistenceAndFetchTests {
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
-                             transport: MockTransport { request in emptyResponse(for: request) })
+                             transport: MockTransport { request in emptyResponse(for: request) },
+                             modules: [BetterAuthEmailPasswordModule()])
         let store = AuthStore(client: client)
         store.statusMessage = "Keep this message"
 
@@ -465,7 +476,8 @@ struct SessionPersistenceAndFetchTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
                                                                     storage: .init(key: "test-key")),
                              sessionStore: InMemorySessionStore(),
-                             transport: transport)
+                             transport: transport,
+                             modules: [BetterAuthEmailPasswordModule()])
 
         try await client.auth.updateSession(BetterAuthSession(session: .init(id: "session-1", userId: "user-1",
                                                                              accessToken: "token"),
@@ -486,7 +498,8 @@ struct SessionPersistenceAndFetchTests {
                              transport: MockTransport { _ in
                                  Issue.record("Local-only sign out should not hit the network")
                                  return emptyResponse(for: URLRequest(url: URL(string: "https://example.com")!))
-                             })
+                             },
+                             modules: [BetterAuthEmailPasswordModule()])
 
         try await client.auth.updateSession(BetterAuthSession(session: .init(id: "session-1", userId: "user-1",
                                                                              accessToken: "token"),

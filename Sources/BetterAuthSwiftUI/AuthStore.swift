@@ -39,8 +39,6 @@ public final class AuthStore {
     public internal(set) var lastUnderlyingError: (any Error)?
 
     let sessionAuth: any BetterAuthSessionLifecycle & BetterAuthSessionFetching
-    let primaryAuth: any BetterAuthPrimaryAuthPerforming
-    let oauthAuth: any BetterAuthOAuthPerforming
     let oneTimeCodeAuth: any BetterAuthOneTimeCodePerforming
     let twoFactorAuth: any BetterAuthTwoFactorPerforming
     let passkeyAuth: any BetterAuthPasskeyPerforming
@@ -52,8 +50,6 @@ public final class AuthStore {
 
     public init(client: some BetterAuthClientProtocol) {
         sessionAuth = client.authSessionLifecycle
-        primaryAuth = client.primaryAuth
-        oauthAuth = client.oauthAuth
         oneTimeCodeAuth = client.oneTimeCodeAuth
         twoFactorAuth = client.twoFactorAuth
         passkeyAuth = client.passkeyAuth

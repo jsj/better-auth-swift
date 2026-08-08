@@ -7,7 +7,6 @@ struct BetterAuthSessionContext {
     let state: BetterAuthSessionState
     let sessionService: BetterAuthSessionService
     let refreshService: BetterAuthSessionRefreshService
-    let authFlowService: BetterAuthAuthFlowService
     let userAccountService: BetterAuthUserAccountService
     let callbackHandler: BetterAuthCallbackHandler
     let network: AuthNetworkClient

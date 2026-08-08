@@ -159,28 +159,22 @@ public extension BetterAuthConfiguration {
     }
 
     struct Endpoints: Sendable {
-        public let auth: AuthEndpoints
         public let user: UserEndpoints
         public let session: SessionEndpoints
-        public let oauth: OAuthEndpoints
         public let passkey: PasskeyEndpoints
         public let emailOTP: EmailOTPEndpoints
         public let phoneOTP: PhoneOTPEndpoints
         public let twoFactor: TwoFactorEndpoints
 
-        public init(auth: AuthEndpoints = .init(),
-                    user: UserEndpoints = .init(),
+        public init(user: UserEndpoints = .init(),
                     session: SessionEndpoints = .init(),
-                    oauth: OAuthEndpoints = .init(),
                     passkey: PasskeyEndpoints = .init(),
                     emailOTP: EmailOTPEndpoints = .init(),
                     phoneOTP: PhoneOTPEndpoints = .init(),
                     twoFactor: TwoFactorEndpoints = .init())
         {
-            self.auth = auth
             self.user = user
             self.session = session
-            self.oauth = oauth
             self.passkey = passkey
             self.emailOTP = emailOTP
             self.phoneOTP = phoneOTP
@@ -188,41 +182,7 @@ public extension BetterAuthConfiguration {
         }
     }
 
-    struct AuthEndpoints: Sendable {
-        public let emailSignUpPath: String
-        public let emailSignInPath: String
-        public let usernameAvailabilityPath: String
-        public let usernameSignInPath: String
-        public let nativeAppleSignInPath: String
-        public let socialSignInPath: String
-        public let anonymousSignInPath: String
-        public let forgotPasswordPath: String
-        public let resetPasswordPath: String
-
-        public init(emailSignUpPath: String = "/api/auth/email/sign-up",
-                    emailSignInPath: String = "/api/auth/email/sign-in",
-                    usernameAvailabilityPath: String = "/api/auth/is-username-available",
-                    usernameSignInPath: String = "/api/auth/sign-in/username",
-                    nativeAppleSignInPath: String = "/api/auth/apple/native",
-                    socialSignInPath: String = "/api/auth/sign-in/social",
-                    anonymousSignInPath: String = "/api/auth/sign-in/anonymous",
-                    forgotPasswordPath: String = "/api/auth/forget-password",
-                    resetPasswordPath: String = "/api/auth/reset-password")
-        {
-            self.emailSignUpPath = emailSignUpPath
-            self.emailSignInPath = emailSignInPath
-            self.usernameAvailabilityPath = usernameAvailabilityPath
-            self.usernameSignInPath = usernameSignInPath
-            self.nativeAppleSignInPath = nativeAppleSignInPath
-            self.socialSignInPath = socialSignInPath
-            self.anonymousSignInPath = anonymousSignInPath
-            self.forgotPasswordPath = forgotPasswordPath
-            self.resetPasswordPath = resetPasswordPath
-        }
-    }
-
     struct UserEndpoints: Sendable {
-        public let deleteAnonymousUserPath: String
         public let deleteUserPath: String
         public let sendVerificationEmailPath: String
         public let verifyEmailPath: String
@@ -230,15 +190,13 @@ public extension BetterAuthConfiguration {
         public let updateUserPath: String
         public let changePasswordPath: String
 
-        public init(deleteAnonymousUserPath: String = "/api/auth/delete-anonymous-user",
-                    deleteUserPath: String = "/api/auth/delete-user",
+        public init(deleteUserPath: String = "/api/auth/delete-user",
                     sendVerificationEmailPath: String = "/api/auth/send-verification-email",
                     verifyEmailPath: String = "/api/auth/verify-email",
                     changeEmailPath: String = "/api/auth/change-email",
                     updateUserPath: String = "/api/auth/update-user",
                     changePasswordPath: String = "/api/auth/change-password")
         {
-            self.deleteAnonymousUserPath = deleteAnonymousUserPath
             self.deleteUserPath = deleteUserPath
             self.sendVerificationEmailPath = sendVerificationEmailPath
             self.verifyEmailPath = verifyEmailPath
@@ -287,27 +245,6 @@ public extension BetterAuthConfiguration {
             self.sessionRefreshPath = sessionRefreshPath
             self.currentSessionPath = currentSessionPath
             self.signOutPath = signOutPath
-        }
-    }
-
-    struct OAuthEndpoints: Sendable {
-        public let genericOAuthSignInPath: String
-        public let genericOAuthLinkPath: String
-        public let genericOAuthCallbackPath: String
-        public let listLinkedAccountsPath: String
-        public let linkSocialAccountPath: String
-
-        public init(genericOAuthSignInPath: String = "/api/auth/sign-in/oauth2",
-                    genericOAuthLinkPath: String = "/api/auth/oauth2/link",
-                    genericOAuthCallbackPath: String = "/api/auth/oauth2/callback/{providerId}",
-                    listLinkedAccountsPath: String = "/api/auth/list-accounts",
-                    linkSocialAccountPath: String = "/api/auth/link-social")
-        {
-            self.genericOAuthSignInPath = genericOAuthSignInPath
-            self.genericOAuthLinkPath = genericOAuthLinkPath
-            self.genericOAuthCallbackPath = genericOAuthCallbackPath
-            self.listLinkedAccountsPath = listLinkedAccountsPath
-            self.linkSocialAccountPath = linkSocialAccountPath
         }
     }
 

@@ -19,7 +19,7 @@ public struct BetterAuthMagicLinkClient: Sendable {
     private let endpoints: BetterAuthMagicLinkEndpoints
     private let baseURL: URL
     private let acceptedURLSchemes: Set<String>
-    private let operationThrottle: MagicLinkOperationThrottle?
+    private let operationThrottle: any BetterAuthAuthOperationThrottling
 
     init(context: BetterAuthModuleContext, endpoints: BetterAuthMagicLinkEndpoints) {
         requests = context.requestsPerformer
@@ -31,12 +31,12 @@ public struct BetterAuthMagicLinkClient: Sendable {
             schemes.insert(baseScheme)
         }
         acceptedURLSchemes = schemes
-        operationThrottle = context.configuration.auth.throttlePolicy.map(MagicLinkOperationThrottle.init)
+        operationThrottle = context.authOperationThrottle
     }
 
     @discardableResult
     public func request(_ payload: MagicLinkRequest) async throws -> Bool {
-        try await operationThrottle?.check(operation: "request")
+        try await operationThrottle.checkAuthOperation("magic-link.request")
         let response: StatusResponse = try await requests.sendJSON(path: endpoints.requestPath,
                                                                    body: payload,
                                                                    requiresAuthentication: false,
@@ -50,7 +50,7 @@ public struct BetterAuthMagicLinkClient: Sendable {
 
     @discardableResult
     public func verify(_ payload: MagicLinkVerifyRequest) async throws -> MagicLinkVerificationResult {
-        try await operationThrottle?.check(operation: "verify")
+        try await operationThrottle.checkAuthOperation("magic-link.verify")
         let response: VerificationResponse = try await requests.sendJSON(path: try verificationPath(for: payload),
                                                                          requiresAuthentication: false,
                                                                          retryOnUnauthorized: false)
@@ -128,32 +128,6 @@ public struct BetterAuthMagicLinkClient: Sendable {
 private struct StatusResponse: Decodable {
     let status: Bool?
     let success: Bool?
-}
-
-private actor MagicLinkOperationThrottle {
-    private let policy: BetterAuthConfiguration.AuthThrottlePolicy
-    private var lastAttempts: [String: Date] = [:]
-
-    init(policy: BetterAuthConfiguration.AuthThrottlePolicy) {
-        self.policy = policy
-    }
-
-    func check(operation: String, now: Date = Date()) throws {
-        if let lastAttempt = lastAttempts[operation],
-           now.timeIntervalSince(lastAttempt) < policy.minimumInterval
-        {
-            let message = "Client-side auth throttle is active. Try again later."
-            throw BetterAuthError.requestFailed(statusCode: 429,
-                                                message: message,
-                                                errorCode: .tooManyRequests,
-                                                response: ServerErrorResponse(message: message,
-                                                                              code: AuthErrorCode.tooManyRequests
-                                                                                  .rawValue,
-                                                                              status: 429,
-                                                                              statusCode: 429))
-        }
-        lastAttempts[operation] = now
-    }
 }
 
 private struct VerificationResponse: Decodable {

@@ -33,14 +33,7 @@ struct BetterAuthMagicLinkTests {
                                                                accessToken: "token-1"),
                                                 user: .init(id: "user-1", email: "user@example.com"))
         let transport = SequencedMockTransport([.response(statusCode: 200, encodable: ["status": true]),
-                                                .response(statusCode: 200,
-                                                          encodable: SocialSignInTransportResponse(redirect: false,
-                                                                                                   token: verifiedSession
-                                                                                                       .session
-                                                                                                       .accessToken,
-                                                                                                   user: verifiedSession
-                                                                                                       .user,
-                                                                                                   session: verifiedSession))])
+                                                .response(statusCode: 200, encodable: verifiedSession)])
         let store = InMemorySessionStore()
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),

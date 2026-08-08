@@ -1,3 +1,6 @@
+import BetterAuthAnonymous
+import BetterAuthEmailPassword
+import BetterAuthUsername
 import Foundation
 import Testing
 @testable import BetterAuth
@@ -39,7 +42,10 @@ private enum LiveBetterAuthContract {
                                                                 storage: .init(key: storageKey),
                                                                 requestOrigin: requestOrigin),
                          sessionStore: InMemorySessionStore(),
-                         transport: URLSessionTransport(session: makeIsolatedURLSession()))
+                         transport: URLSessionTransport(session: makeIsolatedURLSession()),
+                         modules: [BetterAuthAnonymousModule(),
+                                   BetterAuthEmailPasswordModule(),
+                                   BetterAuthUsernameModule()])
     }
 
     static func makeIsolatedURLSession() -> URLSession {
@@ -55,7 +61,7 @@ private enum LiveBetterAuthContract {
                                                password: String) async throws -> BetterAuthSession
     {
         do {
-            return try await client.auth.signInWithEmail(.init(email: email, password: password))
+            return try await client.requireEmailPassword().signIn(.init(email: email, password: password))
         } catch {
             guard provisionWithFixtures else {
                 throw error
@@ -70,7 +76,7 @@ private enum LiveBetterAuthContract {
                                                          captureURL: try #require(fixtureCaptureURL))
         _ = try await client.auth.verifyEmail(.init(token: token))
         try await client.auth.signOut(remotely: true)
-        return try await client.auth.signInWithEmail(.init(email: email, password: password))
+        return try await client.requireEmailPassword().signIn(.init(email: email, password: password))
     }
 }
 
@@ -110,8 +116,8 @@ struct LiveBetterAuthContractTests {
     func usernameSignInFetchSessionAndRemoteSignOutAgainstRealServer() async throws {
         let client = try LiveBetterAuthContract.makeClient(storageKey: "better-auth.contract.username")
 
-        let session = try await client.auth.signInWithUsername(.init(username: try #require(LiveBetterAuthContract
-                                                                         .username),
+        let session = try await client.requireUsername().signIn(.init(username: try #require(LiveBetterAuthContract
+                                                                          .username),
             password: try #require(LiveBetterAuthContract
                 .usernamePassword)))
         #expect(session.session.accessToken.isEmpty == false)
@@ -135,10 +141,10 @@ struct LiveBetterAuthContractTests {
     func anonymousSignInAndDeleteAgainstRealServer() async throws {
         let client = try LiveBetterAuthContract.makeClient(storageKey: "better-auth.contract.anonymous")
 
-        let session = try await client.auth.signInAnonymously()
+        let session = try await client.requireAnonymous().signIn()
         #expect(session.session.accessToken.isEmpty == false)
 
-        let deleted = try await client.auth.deleteAnonymousUser()
+        let deleted = try await client.requireAnonymous().deleteUser()
         #expect(deleted)
         #expect(await client.auth.currentSession() == nil)
     }

@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PROJECT="$ROOT/better-auth-swift.xcodeproj"
 DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-$ROOT/.build/platform-derived-data}"
-SCHEMES=("BetterAuth" "BetterAuthMagicLink" "BetterAuthSwiftUI" "BetterAuthOrganization")
+SCHEMES=("BetterAuth" "BetterAuthEmailPassword" "BetterAuthUsername" "BetterAuthAnonymous" "BetterAuthSocialOAuth" "BetterAuthAppleSignIn" "BetterAuthMagicLink" "BetterAuthSwiftUI" "BetterAuthOrganization")
 PLATFORMS=(
   "iOS|generic/platform=iOS"
   "macOS|generic/platform=macOS"

@@ -27,7 +27,7 @@ Use namespaced Auth flows as the canonical public Interface. Examples include:
 
 - `client.auth.lifecycle.restoreOnLaunch()`
 - `client.auth.email.signIn(...)`
-- `client.auth.apple.signIn(...)`
+- `try client.requireAppleSignIn().signIn(...)`
 - `client.auth.sessions.list()`
 
 Remove duplicate flat Auth methods before `1.0` after repository call sites
@@ -41,13 +41,17 @@ state. It does not expose a second flat copy of the core Interface.
 Keep these capabilities in the core `BetterAuth` product:
 
 - Session lifecycle and persistence
-- Email and password authentication
 - Authenticated requests
 - Shared coding, errors, configuration, and Backend diagnostics
 
 Move Better Auth server-plugin-specific Auth flows into optional package
 products and runtime Plugin modules. Products follow real server-plugin
 boundaries. Do not create a product for each endpoint or helper.
+
+Email/password and provider-specific adapters also use separate products. This
+keeps app dependency selection consistent even when the server capability is a
+core Better Auth feature instead of a server plugin. Core remains responsible
+only for transport, session lifecycle, shared models, and module seams.
 
 Core provides Plugin modules with a narrow, `Sendable`, actor-isolated Seam for
 applying session outcomes. Plugin modules must not mutate session storage or

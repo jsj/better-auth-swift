@@ -5,30 +5,6 @@ public extension BetterAuthAuthClient {
         BetterAuthSessionLifecycleClient(auth: self)
     }
 
-    var email: BetterAuthEmailAuthClient {
-        BetterAuthEmailAuthClient(auth: self)
-    }
-
-    var username: BetterAuthUsernameAuthClient {
-        BetterAuthUsernameAuthClient(auth: self)
-    }
-
-    var apple: BetterAuthAppleAuthClient {
-        BetterAuthAppleAuthClient(auth: self)
-    }
-
-    var social: BetterAuthSocialAuthClient {
-        BetterAuthSocialAuthClient(auth: self)
-    }
-
-    var anonymous: BetterAuthAnonymousAuthClient {
-        BetterAuthAnonymousAuthClient(auth: self)
-    }
-
-    var oauth: BetterAuthOAuthClient {
-        BetterAuthOAuthClient(auth: self)
-    }
-
     var emailOTP: BetterAuthEmailOTPClient {
         BetterAuthEmailOTPClient(auth: self)
     }
@@ -115,140 +91,6 @@ public struct BetterAuthSessionLifecycleClient: Sendable {
 
     public func handleIncomingURL(_ url: URL) async throws -> BetterAuthHandledURLResult {
         try await auth.handleIncomingURL(url)
-    }
-}
-
-public struct BetterAuthEmailAuthClient: Sendable {
-    private let auth: BetterAuthAuthClient
-
-    init(auth: BetterAuthAuthClient) {
-        self.auth = auth
-    }
-
-    @discardableResult
-    public func signUp(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult {
-        try await auth.signUpWithEmail(payload)
-    }
-
-    @discardableResult
-    public func signIn(_ payload: EmailSignInRequest) async throws -> BetterAuthSession {
-        try await auth.signInWithEmail(payload)
-    }
-
-    @discardableResult
-    public func requestPasswordReset(_ payload: ForgotPasswordRequest) async throws -> Bool {
-        try await auth.requestPasswordReset(payload)
-    }
-
-    @discardableResult
-    public func resetPassword(_ payload: ResetPasswordRequest) async throws -> Bool {
-        try await auth.resetPassword(payload)
-    }
-}
-
-public struct BetterAuthUsernameAuthClient: Sendable {
-    private let auth: BetterAuthAuthClient
-
-    init(auth: BetterAuthAuthClient) {
-        self.auth = auth
-    }
-
-    public func isAvailable(_ payload: UsernameAvailabilityRequest) async throws -> Bool {
-        try await auth.isUsernameAvailable(payload)
-    }
-
-    @discardableResult
-    public func signIn(_ payload: UsernameSignInRequest) async throws -> BetterAuthSession {
-        try await auth.signInWithUsername(payload)
-    }
-}
-
-public struct BetterAuthAppleAuthClient: Sendable {
-    private let auth: BetterAuthAuthClient
-
-    init(auth: BetterAuthAuthClient) {
-        self.auth = auth
-    }
-
-    @discardableResult
-    public func signIn(_ payload: AppleNativeSignInPayload) async throws -> BetterAuthSession {
-        try await auth.signInWithApple(payload)
-    }
-}
-
-public struct BetterAuthSocialAuthClient: Sendable {
-    private let auth: BetterAuthAuthClient
-
-    init(auth: BetterAuthAuthClient) {
-        self.auth = auth
-    }
-
-    @discardableResult
-    public func signIn(_ payload: SocialSignInRequest) async throws -> SocialSignInResult {
-        try await auth.signInWithSocial(payload)
-    }
-
-    public func listLinkedAccounts() async throws -> [LinkedAccount] {
-        try await auth.listLinkedAccounts()
-    }
-
-    @discardableResult
-    public func linkAccount(_ payload: LinkSocialAccountRequest) async throws -> LinkSocialAccountResponse {
-        try await auth.linkSocialAccount(payload)
-    }
-}
-
-public struct BetterAuthAnonymousAuthClient: Sendable {
-    private let auth: BetterAuthAuthClient
-
-    init(auth: BetterAuthAuthClient) {
-        self.auth = auth
-    }
-
-    @discardableResult
-    public func signIn() async throws -> BetterAuthSession {
-        try await auth.signInAnonymously()
-    }
-
-    @discardableResult
-    public func deleteUser() async throws -> Bool {
-        try await auth.deleteAnonymousUser()
-    }
-
-    @discardableResult
-    public func upgradeWithEmail(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult {
-        try await auth.upgradeAnonymousWithEmail(payload)
-    }
-
-    @discardableResult
-    public func upgradeWithApple(_ payload: AppleNativeSignInPayload) async throws -> BetterAuthSession {
-        try await auth.upgradeAnonymousWithApple(payload)
-    }
-
-    @discardableResult
-    public func upgradeWithSocial(_ payload: SocialSignInRequest) async throws -> SocialSignInResult {
-        try await auth.upgradeAnonymousWithSocial(payload)
-    }
-}
-
-public struct BetterAuthOAuthClient: Sendable {
-    private let auth: BetterAuthAuthClient
-
-    init(auth: BetterAuthAuthClient) {
-        self.auth = auth
-    }
-
-    public func begin(_ payload: GenericOAuthSignInRequest) async throws -> GenericOAuthAuthorizationResponse {
-        try await auth.beginGenericOAuth(payload)
-    }
-
-    public func link(_ payload: GenericOAuthSignInRequest) async throws -> GenericOAuthAuthorizationResponse {
-        try await auth.linkGenericOAuth(payload)
-    }
-
-    @discardableResult
-    public func complete(_ payload: GenericOAuthCallbackRequest) async throws -> BetterAuthSession {
-        try await auth.completeGenericOAuth(payload)
     }
 }
 
@@ -415,11 +257,6 @@ public struct BetterAuthAccountClient: Sendable {
     @discardableResult
     public func deleteUser(_ payload: DeleteUserRequest = .init()) async throws -> Bool {
         try await auth.deleteUser(payload)
-    }
-
-    @discardableResult
-    public func reauthenticate(password: String) async throws -> Bool {
-        try await auth.reauthenticate(password: password)
     }
 }
 
