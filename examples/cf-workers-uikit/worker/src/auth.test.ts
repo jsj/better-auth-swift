@@ -307,7 +307,6 @@ describe('better auth example worker', () => {
 
     expect(result).toEqual({
       user: {
-        id: 'user-123',
         email: 'payload@example.com',
         name: 'Better Auth',
         emailVerified: true,
@@ -2280,7 +2279,7 @@ describe('better auth example worker', () => {
   it('fixture google user info can simulate cross-user linking identities', async () => {
     const result = await getFixtureGoogleUserInfo({ idToken: 'cross-user-token' });
     expect(result.user.email).toBe('other@example.com');
-    expect(result.user.id).toBe('google-cross-user');
+    expect(result.data.sub).toBe('google-cross-user');
   });
 
   it('creates google authorization URLs against the emulator when enabled', () => {
@@ -2328,12 +2327,12 @@ describe('better auth example worker', () => {
       }, { accessToken: 'access-token' });
 
       expect(result.user).toEqual({
-        id: 'google-user-1',
         name: 'Google User',
         email: 'google@example.com',
         emailVerified: true,
         image: 'https://example.com/avatar.png',
       });
+      expect(result.data.sub).toBe('google-user-1');
     } finally {
       globalThis.fetch = originalFetch;
     }

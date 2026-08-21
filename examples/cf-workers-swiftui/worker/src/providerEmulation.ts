@@ -108,7 +108,6 @@ export function getEmulatedAppleUserInfo(token: {
 
   return {
     user: {
-      id: String(profile.sub ?? ''),
       name,
       email,
       emailVerified: String(profile.email_verified ?? 'false') === 'true' || profile.email_verified === true,
@@ -151,7 +150,6 @@ export async function getFixtureGoogleUserInfo(token: GenericProviderToken) {
   if (token.idToken === 'missing-email-token') {
     return {
       user: {
-        id: 'google-missing-email',
         name: 'Missing Email User',
         email: '',
         emailVerified: true,
@@ -165,7 +163,6 @@ export async function getFixtureGoogleUserInfo(token: GenericProviderToken) {
   if (token.idToken === 'cross-user-token') {
     return {
       user: {
-        id: 'google-cross-user',
         name: 'Cross User',
         email: 'other@example.com',
         emailVerified: true,
@@ -179,7 +176,6 @@ export async function getFixtureGoogleUserInfo(token: GenericProviderToken) {
   if (token.idToken === 'existing-link-token') {
     return {
       user: {
-        id: 'google-existing',
         name: 'Existing Link',
         email: 'linked@example.com',
         emailVerified: true,
@@ -192,7 +188,6 @@ export async function getFixtureGoogleUserInfo(token: GenericProviderToken) {
 
   return {
     user: {
-      id: token.user?.id ?? 'google-fixture-user',
       name: token.user?.name ?? 'Fixture Google User',
       email: token.user?.email ?? 'linked@example.com',
       emailVerified: token.user?.emailVerified ?? true,
@@ -227,7 +222,6 @@ export async function getGoogleUserInfo(env: Env, token: GenericProviderToken) {
 
     return {
       user: {
-        id: String(profile.sub ?? profile.id ?? ''),
         name: String(profile.name ?? email),
         email,
         emailVerified: profile.email_verified === true || profile.email_verified === 'true',
@@ -244,10 +238,7 @@ export function createGoogleAuthorizationURL(
   env: Env,
   { state, redirectURI, scopes, loginHint }: AuthorizationURLInput,
 ) {
-  const baseURL = isEmulatedGoogle(env)
-    ? getGoogleEmulatorBaseURL(env)
-    : 'https://accounts.google.com';
-  const url = new URL('/o/oauth2/v2/auth', baseURL);
+  const url = new URL(getGoogleAuthorizationEndpoint(env));
   url.searchParams.set('client_id', env.GOOGLE_CLIENT_ID ?? 'fixture-google-client-id');
   url.searchParams.set('redirect_uri', redirectURI);
   url.searchParams.set('response_type', 'code');
@@ -257,4 +248,11 @@ export function createGoogleAuthorizationURL(
     url.searchParams.set('login_hint', loginHint);
   }
   return url;
+}
+
+export function getGoogleAuthorizationEndpoint(env: Env) {
+  const baseURL = isEmulatedGoogle(env)
+    ? getGoogleEmulatorBaseURL(env)
+    : 'https://accounts.google.com';
+  return new URL('/o/oauth2/v2/auth', baseURL).toString();
 }

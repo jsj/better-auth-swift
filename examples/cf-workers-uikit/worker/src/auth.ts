@@ -15,6 +15,7 @@ import type { Env } from './types';
 import { schema } from './db/schema';
 import {
   createGoogleAuthorizationURL,
+  getGoogleAuthorizationEndpoint,
   getEmulatedAppleUserInfo,
   getFixtureGoogleUserInfo,
   getGoogleUserInfo,
@@ -22,7 +23,7 @@ import {
   verifyEmulatedAppleIdToken,
   verifyFixtureGoogleIdToken,
   verifyGoogleIdToken,
-  type AuthorizationURLInput,
+  type GenericProviderToken,
 } from './providerEmulation';
 
 export {
@@ -268,7 +269,7 @@ export function createAuthInstance({
           genericOAuth({
             config: [{
               providerId: 'fixture-generic',
-              issuer: env.GENERIC_OAUTH_ISSUER ?? 'https://fixture-oauth.example.com',
+              accountIssuer: env.GENERIC_OAUTH_ISSUER ?? 'https://fixture-oauth.example.com',
               authorizationUrl: env.GENERIC_OAUTH_AUTHORIZATION_URL ?? 'https://fixture-oauth.example.com/oauth/authorize',
               tokenUrl: env.GENERIC_OAUTH_TOKEN_URL ?? 'https://fixture-oauth.example.com/oauth/token',
               userInfoUrl: env.GENERIC_OAUTH_USERINFO_URL ?? 'https://fixture-oauth.example.com/oauth/userinfo',
@@ -374,7 +375,7 @@ export function createAuthInstance({
         session: {
           cookieCache: {
             enabled: false,
-            cookieRefreshCache: 0,
+            refreshCache: false,
           },
         },
         socialProviders: {
@@ -384,33 +385,23 @@ export function createAuthInstance({
             appBundleIdentifier: env.APPLE_APP_BUNDLE_IDENTIFIER,
             audience: env.APPLE_APP_BUNDLE_IDENTIFIER || env.APPLE_CLIENT_ID,
             verifyIdToken: isEmulatedApple(env)
-              ? (token, nonce) => verifyEmulatedAppleIdToken(env, token, nonce)
+              ? (token: string, nonce?: string) => verifyEmulatedAppleIdToken(env, token, nonce)
               : undefined,
-            getUserInfo: isEmulatedApple(env)
-              ? async (token) => getEmulatedAppleUserInfo(token)
-              : undefined,
+            getUserInfo: (isEmulatedApple(env)
+              ? async (token: Parameters<typeof getEmulatedAppleUserInfo>[0]) => getEmulatedAppleUserInfo(token)
+              : undefined) as never,
           },
           google: {
             clientId: env.GOOGLE_CLIENT_ID ?? 'fixture-google-client-id',
             clientSecret: env.GOOGLE_CLIENT_SECRET ?? 'fixture-google-client-secret',
-            verifyIdToken: (token, nonce) => verifyGoogleIdToken(env, token, nonce),
-            getUserInfo: (token) => getGoogleUserInfo(env, token),
-            async createAuthorizationURL({ state, redirectURI, scopes, loginHint }: AuthorizationURLInput) {
-              return createGoogleAuthorizationURL(env, { state, redirectURI, scopes, loginHint });
-            },
+            authorizationEndpoint: getGoogleAuthorizationEndpoint(env),
+            verifyIdToken: (token: string, nonce?: string) => verifyGoogleIdToken(env, token, nonce),
+            getUserInfo: ((token: GenericProviderToken) => getGoogleUserInfo(env, token)) as never,
           },
           github: {
             clientId: 'fixture-github-client-id',
             clientSecret: 'fixture-github-client-secret',
             disableIdTokenSignIn: true,
-            async createAuthorizationURL({ state, redirectURI, scopes }: AuthorizationURLInput) {
-              const url = new URL('https://github.com/login/oauth/authorize');
-              url.searchParams.set('client_id', 'fixture-github-client-id');
-              url.searchParams.set('redirect_uri', redirectURI);
-              url.searchParams.set('scope', (scopes?.length ? scopes : ['read:user', 'user:email']).join(' '));
-              url.searchParams.set('state', state);
-              return url;
-            },
           },
         },
         account: {

@@ -15,25 +15,22 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "@better-auth/passkey": "^1.6.20",
-    "better-auth": "^1.6.20",
+    "@better-auth/passkey": "^1.7.1",
+    "better-auth": "^1.7.1",
     "better-auth-cloudflare": "^0.3.0",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.26",
     "jose": "^6.2.3"
   },
   "devDependencies": {
-    "@better-auth/cli": "1.5.0-beta.13",
+    "auth": "1.7.1",
     "@cloudflare/workers-types": "^4.20260620.1",
+    "@types/node": "^25.0.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.9",
     "wrangler": "^4.103.0"
   },
   "overrides": {
-    "@better-auth/cli": {
-      "@mrleebo/prisma-ast": "0.16.0",
-      "better-auth": "$better-auth",
-      "drizzle-orm": "$drizzle-orm"
-    }
+    "@mrleebo/prisma-ast": "0.16.0"
   }
 }

@@ -30,6 +30,7 @@ CREATE INDEX IF NOT EXISTS session_userId_idx ON session (user_id);
 
 CREATE TABLE IF NOT EXISTS account (
   id TEXT PRIMARY KEY NOT NULL,
+  issuer TEXT NOT NULL,
   account_id TEXT NOT NULL,
   provider_id TEXT NOT NULL,
   user_id TEXT NOT NULL,
@@ -46,6 +47,7 @@ CREATE TABLE IF NOT EXISTS account (
 );
 
 CREATE INDEX IF NOT EXISTS account_userId_idx ON account (user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS account_issuer_accountId_uidx ON account (issuer, account_id);
 
 CREATE TABLE IF NOT EXISTS verification (
   id TEXT PRIMARY KEY NOT NULL,
@@ -82,6 +84,8 @@ CREATE TABLE IF NOT EXISTS two_factor (
   backup_codes TEXT NOT NULL,
   user_id TEXT NOT NULL,
   verified INTEGER DEFAULT 1,
+  failed_verification_count INTEGER DEFAULT 0,
+  locked_until INTEGER,
   FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE cascade
 );
 
@@ -93,7 +97,9 @@ CREATE TABLE IF NOT EXISTS jwks (
   public_key TEXT NOT NULL,
   private_key TEXT NOT NULL,
   created_at INTEGER NOT NULL,
-  expires_at INTEGER
+  expires_at INTEGER,
+  alg TEXT,
+  crv TEXT
 );
 
 CREATE TABLE IF NOT EXISTS profiles (
