@@ -13,7 +13,7 @@ struct BetterAuthProfileService {
             .post(path: context.configuration.endpoints.user.deleteUserPath,
                   body: payload,
                   accessToken: accessToken)
-        try relay.clearSession(event: .signedOut)
+        try await relay.clearSession(event: .signedOut)
         return response.status
     }
 
@@ -29,9 +29,9 @@ struct BetterAuthProfileService {
 
     func verifyEmail(_ payload: VerifyEmailRequest) async throws -> VerifyEmailResult {
         let result: VerifyEmailResult = try await context.network
-            .get(path: context.configuration.endpoints.user.verifyEmailPath,
-                 queryItems: [URLQueryItem(name: "token", value: payload.token)],
-                 accessToken: nil)
+            .getWithoutRetry(path: context.configuration.endpoints.user.verifyEmailPath,
+                             queryItems: [URLQueryItem(name: "token", value: payload.token)],
+                             accessToken: nil)
         if case let .signedIn(session) = result {
             try await sessionResults.apply(.signedIn(session))
         }

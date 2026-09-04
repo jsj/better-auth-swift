@@ -137,7 +137,9 @@ public final class AuthStore {
         }
     }
 
-    func perform(_ operation: () async throws -> Void) async {
+    /// Runs an optional module action and records its loading, success, or error state.
+    /// Session changes arrive through the client's shared auth-state stream.
+    public func perform(_ operation: () async throws -> Void) async {
         let identifier = beginOperation()
         defer { endOperation(identifier) }
         do {

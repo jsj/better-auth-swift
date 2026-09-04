@@ -117,7 +117,7 @@ Alternatively, add the package to `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/jsj/better-auth-swift.git")
+    .package(url: "https://github.com/jsj/better-auth-swift.git", branch: "main")
 ]
 ```
 
@@ -230,7 +230,10 @@ let session = try await client.requireAnonymous().signIn()
 let profile: Profile = try await client.requests.sendJSON(path: "/api/me")
 ```
 
-The request client attaches bearer tokens. It uses the configured transient retry policy.
+The request client attaches bearer tokens. GET, HEAD, and OPTIONS requests use the
+configured transient retry policy by default. Mutations require an explicit
+`allowsTransientRetry: true` and should opt in only when repeating the operation is safe.
+Set `allowsTransientRetry: false` for GET endpoints that consume one-time tokens.
 After a `401` response, it refreshes the session and retries once.
 
 ### Make sure that the backend is compatible
@@ -241,35 +244,48 @@ let report = await client.diagnostics.check(
 )
 ```
 
+Email/password defaults use Better Auth's standard `/api/auth/sign-up/email`,
+`/api/auth/sign-in/email`, and `/api/auth/request-password-reset` routes. Enable
+the server's `bearer()` plugin for native session requests. The upstream contract
+suite exercises these routes against Better Auth 1.7.1 without example adapters.
+A sign-up response with `token: null` succeeds without signing in; its
+`requiresVerification` value is `nil` when the server does not supply that information.
+
 The Cloudflare Workers examples expose `/api/better-auth-swift/diagnostics`.
 Apps can use this endpoint to make sure that the backend supports the required plugins.
 
 ## SwiftUI integration
 
+<!-- swiftui-quick-start -->
 ```swift
+import BetterAuth
+import BetterAuthEmailPassword
 import BetterAuthSwiftUI
 
 @MainActor
-let store = AuthStore(client: client)
+func signInExample(client: BetterAuthClient, email: String, password: String) async {
+    let store = AuthStore(client: client)
+    await store.lifecycle.bootstrap()
 
-// Launch
-await store.lifecycle.bootstrap()
+    switch store.viewState.launchState {
+    case .authenticated(let session):
+        print("Show app", session.user.id)
+    case .unauthenticated:
+        print("Show sign in")
+    case .restoring:
+        print("Show loading")
+    default:
+        break
+    }
 
-// Drive UI from typed launch state
-switch store.viewState.launchState {
-case .authenticated(let session):
-    print("Show app", session.user.id)
-case .unauthenticated:
-    print("Show sign in")
-case .restoring:
-    print("Show loading")
-default:
-    break
+    // The client must register BetterAuthEmailPasswordModule.
+    await store.perform {
+        _ = try await client.requireEmailPassword().signIn(
+            .init(email: email, password: password)
+        )
+    }
+    await store.lifecycle.signOut()
 }
-
-// Namespaced UI actions keep view code organized
-await store.email.signIn(.init(email: email, password: password))
-await store.lifecycle.signOut()
 ```
 
 ## Organization plugin
@@ -304,6 +320,12 @@ let client = BetterAuthClient(
     ]
 )
 ```
+
+### Local and remote sign-out
+
+Sign-out clears the local session before contacting the server. If remote revocation
+fails, the call throws while the app stays signed out locally. Use
+`client.auth.lifecycle.signOut(remotely: false)` when only local sign-out is needed.
 
 ## Apple Sign In
 

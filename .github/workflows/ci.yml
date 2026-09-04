@@ -48,9 +48,17 @@ jobs:
           bun run --cwd examples/cf-workers-swiftui/worker typecheck
           npm --prefix examples/cf-workers-uikit/worker run typecheck
 
+      - name: Test shared example routes in both workers
+        run: |
+          bun run --cwd examples/cf-workers-swiftui/worker test
+          npm --prefix examples/cf-workers-uikit/worker test
+
       - name: Run release verifier
         # Xcode Cloud performs the Apple-platform compilation gates.
         run: Scripts/verify_release.sh --skip-platform-builds
 
       - name: Run local live contracts
         run: Scripts/run_local_contracts.sh
+
+      - name: Run upstream contracts without example adapters
+        run: Scripts/run_upstream_contracts.sh

@@ -26,8 +26,9 @@ USAGE
 }
 
 cleanup() {
-  if [ -n "$WORKER_PID" ] && kill -0 "$WORKER_PID" >/dev/null 2>&1; then
-    kill "$WORKER_PID" >/dev/null 2>&1 || true
+  if [ -n "$WORKER_PID" ]; then
+    # The worker runs in its own process group, including Wrangler and workerd.
+    kill -TERM -- "-$WORKER_PID" >/dev/null 2>&1 || true
     wait "$WORKER_PID" >/dev/null 2>&1 || true
   fi
   rm -rf "$PERSIST_TO"
@@ -36,13 +37,13 @@ cleanup() {
 wait_for_health() {
   local deadline=$((SECONDS + 60))
   while [ "$SECONDS" -lt "$deadline" ]; do
-    if curl -fsS "$BASE_URL/health" >/dev/null 2>&1; then
-      return 0
-    fi
     if [ -n "$WORKER_PID" ] && ! kill -0 "$WORKER_PID" >/dev/null 2>&1; then
       echo "Local contract worker exited early. Log:" >&2
       cat "$WORKER_LOG" >&2
       return 1
+    fi
+    if curl -fsS "$BASE_URL/health" >/dev/null 2>&1; then
+      return 0
     fi
     sleep 1
   done
@@ -66,7 +67,7 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-for tool in bun curl swift; do
+for tool in bun curl swift python3; do
   if ! command -v "$tool" >/dev/null 2>&1; then
     echo "$tool is required for local contract verification." >&2
     exit 127
@@ -74,6 +75,15 @@ for tool in bun curl swift; do
 done
 
 trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+# Fail before a health check could accidentally target an existing server.
+python3 - "$PORT" <<'PYPORT'
+import socket, sys
+with socket.socket() as listener:
+    listener.bind(("127.0.0.1", int(sys.argv[1])))
+PYPORT
 
 echo "Preparing fresh local D1 store..."
 (cd "$WORKER_DIR" && bunx wrangler d1 migrations apply DB --local --persist-to "$PERSIST_TO")
@@ -81,7 +91,7 @@ echo "Preparing fresh local D1 store..."
 echo "Starting local Better Auth fixture backend on $BASE_URL..."
 (
   cd "$WORKER_DIR"
-  bun run dev -- \
+  exec python3 -c 'import os, sys; os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' bun run dev -- \
     --port "$PORT" \
     --persist-to "$PERSIST_TO" \
     --var "BETTER_AUTH_URL:$BASE_URL" \

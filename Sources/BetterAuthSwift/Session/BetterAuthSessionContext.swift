@@ -15,25 +15,15 @@ struct BetterAuthSessionContext {
 
 struct BetterAuthSessionEventRelay {
     let context: BetterAuthSessionContext
-    let refreshSession: @Sendable () async throws -> BetterAuthSession
 
-    func setSession(_ session: BetterAuthSession?, event: AuthChangeEvent) throws -> AuthStateChange {
-        let previousSession = context.state.replaceCurrentSession(session)
-        do {
-            try context.sessionService.persist(session)
-        } catch {
-            _ = context.state.replaceCurrentSession(previousSession)
-            throw error
-        }
-        let change = AuthStateChange(event: event,
-                                     session: session,
-                                     transition: transition(for: event, session: session))
-        context.state.eventEmitter.yield(change)
-        return change
+    let commitSession: @Sendable (BetterAuthSession?, AuthChangeEvent) async throws -> AuthStateChange
+
+    func setSession(_ session: BetterAuthSession?, event: AuthChangeEvent) async throws -> AuthStateChange {
+        try await commitSession(session, event)
     }
 
-    func clearSession(event: AuthChangeEvent = .signedOut) throws {
-        _ = try setSession(nil, event: event)
+    func clearSession(event: AuthChangeEvent = .signedOut) async throws {
+        _ = try await setSession(nil, event: event)
     }
 
     func shouldClearSession(for error: Error) -> Bool {
@@ -65,16 +55,6 @@ struct BetterAuthSessionEventRelay {
         default:
             return authError.isUnauthorized ? .unauthorized : .storageFailure
         }
-    }
-
-    func validSession() async throws -> BetterAuthSession {
-        guard let current = context.state.currentSession else {
-            throw BetterAuthError.missingSession
-        }
-        if current.needsRefresh(clockSkew: context.configuration.auth.clockSkew) {
-            return try await refreshSession()
-        }
-        return current
     }
 }
 

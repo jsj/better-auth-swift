@@ -7,7 +7,8 @@ public struct BetterAuthDataRequest: Sendable {
     public var body: Data?
     public var requiresAuthentication: Bool
     public var retryOnUnauthorized: Bool
-    public var allowsTransientRetry: Bool
+    /// `nil` retries GET/HEAD/OPTIONS only. Set explicitly for application-specific semantics.
+    public var allowsTransientRetry: Bool?
 
     public init(path: String,
                 method: String = "GET",
@@ -15,7 +16,7 @@ public struct BetterAuthDataRequest: Sendable {
                 body: Data? = nil,
                 requiresAuthentication: Bool = true,
                 retryOnUnauthorized: Bool = true,
-                allowsTransientRetry: Bool = true)
+                allowsTransientRetry: Bool? = nil)
     {
         self.path = path
         self.method = method
@@ -41,7 +42,7 @@ public extension BetterAuthRequestPerforming {
               body: Data? = nil,
               requiresAuthentication: Bool = true,
               retryOnUnauthorized: Bool = true,
-              allowsTransientRetry: Bool = true) async throws -> (Data, HTTPURLResponse)
+              allowsTransientRetry: Bool? = nil) async throws -> (Data, HTTPURLResponse)
     {
         try await send(.init(path: path,
                              method: method,
@@ -58,7 +59,7 @@ public extension BetterAuthRequestPerforming {
                                        body: Data? = nil,
                                        requiresAuthentication: Bool = true,
                                        retryOnUnauthorized: Bool = true,
-                                       allowsTransientRetry: Bool = true,
+                                       allowsTransientRetry: Bool? = nil,
                                        decoder: JSONDecoder = BetterAuthCoding.makeDecoder()) async throws -> Response
     {
         let (data, response) = try await send(.init(path: path,
@@ -80,7 +81,7 @@ public extension BetterAuthRequestPerforming {
                                        body: some Encodable,
                                        requiresAuthentication: Bool = true,
                                        retryOnUnauthorized: Bool = true,
-                                       allowsTransientRetry: Bool = true,
+                                       allowsTransientRetry: Bool? = nil,
                                        encoder: JSONEncoder = BetterAuthCoding.makeEncoder(),
                                        decoder: JSONDecoder = BetterAuthCoding.makeDecoder()) async throws -> Response
     {

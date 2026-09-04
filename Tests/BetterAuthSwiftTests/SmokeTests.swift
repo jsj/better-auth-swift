@@ -22,7 +22,7 @@ struct SmokeTests {
                                                        ipAddress: nil,
                                                        userAgent: nil)
         let transport = SequencedMockTransport([.handler { request in
-            try expect(request.url?.path == "/api/auth/email/sign-in")
+            try expect(request.url?.path == "/api/auth/sign-in/email")
             try expect(request.httpMethod == "POST")
             return try response(for: request, statusCode: 200, data: encodeJSON(signedInSession))
         }, .handler { request in

@@ -82,7 +82,8 @@ public struct BetterAuthSocialOAuthClient: BetterAuthFeatureClient, Sendable {
         let hasSession = await lifecycle.currentSession() != nil
         let session: BetterAuthSession = try await requests.sendJSON(path: callbackPath(for: payload),
                                                                      requiresAuthentication: hasSession,
-                                                                     retryOnUnauthorized: false)
+                                                                     retryOnUnauthorized: false,
+                                                                     allowsTransientRetry: false)
         return try await outcomes.applySessionOutcome(.signedIn(session))
     }
 

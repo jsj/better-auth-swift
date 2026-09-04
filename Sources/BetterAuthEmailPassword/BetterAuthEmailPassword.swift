@@ -6,9 +6,9 @@ public struct BetterAuthEmailPasswordEndpoints: Sendable, Equatable {
     public let forgotPasswordPath: String
     public let resetPasswordPath: String
 
-    public init(signUpPath: String = "/api/auth/email/sign-up",
-                signInPath: String = "/api/auth/email/sign-in",
-                forgotPasswordPath: String = "/api/auth/forget-password",
+    public init(signUpPath: String = "/api/auth/sign-up/email",
+                signInPath: String = "/api/auth/sign-in/email",
+                forgotPasswordPath: String = "/api/auth/request-password-reset",
                 resetPasswordPath: String = "/api/auth/reset-password")
     {
         self.signUpPath = signUpPath
@@ -37,25 +37,29 @@ public struct BetterAuthEmailPasswordClient: BetterAuthFeatureClient, Sendable {
 
     public func signUp(_ payload: EmailSignUpRequest) async throws -> EmailSignUpResult {
         try await throttle.checkAuthOperation("email-password.sign-up")
-        let result: EmailSignUpResult = try await requests.sendJSON(path: endpoints.signUpPath,
-                                                                    body: payload,
-                                                                    requiresAuthentication: false,
-                                                                    retryOnUnauthorized: false,
-                                                                    allowsTransientRetry: false)
-        if case let .signedIn(session) = result {
-            _ = try await sessionOutcomes.applySessionOutcome(.signedIn(session))
+        let response: EmailAuthResponse = try await requests.sendJSON(path: endpoints.signUpPath,
+                                                                      body: payload,
+                                                                      requiresAuthentication: false,
+                                                                      retryOnUnauthorized: false,
+                                                                      allowsTransientRetry: false)
+        if let outcome = response.sessionOutcome {
+            return await .signedIn(try sessionOutcomes.applySessionOutcome(outcome))
         }
-        return result
+        if response.requiresVerification == true {
+            return .verificationHeld(.init(user: response.user))
+        }
+        return .signedUp(.init(requiresVerification: response.requiresVerification, user: response.user))
     }
 
     public func signIn(_ payload: EmailSignInRequest) async throws -> BetterAuthSession {
         try await throttle.checkAuthOperation("email-password.sign-in")
-        let session: BetterAuthSession = try await requests.sendJSON(path: endpoints.signInPath,
-                                                                     body: payload,
-                                                                     requiresAuthentication: false,
-                                                                     retryOnUnauthorized: false,
-                                                                     allowsTransientRetry: false)
-        return try await sessionOutcomes.applySessionOutcome(.signedIn(session))
+        let response: EmailAuthResponse = try await requests.sendJSON(path: endpoints.signInPath,
+                                                                      body: payload,
+                                                                      requiresAuthentication: false,
+                                                                      retryOnUnauthorized: false,
+                                                                      allowsTransientRetry: false)
+        guard let outcome = response.sessionOutcome else { throw BetterAuthError.invalidResponse }
+        return try await sessionOutcomes.applySessionOutcome(outcome)
     }
 
     public func requestPasswordReset(_ payload: ForgotPasswordRequest) async throws -> Bool {
@@ -87,13 +91,15 @@ public struct BetterAuthEmailPasswordClient: BetterAuthFeatureClient, Sendable {
             throw BetterAuthError.missingSession
         }
 
-        let temporary: BetterAuthSession = try await requests.sendJSON(path: endpoints.signInPath,
-                                                                       body: EmailSignInRequest(email: email,
-                                                                                                password: password),
-                                                                       requiresAuthentication: false,
-                                                                       retryOnUnauthorized: false,
-                                                                       allowsTransientRetry: false)
-        return try await sessions.revokeSession(token: temporary.session.accessToken)
+        let response: EmailAuthResponse = try await requests.sendJSON(path: endpoints.signInPath,
+                                                                      body: EmailSignInRequest(email: email,
+                                                                                               password: password),
+                                                                      requiresAuthentication: false,
+                                                                      retryOnUnauthorized: false,
+                                                                      allowsTransientRetry: false)
+        guard let token = response.session?.session.accessToken ?? response.token,
+              response.user?.id == current.user.id else { throw BetterAuthError.invalidResponse }
+        return try await sessions.revokeSession(token: token)
     }
 }
 

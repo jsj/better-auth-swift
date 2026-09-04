@@ -13,9 +13,9 @@ public struct RetryPolicy: Sendable {
                 retryableStatusCodes: Set<Int> = [408, 500, 502, 503, 504],
                 jitterFactor: Double = 0.25)
     {
-        self.maxRetries = maxRetries
-        self.baseDelay = baseDelay
-        self.maxDelay = maxDelay
+        self.maxRetries = max(0, maxRetries)
+        self.baseDelay = baseDelay.isFinite ? max(0, baseDelay) : 0
+        self.maxDelay = maxDelay.isFinite ? max(0, maxDelay) : 0
         self.retryableStatusCodes = retryableStatusCodes
         self.jitterFactor = min(max(jitterFactor, 0), 1)
     }

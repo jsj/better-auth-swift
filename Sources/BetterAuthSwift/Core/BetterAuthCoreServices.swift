@@ -57,13 +57,19 @@ struct BetterAuthSessionRefreshService {
                                           body: RefreshPayload(refreshToken: refreshToken),
                                           accessToken: existingSession.session.accessToken)
         }
-        return try await network.get(path: configuration.endpoints.session.currentSessionPath,
-                                     accessToken: existingSession.session.accessToken)
+        return try await fetchCurrentSession(accessToken: existingSession.session.accessToken)
     }
 
     func fetchCurrentSession(accessToken: String?) async throws -> BetterAuthSession {
-        try await network.get(path: configuration.endpoints.session.currentSessionPath,
-                              accessToken: accessToken)
+        // Upstream returns JSON null with HTTP 200 for an absent or revoked session.
+        let session: BetterAuthSession? = try await network
+            .get(path: configuration.endpoints.session.currentSessionPath,
+                 accessToken: accessToken)
+        guard let session else {
+            throw BetterAuthError.requestFailed(statusCode: 401, message: nil,
+                                                errorCode: .sessionNotFound, response: nil)
+        }
+        return session
     }
 }
 

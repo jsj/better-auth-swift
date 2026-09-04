@@ -53,7 +53,8 @@ public struct BetterAuthMagicLinkClient: Sendable {
         try await operationThrottle.checkAuthOperation("magic-link.verify")
         let response: VerificationResponse = try await requests.sendJSON(path: try verificationPath(for: payload),
                                                                          requiresAuthentication: false,
-                                                                         retryOnUnauthorized: false)
+                                                                         retryOnUnauthorized: false,
+                                                                         allowsTransientRetry: false)
         if let failure = response.failure {
             return .failure(failure)
         }

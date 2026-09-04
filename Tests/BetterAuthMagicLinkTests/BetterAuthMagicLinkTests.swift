@@ -153,8 +153,8 @@ struct BetterAuthMagicLinkTests {
         #expect(await client.auth.currentSession() == nil)
     }
 
-    @Test
-    func requestDoesNotRetryTransientFailure() async throws {
+    @Test(arguments: [false, true])
+    func oneTimeOperationsDoNotRetryTransientFailure(verify: Bool) async throws {
         let transport = CountingTransport(statusCode: 503)
         let client =
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com")),
@@ -166,7 +166,11 @@ struct BetterAuthMagicLinkTests {
                              modules: [BetterAuthMagicLinkModule()])
 
         await #expect(throws: BetterAuthError.self) {
-            try await client.requireMagicLinks().request(.init(email: "magic@example.com"))
+            if verify {
+                _ = try await client.requireMagicLinks().verify(.init(token: "one-time-token"))
+            } else {
+                _ = try await client.requireMagicLinks().request(.init(email: "magic@example.com"))
+            }
         }
         #expect(await transport.requestCount == 1)
     }

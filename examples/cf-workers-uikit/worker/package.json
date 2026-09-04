@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "vitest run",
+    "test": "node ../../shared-worker/sync-routes.mjs && vitest run",
     "dev": "wrangler dev",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "node ../../shared-worker/sync-routes.mjs && tsc --noEmit",
     "db:gen": "better-auth generate --config src/auth.ts --output src/db/auth-schema.ts -y",
     "db:migrate:local": "wrangler d1 migrations apply DB --local"
   },

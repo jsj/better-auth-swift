@@ -167,7 +167,7 @@ struct SocialAndUsernameAuthTests {
     @Test
     func requestPasswordResetUsesConfiguredEndpoint() async throws {
         let transport = MockTransport { request in
-            try expect(request.url?.path == "/api/auth/forget-password")
+            try expect(request.url?.path == "/api/auth/request-password-reset")
             try expect(request.httpMethod == "POST")
             let payload = try JSONDecoder().decode(ForgotPasswordRequest.self, from: try #require(request.httpBody))
             try expect(payload.email == "reset@example.com")

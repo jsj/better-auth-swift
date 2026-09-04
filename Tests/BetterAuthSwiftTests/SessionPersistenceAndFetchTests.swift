@@ -263,7 +263,7 @@ struct SessionPersistenceAndFetchTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
                              transport: MockTransport { request in
-                                 try expect(request.url?.path == "/api/auth/email/sign-in")
+                                 try expect(request.url?.path == "/api/auth/sign-in/email")
                                  return try response(for: request, statusCode: 200, data: encodeJSON(signedIn))
                              },
                              eventEmitter: emitter,
@@ -325,7 +325,7 @@ struct SessionPersistenceAndFetchTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
                              transport: MockTransport { request in
-                                 try expect(request.url?.path == "/api/auth/email/sign-in")
+                                 try expect(request.url?.path == "/api/auth/sign-in/email")
                                  return try response(for: request, statusCode: 200, data: encodeJSON(signedIn))
                              },
                              eventEmitter: emitter,
@@ -353,7 +353,7 @@ struct SessionPersistenceAndFetchTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
                              transport: MockTransport { request in
-                                 try expect(request.url?.path == "/api/auth/email/sign-in")
+                                 try expect(request.url?.path == "/api/auth/sign-in/email")
                                  return try response(for: request, statusCode: 200, data: encodeJSON(signedIn))
                              },
                              modules: [BetterAuthEmailPasswordModule()])
@@ -377,7 +377,7 @@ struct SessionPersistenceAndFetchTests {
             BetterAuthClient(configuration: BetterAuthConfiguration(baseURL: try #require(URL(string: "https://example.com"))),
                              sessionStore: InMemorySessionStore(),
                              transport: MockTransport { request in
-                                 try expect(request.url?.path == "/api/auth/email/sign-in")
+                                 try expect(request.url?.path == "/api/auth/sign-in/email")
                                  return response(for: request,
                                                  statusCode: 401,
                                                  data: Data(#"{"message":"nope","code":"INVALID_CREDENTIALS"}"#.utf8))

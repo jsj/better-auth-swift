@@ -22,96 +22,44 @@ actor BetterAuthSessionManager {
     var authStateListenerRegistrations: [any AuthStateChangeRegistration] = []
     var inFlightRefreshTask: Task<BetterAuthSession, Error>?
     var autoRefreshTask: Task<Void, Never>?
-    var cachedRelay: BetterAuthSessionEventRelay?
-    var cachedMaterializer: BetterAuthSessionMaterializer?
-    var cachedProfileService: BetterAuthProfileService?
-    var cachedPasskeyService: BetterAuthPasskeyService?
-    var cachedOneTimeCodeService: BetterAuthOneTimeCodeService?
-    var cachedTwoFactorService: BetterAuthTwoFactorService?
-    var cachedSessionAdministrationService: BetterAuthSessionAdministrationService?
-    var cachedSessionBootstrapService: BetterAuthSessionBootstrapService?
+    var sessionGeneration = UUID()
+    var credentialGeneration = UUID()
+    var autoRefreshSuspended = false
+    var inFlightRefreshIdentifier: UUID?
+    var inFlightRefreshGeneration: UUID?
 
     func makeRelay() -> BetterAuthSessionEventRelay {
-        if let cachedRelay {
-            return cachedRelay
-        }
-        let relay = BetterAuthSessionEventRelay(context: context,
-                                                refreshSession: {
-                                                    try await self.refreshSession()
-                                                })
-        cachedRelay = relay
-        return relay
+        let generation = sessionGeneration
+        return BetterAuthSessionEventRelay(context: context,
+                                           commitSession: { [weak self] session, event in
+                                               guard let self else { throw CancellationError() }
+                                               return try await self.commitSession(session, event: event,
+                                                                                   generation: generation)
+                                           })
     }
 
     func makeMaterializer() -> BetterAuthSessionMaterializer {
-        if let cachedMaterializer {
-            return cachedMaterializer
-        }
-        let materializer = BetterAuthSessionMaterializer(context: context)
-        cachedMaterializer = materializer
-        return materializer
+        BetterAuthSessionMaterializer(context: context)
     }
 
     func makeProfileService() -> BetterAuthProfileService {
-        if let cachedProfileService {
-            return cachedProfileService
-        }
-        let service = BetterAuthProfileService(context: context,
-                                               relay: makeRelay(),
-                                               materializer: makeMaterializer())
-        cachedProfileService = service
-        return service
+        BetterAuthProfileService(context: context, relay: makeRelay(), materializer: makeMaterializer())
     }
 
     func makePasskeyService() -> BetterAuthPasskeyService {
-        if let cachedPasskeyService {
-            return cachedPasskeyService
-        }
-        let service = BetterAuthPasskeyService(context: context,
-                                               relay: makeRelay(),
-                                               materializer: makeMaterializer())
-        cachedPasskeyService = service
-        return service
+        BetterAuthPasskeyService(context: context, relay: makeRelay(), materializer: makeMaterializer())
     }
 
     func makeOneTimeCodeService() -> BetterAuthOneTimeCodeService {
-        if let cachedOneTimeCodeService {
-            return cachedOneTimeCodeService
-        }
-        let service = BetterAuthOneTimeCodeService(context: context,
-                                                   relay: makeRelay(),
-                                                   materializer: makeMaterializer())
-        cachedOneTimeCodeService = service
-        return service
+        BetterAuthOneTimeCodeService(context: context, relay: makeRelay(), materializer: makeMaterializer())
     }
 
     func makeTwoFactorService() -> BetterAuthTwoFactorService {
-        if let cachedTwoFactorService {
-            return cachedTwoFactorService
-        }
-        let service = BetterAuthTwoFactorService(context: context,
-                                                 relay: makeRelay(),
-                                                 materializer: makeMaterializer())
-        cachedTwoFactorService = service
-        return service
+        BetterAuthTwoFactorService(context: context, relay: makeRelay(), materializer: makeMaterializer())
     }
 
     func makeSessionAdministrationService() -> BetterAuthSessionAdministrationService {
-        if let cachedSessionAdministrationService {
-            return cachedSessionAdministrationService
-        }
-        let service = BetterAuthSessionAdministrationService(context: context, relay: makeRelay())
-        cachedSessionAdministrationService = service
-        return service
-    }
-
-    func makeSessionBootstrapService() -> BetterAuthSessionBootstrapService {
-        if let cachedSessionBootstrapService {
-            return cachedSessionBootstrapService
-        }
-        let service = BetterAuthSessionBootstrapService(context: context, relay: makeRelay())
-        cachedSessionBootstrapService = service
-        return service
+        BetterAuthSessionAdministrationService(context: context, relay: makeRelay())
     }
 
     func throttleAuthOperation(_ operation: String) async throws {
@@ -164,9 +112,10 @@ actor BetterAuthSessionManager {
     }
 
     nonisolated var accessTokenChanges: AsyncStream<String?> {
-        AsyncStream { continuation in
+        let changes = authStateChanges
+        return AsyncStream { continuation in
             let task = Task {
-                for await change in authStateChanges {
+                for await change in changes {
                     continuation.yield(change.session?.session.accessToken)
                 }
             }
@@ -184,9 +133,10 @@ actor BetterAuthSessionManager {
 
     /// Signs out and clears the local session. This method can also revoke the backend session.
     func signOut(remotely: Bool = true) async throws {
-        stopAutoRefresh()
-        try await makeSessionAdministrationService().signOut(remotely: remotely,
-                                                             accessToken: state.currentSession?.session.accessToken)
+        let accessToken = state.currentSession?.session.accessToken
+        try clearSession(event: .signedOut)
+        inFlightRefreshTask?.cancel()
+        try await makeSessionAdministrationService().signOut(remotely: remotely, accessToken: accessToken)
     }
 
     // MARK: - Auto-Refresh
@@ -194,8 +144,18 @@ actor BetterAuthSessionManager {
     func startAutoRefresh() {
         stopAutoRefresh()
         logger?.debug("Starting auto-refresh timer")
+        guard configuration.autoRefreshToken, !autoRefreshSuspended,
+              let expiresAt = state.currentSession?.session.expiresAt else { return }
+        let sleepDuration = max(expiresAt.timeIntervalSinceNow - AutoRefreshConstants.refreshLeadTime,
+                                AutoRefreshConstants.minimumSleepInterval)
         autoRefreshTask = Task { [weak self] in
-            await self?.runAutoRefreshLoop()
+            do {
+                try await Task.sleep(for: .seconds(sleepDuration))
+                try Task.checkCancellation()
+                await self?.autoRefreshTimerFired()
+            } catch {
+                // Cancelling the timer is expected when the session changes.
+            }
         }
     }
 
@@ -205,6 +165,8 @@ actor BetterAuthSessionManager {
     }
 
     func shutdown() {
+        autoRefreshSuspended = true
+        sessionGeneration = UUID()
         stopAutoRefresh()
         inFlightRefreshTask?.cancel()
         inFlightRefreshTask = nil
@@ -213,6 +175,7 @@ actor BetterAuthSessionManager {
     }
 
     func applicationDidBecomeActive() async {
+        autoRefreshSuspended = false
         guard configuration.autoRefreshToken, state.currentSession != nil else { return }
         startAutoRefresh()
         do {
@@ -223,6 +186,7 @@ actor BetterAuthSessionManager {
     }
 
     func applicationWillResignActive() {
+        autoRefreshSuspended = true
         stopAutoRefresh()
     }
 
@@ -232,23 +196,13 @@ actor BetterAuthSessionManager {
         authStateListenerRegistrations.forEach { $0.remove() }
     }
 
-    func runAutoRefreshLoop() async {
-        while !Task.isCancelled {
-            guard let expiresAt = state.currentSession?.session.expiresAt else { return }
-            let sleepDuration = max(expiresAt.timeIntervalSinceNow - AutoRefreshConstants.refreshLeadTime,
-                                    AutoRefreshConstants.minimumSleepInterval)
-            do {
-                try await Task.sleep(for: .seconds(sleepDuration))
-            } catch {
-                return
-            }
-            guard !Task.isCancelled else { return }
-            logger?.debug("Auto-refreshing session before expiry")
-            do {
-                _ = try await refreshSession()
-            } catch {
-                logger?.warning("Automatic session refresh failed: \(error)")
-            }
+    func autoRefreshTimerFired() {
+        guard !autoRefreshSuspended, !Task.isCancelled else { return }
+        // Start the owned refresh task without holding this actor alive across network I/O.
+        do {
+            _ = try makeRefreshTask()
+        } catch {
+            logger?.warning("Automatic session refresh failed: \(error)")
         }
     }
 
@@ -291,17 +245,47 @@ actor BetterAuthSessionManager {
 
     // MARK: - Session Lifecycle Helpers
 
-    func setSession(_ session: BetterAuthSession?, event: AuthChangeEvent) throws {
-        _ = try makeRelay().setSession(session, event: event)
-        if session != nil, configuration.autoRefreshToken {
-            startAutoRefresh()
-        } else if session == nil {
-            stopAutoRefresh()
+    /// All session commits, persistence, notifications and timer updates run on this actor.
+    @discardableResult
+    func commitSession(_ session: BetterAuthSession?, event: AuthChangeEvent,
+                       generation: UUID) throws -> AuthStateChange
+    {
+        guard generation == sessionGeneration else { throw CancellationError() }
+        return try setSession(session, event: event)
+    }
+
+    @discardableResult
+    func setSession(_ session: BetterAuthSession?, event: AuthChangeEvent,
+                    startsNewGeneration: Bool = false) throws -> AuthStateChange
+    {
+        let previous = state.currentSession
+        // A profile response must not roll credentials back if a refresh finished meanwhile.
+        let session = if event == .userUpdated, let previous, let session,
+                         previous.user.id == session.user.id
+        {
+            BetterAuthSession(session: previous.session, user: session.user)
+        } else {
+            session
         }
+        try sessionService.persist(session)
+        state.replaceCurrentSession(session)
+        if startsNewGeneration || event == .signedIn || event == .signedOut || event == .sessionExpired ||
+            previous?.user.id != session?.user.id
+        {
+            sessionGeneration = UUID()
+        }
+        if previous?.session != session?.session {
+            credentialGeneration = UUID()
+        }
+        let change = AuthStateChange(event: event, session: session,
+                                     transition: makeRelay().transition(for: event, session: session))
+        state.eventEmitter.yield(change)
+        updateAutoRefresh(for: session)
+        return change
     }
 
     func clearSession(event: AuthChangeEvent = .signedOut) throws {
-        try setSession(nil, event: event)
+        _ = try setSession(nil, event: event)
     }
 
     static func makeAuthStateListenerRegistrations(_ listeners: [any BetterAuthAuthStateListener],
@@ -346,16 +330,6 @@ actor BetterAuthSessionManager {
                 return .tokenRefreshed
             }
             return .userUpdated
-        }
-    }
-
-    func updateAutoRefresh(for result: BetterAuthRestoreResult) {
-        switch result {
-        case let .restored(session, _, _):
-            updateAutoRefresh(for: session)
-
-        case .noStoredSession, .cleared:
-            updateAutoRefresh(for: nil)
         }
     }
 }

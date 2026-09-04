@@ -3,7 +3,9 @@
   "name": "better-auth-example-worker",
   "main": "src/index.ts",
   "compatibility_date": "2026-03-29",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "d1_databases": [
     {
       "binding": "DB",
@@ -27,5 +29,12 @@
     "GOOGLE_EMULATOR_BASE_URL": "http://127.0.0.1:4002",
     "TRUSTED_ORIGIN": "http://127.0.0.1:8787",
     "EMAIL_OTP_RUNTIME_MODE": "sign-up-enabled"
+  },
+  "build": {
+    "command": "node ../../shared-worker/sync-routes.mjs",
+    "watch_dir": [
+      "./src",
+      "../../shared-worker"
+    ]
   }
 }

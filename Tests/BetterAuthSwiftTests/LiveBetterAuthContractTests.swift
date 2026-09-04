@@ -154,7 +154,7 @@ private struct FixtureCaptureClient {
     let origin: String?
 
     func signUp(email: String, password: String, baseURL: URL) async throws {
-        let url = baseURL.appending(path: "api/auth/email/sign-up")
+        let url = baseURL.appending(path: "api/auth/sign-up/email")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

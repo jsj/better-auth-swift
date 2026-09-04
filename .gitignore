@@ -29,3 +29,6 @@ examples/**/ios/*.xcworkspace
 examples/**/ios/.xc/
 examples/**/ios/Derived/
 examples/**/ios/.env
+
+# Generated from the shared example backend route source.
+examples/*/worker/src/routes/app.generated.ts

@@ -77,6 +77,9 @@ swift build -c release
 echo "Running package tests..."
 swift test --enable-swift-testing
 
+echo "Compiling README quick start..."
+python3 "$ROOT/Scripts/verify_quick_start.py"
+
 echo "Building public documentation..."
 "$ROOT/Scripts/generate_xcodeproj.sh"
 for scheme in BetterAuth BetterAuthEmailPassword BetterAuthUsername BetterAuthAnonymous BetterAuthSocialOAuth BetterAuthAppleSignIn BetterAuthMagicLink BetterAuthSwiftUI BetterAuthOrganization; do

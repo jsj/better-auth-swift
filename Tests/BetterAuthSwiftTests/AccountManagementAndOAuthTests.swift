@@ -194,7 +194,7 @@ struct AccountManagementAndOAuthTests {
                               user: .init(id: "anon-user", email: "temp@anon.example.com"))
 
         let transport = SequencedMockTransport([.handler { request in
-            try expect(request.url?.path == "/api/auth/email/sign-up")
+            try expect(request.url?.path == "/api/auth/sign-up/email")
             return try response(for: request, statusCode: 200, data: encodeJSON(upgradedSession))
         }])
 
@@ -261,7 +261,7 @@ struct AccountManagementAndOAuthTests {
                                         user: .init(id: "user-1", email: "user@example.com"))
 
         let transport = SequencedMockTransport([.handler { request in
-                try expect(request.url?.path == "/api/auth/email/sign-in")
+                try expect(request.url?.path == "/api/auth/sign-in/email")
                 try expect(request.httpMethod == "POST")
                 let payload = try JSONDecoder().decode(EmailSignInRequest.self,
                                                        from: try #require(request.httpBody))

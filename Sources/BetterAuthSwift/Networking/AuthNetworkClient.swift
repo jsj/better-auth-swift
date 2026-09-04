@@ -57,6 +57,18 @@ struct AuthNetworkClient {
         return try await execute(request)
     }
 
+    /// For GET endpoints that consume a token or otherwise change authentication state.
+    func getWithoutRetry<Response: Decodable>(path: String,
+                                              queryItems: [URLQueryItem] = [],
+                                              accessToken: String?) async throws -> Response
+    {
+        let request = try pipeline.makeRequest(path: path, method: "GET", accessToken: accessToken,
+                                               queryItems: queryItems)
+        let (data, response) = try await pipeline.execute(request, allowsTransientRetry: false)
+        return try BetterAuthHTTPResponse.decode(Response.self, data: data, response: response,
+                                                 decoder: BetterAuthCoding.makeDecoder())
+    }
+
     // MARK: - Private
 
     private func buildRequest(path: String,
@@ -143,10 +155,14 @@ struct BetterAuthHTTPPipeline {
 
     func execute(_ request: URLRequest,
                  statusValidation: BetterAuthHTTPStatusValidation = .validateSuccess,
-                 allowsTransientRetry: Bool = true) async throws
+                 allowsTransientRetry: Bool? = nil) async throws
         -> (Data, HTTPURLResponse)
     {
-        let retryLimit = allowsTransientRetry ? retryPolicy.maxRetries : 0
+        // Mutations can have succeeded even when their response is lost. Callers must
+        // explicitly opt in only when their operation is safe to repeat.
+        let retriesAllowed = allowsTransientRetry ?? ["GET", "HEAD", "OPTIONS"]
+            .contains(request.httpMethod?.uppercased() ?? "GET")
+        let retryLimit = retriesAllowed ? retryPolicy.maxRetries : 0
         var lastError: Error?
         for attempt in 0 ... retryLimit {
             if attempt > 0 {

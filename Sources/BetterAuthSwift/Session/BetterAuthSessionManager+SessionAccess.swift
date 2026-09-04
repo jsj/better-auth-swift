@@ -10,17 +10,39 @@ extension BetterAuthSessionManager {
 
     /// Restores the session from storage into memory. If configured, this method starts automatic refresh.
     func restoreSession() throws -> BetterAuthSession? {
-        let session = try makeSessionBootstrapService().loadStoredSession()
+        let session = try loadStoredSession()
         try applyRestoredSession(session)
         return session
     }
 
     /// Restores the best available session for app launch and reports how it was recovered.
     func restoreSessionOnLaunch() async throws -> BetterAuthRestoreResult {
-        let result = try await makeSessionBootstrapService()
-            .restoreSessionOnLaunch(refreshSession: { try await self.refreshSession() })
-        updateAutoRefresh(for: result)
-        return result
+        let source: BetterAuthRestoreSource
+        if state.currentSession != nil {
+            source = .memory
+        } else {
+            do {
+                _ = try restoreSession()
+            } catch {
+                try clearSession()
+                return .cleared(.storageFailure)
+            }
+            source = .keychain
+        }
+        guard let current = state.currentSession else { return .noStoredSession }
+        guard current.needsRefresh(clockSkew: configuration.auth.clockSkew) else {
+            return .restored(current, source: source, refresh: .notNeeded)
+        }
+        do {
+            return await .restored(try refreshSession(), source: source, refresh: .refreshed)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            if makeRelay().shouldClearSession(for: error) {
+                return .cleared(makeRelay().clearReason(for: error))
+            }
+            return .restored(current, source: source, refresh: .deferred)
+        }
     }
 
     /// Returns the current in-memory session, if any.
@@ -31,18 +53,21 @@ extension BetterAuthSessionManager {
     /// If necessary, refreshes the session. Then returns the session for authenticated requests.
     @discardableResult
     func validSession() async throws -> BetterAuthSession {
-        try await makeRelay().validSession()
+        try await refreshSessionIfNeeded()
     }
 
     func applyRestoredSession(_ session: BetterAuthSession?) throws {
-        try makeSessionBootstrapService().applyRestoredSession(session)
+        state.replaceCurrentSession(session)
+        sessionGeneration = UUID()
+        credentialGeneration = UUID()
+        state.emit(.initialSession, session: session,
+                   transition: .init(phase: session == nil ? .unauthenticated : .authenticated))
         updateAutoRefresh(for: session)
     }
 
     func updateSession(_ session: BetterAuthSession?) throws {
         let event = updateEvent(from: state.currentSession, to: session)
-        _ = try makeRelay().setSession(session, event: event)
-        updateAutoRefresh(for: session)
+        try setSession(session, event: event, startsNewGeneration: true)
     }
 
     func applyPluginSessionOutcome(_ outcome: BetterAuthPluginSessionOutcome) async throws -> BetterAuthSession {
@@ -53,10 +78,8 @@ extension BetterAuthSessionManager {
         case let .token(token, fallbackUser):
             .token(token: token, fallbackUser: fallbackUser)
         }
-        let session = try await BetterAuthSessionResultHandler(relay: makeRelay(), materializer: makeMaterializer())
+        return try await BetterAuthSessionResultHandler(relay: makeRelay(), materializer: makeMaterializer())
             .appliedSession(from: result)
-        updateAutoRefresh(for: session)
-        return session
     }
 
     // MARK: - Session Refresh
@@ -64,34 +87,88 @@ extension BetterAuthSessionManager {
     /// Refreshes the current session with the backend. Deduplicates concurrent calls.
     @discardableResult
     func refreshSession() async throws -> BetterAuthSession {
-        if let existing = inFlightRefreshTask {
-            logger?.debug("Reusing in-flight refresh task")
-            return try await existing.value
-        }
+        try await makeRefreshTask().value
+    }
 
+    /// Shared refresh work owns its completion; waiters only observe the committed result.
+    func makeRefreshTask() throws -> Task<BetterAuthSession, Error> {
+        if let existing = inFlightRefreshTask, inFlightRefreshGeneration == sessionGeneration {
+            return existing
+        }
         guard let existingSession = state.currentSession else {
             throw BetterAuthError.missingSession
         }
-
-        // Keep the refresh task scoped to immutable snapshots so the unstructured
-        // task does not capture actor-isolated mutable state.
-        let task = Task { () -> BetterAuthSession in
-            try await refreshService.refresh(using: existingSession)
-        }
-
-        inFlightRefreshTask = task
-        do {
-            let session = try await task.value
-            inFlightRefreshTask = nil
-            try setSession(session, event: .tokenRefreshed)
-            logger?.info("Session refreshed")
-            return session
-        } catch {
-            inFlightRefreshTask = nil
-            if makeRelay().shouldClearSession(for: error) {
-                try clearSession(event: .sessionExpired)
+        let generation = sessionGeneration
+        let credentials = credentialGeneration
+        let identifier = UUID()
+        let service = refreshService
+        let task = Task { [weak self] () throws -> BetterAuthSession in
+            do {
+                let session = try await service.refresh(using: existingSession)
+                try Task.checkCancellation()
+                guard let self else { throw CancellationError() }
+                return try await self.finishRefresh(session, previousUser: existingSession.user, generation: generation,
+                                                    credentials: credentials, identifier: identifier)
+            } catch {
+                guard let self else { throw CancellationError() }
+                try await self.finishRefresh(error, generation: generation,
+                                             credentials: credentials, identifier: identifier)
+                throw error
             }
-            throw error
+        }
+        inFlightRefreshTask = task
+        inFlightRefreshGeneration = generation
+        inFlightRefreshIdentifier = identifier
+        return task
+    }
+
+    private func finishRefresh(_ session: BetterAuthSession, previousUser: BetterAuthSession.User, generation: UUID,
+                               credentials: UUID, identifier: UUID) throws -> BetterAuthSession
+    {
+        defer { clearRefreshTask(identifier: identifier) }
+        guard generation == sessionGeneration else { throw CancellationError() }
+        // A password rotation or another session fetch may already have replaced these credentials.
+        if credentials != credentialGeneration {
+            guard let current = state.currentSession else { throw CancellationError() }
+            return current
+        }
+        let session = preservingUpdatedUser(in: session, previousUser: previousUser)
+        try commitSession(session, event: .tokenRefreshed, generation: generation)
+        return session
+    }
+
+    private func preservingUpdatedUser(in session: BetterAuthSession,
+                                       previousUser: BetterAuthSession.User?) -> BetterAuthSession
+    {
+        guard let current = state.currentSession,
+              current.user.id == session.user.id,
+              current.user != previousUser else { return session }
+        return BetterAuthSession(session: session.session, user: current.user)
+    }
+
+    private func finishRefresh(_ error: Error, generation: UUID,
+                               credentials: UUID, identifier: UUID) throws
+    {
+        defer { clearRefreshTask(identifier: identifier) }
+        guard credentials == credentialGeneration else { throw CancellationError() }
+        try handleRefreshFailure(error, generation: generation)
+        if !(error is CancellationError), state.currentSession != nil {
+            logger?.warning("Session refresh failed: \(error)")
+            startAutoRefresh()
+        }
+    }
+
+    private func clearRefreshTask(identifier: UUID) {
+        guard inFlightRefreshIdentifier == identifier else { return }
+        inFlightRefreshTask = nil
+        inFlightRefreshGeneration = nil
+        inFlightRefreshIdentifier = nil
+    }
+
+    private func handleRefreshFailure(_ error: Error, generation: UUID) throws {
+        guard generation == sessionGeneration else { throw CancellationError() }
+        if makeRelay().shouldClearSession(for: error) {
+            try clearSession(event: .sessionExpired)
         }
     }
 
@@ -104,7 +181,24 @@ extension BetterAuthSessionManager {
 
     @discardableResult
     func fetchCurrentSession() async throws -> BetterAuthSession {
-        try await makeSessionBootstrapService().fetchCurrentSession()
+        let generation = sessionGeneration
+        let existingToken = state.currentSession?.session.accessToken
+        let previousUser = state.currentSession?.user
+        let credentials = credentialGeneration
+        do {
+            let fetched = try await refreshService.fetchCurrentSession(accessToken: existingToken)
+            guard generation == sessionGeneration else { throw CancellationError() }
+            if credentials != credentialGeneration, let current = state.currentSession {
+                return current
+            }
+            let session = preservingUpdatedUser(in: fetched, previousUser: previousUser)
+            try commitSession(session, event: .tokenRefreshed, generation: generation)
+            return session
+        } catch {
+            guard credentials == credentialGeneration else { throw CancellationError() }
+            try handleRefreshFailure(error, generation: generation)
+            throw error
+        }
     }
 
     // MARK: - Session Management
@@ -163,12 +257,19 @@ extension BetterAuthSessionManager {
     /// Restores the session from storage. If the session expired, this method refreshes it.
     /// Use this method to restore a session at app launch.
     func restoreOrRefreshSession() async throws -> BetterAuthSession? {
-        let bootstrap = makeSessionBootstrapService()
-        let session = try await bootstrap
-            .restoreOrRefreshSession(restoreSession: { try bootstrap.restoreSession() },
-                                     refreshSession: { try await self.refreshSession() })
-        updateAutoRefresh(for: session)
-        return session
+        if state.currentSession == nil {
+            do {
+                _ = try restoreSession()
+            } catch {
+                try clearSession()
+                throw error
+            }
+        }
+        guard let current = state.currentSession else { return nil }
+        if current.needsRefresh(clockSkew: configuration.auth.clockSkew) {
+            return try await refreshSession()
+        }
+        return current
     }
 
     // MARK: - Authorized Request

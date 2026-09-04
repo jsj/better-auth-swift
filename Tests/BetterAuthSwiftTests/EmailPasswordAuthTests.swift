@@ -349,7 +349,7 @@ struct EmailPasswordAuthTests {
                                                             displayUsername: "Custom_User"))
 
         let transport = SequencedMockTransport([.handler { request in
-            try expect(request.url?.path == "/api/auth/email/sign-up")
+            try expect(request.url?.path == "/api/auth/sign-up/email")
             let payload = try JSONDecoder().decode(EmailSignUpRequest.self, from: try #require(request.httpBody))
             try expect(payload.username == "Custom_User")
             try expect(payload.displayUsername == nil)

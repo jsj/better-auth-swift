@@ -39,7 +39,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                      body: Data? = nil,
                      requiresAuthentication: Bool = true,
                      retryOnUnauthorized: Bool = true,
-                     allowsTransientRetry: Bool = true) async throws -> (Data, HTTPURLResponse)
+                     allowsTransientRetry: Bool? = nil) async throws -> (Data, HTTPURLResponse)
     {
         var request = try await makeRequest(path: path,
                                             method: method,
@@ -86,7 +86,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                                               body: Data? = nil,
                                               requiresAuthentication: Bool = true,
                                               retryOnUnauthorized: Bool = true,
-                                              allowsTransientRetry: Bool = true,
+                                              allowsTransientRetry: Bool? = nil,
                                               decoder: JSONDecoder = BetterAuthCoding
                                                   .makeDecoder()) async throws -> Response
     {
@@ -111,7 +111,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                                               body: some Encodable,
                                               requiresAuthentication: Bool = true,
                                               retryOnUnauthorized: Bool = true,
-                                              allowsTransientRetry: Bool = true,
+                                              allowsTransientRetry: Bool? = nil,
                                               encoder: JSONEncoder = BetterAuthCoding.makeEncoder(),
                                               decoder: JSONDecoder = BetterAuthCoding
                                                   .makeDecoder()) async throws -> Response
@@ -136,6 +136,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                                     body: (some Encodable)? = nil,
                                     requiresAuthentication: Bool = true,
                                     retryOnUnauthorized: Bool = true,
+                                    allowsTransientRetry: Bool? = nil,
                                     encoder: JSONEncoder = BetterAuthCoding.makeEncoder()) async throws
     {
         let requestBody = try body.map(encoder.encode)
@@ -144,7 +145,8 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
                                               headers: headers,
                                               body: requestBody,
                                               requiresAuthentication: requiresAuthentication,
-                                              retryOnUnauthorized: retryOnUnauthorized)
+                                              retryOnUnauthorized: retryOnUnauthorized,
+                                              allowsTransientRetry: allowsTransientRetry)
 
         try BetterAuthHTTPResponse.validateSuccess(data: data, response: response)
     }
@@ -168,7 +170,7 @@ public struct BetterAuthRequestClient: BetterAuthRequestPerforming, Sendable {
     }
 
     private func execute(_ request: URLRequest,
-                         allowsTransientRetry: Bool) async throws -> (Data, HTTPURLResponse)
+                         allowsTransientRetry: Bool?) async throws -> (Data, HTTPURLResponse)
     {
         try await pipeline.execute(request,
                                    statusValidation: .preserve,
