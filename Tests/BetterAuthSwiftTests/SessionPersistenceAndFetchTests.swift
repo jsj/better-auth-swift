@@ -151,7 +151,7 @@ struct SessionPersistenceAndFetchTests {
 
         try await manager.updateSession(current)
 
-        await assertRequestFailed(statusCode: 401, message: "{\"error\":\"unauthorized\"}") {
+        await assertRequestFailed(statusCode: 401, message: "unauthorized") {
             _ = try await manager.fetchCurrentSession()
         }
 

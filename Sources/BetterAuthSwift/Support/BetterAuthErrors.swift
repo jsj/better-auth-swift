@@ -183,15 +183,42 @@ public enum AuthErrorCode: String, Codable, Sendable, Equatable {
 
 enum ErrorParsing {
     static func parse(statusCode: Int, data: Data) -> BetterAuthError {
-        let message = String(data: data, encoding: .utf8)
-        let serverError = try? BetterAuthCoding.makeDecoder().decode(ServerErrorResponse.self, from: data)
+        let serverError = try? BetterAuthCoding.makeDecoder().decode(BackendError.self, from: data).response
         let errorCode = serverError?.code.flatMap(AuthErrorCode.init(rawValue:))
         return .requestFailed(statusCode: statusCode,
-                              message: serverError?.message ?? message,
+                              message: serverError?.message?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty,
                               errorCode: errorCode,
                               response: serverError)
     }
 
     static let sessionCleanupCodes: Set<AuthErrorCode> = [.sessionExpired, .sessionNotFound, .refreshTokenExpired,
                                                           .invalidRefreshToken]
+}
+
+private struct BackendError: Decodable {
+    let response: ServerErrorResponse
+
+    private enum CodingKeys: String, CodingKey { case error }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let flat = (try? ServerErrorResponse(from: decoder)) ?? .init()
+        if let nested = try? container.decode(ServerErrorResponse.self, forKey: .error) {
+            response = .init(message: nested.message ?? flat.message,
+                             code: nested.code ?? flat.code,
+                             status: nested.status ?? flat.status,
+                             statusCode: nested.statusCode ?? flat.statusCode)
+        } else if let message = try? container.decode(String.self, forKey: .error) {
+            response = .init(message: flat.message ?? message, code: flat.code,
+                             status: flat.status, statusCode: flat.statusCode)
+        } else {
+            response = flat
+        }
+    }
+}
+
+private extension String {
+    var nonEmpty: String? {
+        isEmpty ? nil : self
+    }
 }

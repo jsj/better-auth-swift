@@ -38,7 +38,7 @@ struct SessionRefreshAndPasskeyCoreTests {
 
         try await manager.updateSession(expired)
 
-        await assertRequestFailed(statusCode: 401, message: "{\"error\":\"revoked\"}") {
+        await assertRequestFailed(statusCode: 401, message: "revoked") {
             _ = try await manager.refreshSession()
         }
 

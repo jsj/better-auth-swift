@@ -364,7 +364,7 @@ struct SessionLifecycleCoreTests {
                                                               user: .init(id: "user-1", email: "test@example.com")))
 
         struct Response: Codable, Equatable { let ok: Bool }
-        await assertRequestFailed(statusCode: 401, message: "{\"error\":\"still unauthorized\"}") {
+        await assertRequestFailed(statusCode: 401, message: "still unauthorized") {
             let _: Response = try await client.requests.sendJSON(path: "/api/me")
         }
     }
@@ -471,7 +471,7 @@ struct SessionLifecycleCoreTests {
                                                          data: Data("{\"error\":\"expired\"}".utf8))
                                      })
 
-        await assertRequestFailed(statusCode: 401, message: "{\"error\":\"expired\"}") {
+        await assertRequestFailed(statusCode: 401, message: "expired") {
             _ = try await manager.restoreOrRefreshSession()
         }
 
