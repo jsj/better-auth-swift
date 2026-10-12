@@ -224,6 +224,15 @@ appRoutes.post('/api/auth/anonymous/delete', async (c) => {
   return c.json({ status: true });
 });
 
+appRoutes.post('/api/auth/sign-in/oauth2', async (c) => {
+  const auth = c.get('auth');
+  const { providerId, ...payload } = await c.req.json<Record<string, unknown>>();
+  return callPublicAuthEndpoint(c, auth, '/api/auth/sign-in/social', {
+    method: 'POST',
+    body: { ...payload, provider: providerId },
+  });
+});
+
 appRoutes.post('/api/auth/oauth2/link', async (c) => {
   const auth = c.get('auth');
   const accessToken = extractBearerToken(c.req.raw.headers);
@@ -231,11 +240,11 @@ appRoutes.post('/api/auth/oauth2/link', async (c) => {
     return c.json({ error: 'Missing Authorization header.' }, 401);
   }
 
-  const payload = await c.req.json<Record<string, unknown>>();
-  const response = await callAuthEndpoint(c, auth, '/api/auth/oauth2/link', {
+  const { providerId, ...payload } = await c.req.json<Record<string, unknown>>();
+  const response = await callAuthEndpoint(c, auth, '/api/auth/link-social', {
     method: 'POST',
     accessToken,
-    body: payload,
+    body: { ...payload, provider: providerId },
   });
 
   const responseCookies = copySetCookies(response.headers);

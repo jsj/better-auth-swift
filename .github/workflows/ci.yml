@@ -48,10 +48,16 @@ jobs:
           bun run --cwd examples/cf-workers-swiftui/worker typecheck
           npm --prefix examples/cf-workers-uikit/worker run typecheck
 
+      - name: Test account schema upgrades
+        run: python3 Scripts/test_account_migration.py
+
       - name: Test shared example routes in both workers
         run: |
           bun run --cwd examples/cf-workers-swiftui/worker test
           npm --prefix examples/cf-workers-uikit/worker test
+
+      - name: Test OAuth with local provider emulators
+        run: bun run --cwd examples/cf-workers-swiftui e2e:oauth
 
       - name: Run release verifier
         # Xcode Cloud performs the Apple-platform compilation gates.

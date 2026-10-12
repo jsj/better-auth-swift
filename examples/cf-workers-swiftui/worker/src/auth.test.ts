@@ -503,21 +503,23 @@ describe('better auth example worker', () => {
     expect(response.status).not.toBe(404);
   });
 
-  it('generic OAuth sign-in alias was removed in favor of upstream route ownership', async () => {
-    const instance = new Hono<{ Bindings: Env; Variables: { auth: { handler: typeof vi.fn } } }>();
-    instance.use('*', async (c, next) => {
-      c.set('auth', { handler: vi.fn() });
-      await next();
+  it('generic OAuth sign-in bridge uses the social endpoint and preserves state cookies', async () => {
+    const handler = vi.fn(async (request: Request) => {
+      expect(new URL(request.url).pathname).toBe('/api/auth/sign-in/social');
+      expect(await request.json()).toEqual({ provider: 'fixture-generic', disableRedirect: true });
+      return Response.json({ url: 'https://fixture-oauth.example.com/authorize', redirect: false }, {
+        headers: { 'set-cookie': 'better-auth.oauth_state=state; Path=/; HttpOnly' },
+      });
     });
-    instance.route('/', appRoutes);
-
+    const instance = createApp(handler);
     const response = await instance.fetch(new Request('http://localhost/api/auth/sign-in/oauth2', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ providerId: 'fixture-generic', disableRedirect: true }),
     }), env);
-
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('set-cookie')).toContain('better-auth.oauth_state=state');
+    expect(handler).toHaveBeenCalledOnce();
   });
 
   it('generic OAuth link bridge requires a bearer token', async () => {
@@ -533,7 +535,8 @@ describe('better auth example worker', () => {
 
   it('generic OAuth link bridge forwards the current bearer and preserves upstream state cookies', async () => {
     const handler = vi.fn(async (request: Request) => {
-      expect(request.url).toBe('http://127.0.0.1:8787/api/auth/oauth2/link');
+      expect(request.url).toBe('http://127.0.0.1:8787/api/auth/link-social');
+      expect(await request.json()).toEqual({ provider: 'fixture-generic', disableRedirect: true, callbackURL: 'betterauth://oauth/success' });
       expect(request.headers.get('authorization')).toBe('Bearer existing-bearer');
       expect(request.headers.get('origin')).toBe(env.TRUSTED_ORIGIN);
       return new Response(JSON.stringify({

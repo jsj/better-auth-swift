@@ -269,7 +269,6 @@ export function createAuthInstance({
           genericOAuth({
             config: [{
               providerId: 'fixture-generic',
-              accountIssuer: env.GENERIC_OAUTH_ISSUER ?? 'https://fixture-oauth.example.com',
               authorizationUrl: env.GENERIC_OAUTH_AUTHORIZATION_URL ?? 'https://fixture-oauth.example.com/oauth/authorize',
               tokenUrl: env.GENERIC_OAUTH_TOKEN_URL ?? 'https://fixture-oauth.example.com/oauth/token',
               userInfoUrl: env.GENERIC_OAUTH_USERINFO_URL ?? 'https://fixture-oauth.example.com/oauth/userinfo',

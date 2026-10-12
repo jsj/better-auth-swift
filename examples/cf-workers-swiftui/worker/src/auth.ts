@@ -271,7 +271,6 @@ export function createAuthInstance({
             config: [
               {
                 providerId: 'fixture-generic',
-                accountIssuer: env.GENERIC_OAUTH_ISSUER ?? 'https://fixture-oauth.example.com',
                 authorizationUrl: env.GENERIC_OAUTH_AUTHORIZATION_URL ?? 'https://fixture-oauth.example.com/oauth/authorize',
                 tokenUrl: env.GENERIC_OAUTH_TOKEN_URL ?? 'https://fixture-oauth.example.com/oauth/token',
                 userInfoUrl: env.GENERIC_OAUTH_USERINFO_URL ?? 'https://fixture-oauth.example.com/oauth/userinfo',
@@ -300,7 +299,6 @@ export function createAuthInstance({
               },
               {
                 providerId: 'apple-emulator',
-                accountIssuer: getAppleAuthBaseURL(env),
                 authorizationUrl: `${getAppleAuthBaseURL(env)}/auth/authorize`,
                 tokenUrl: `${getAppleAuthBaseURL(env)}/auth/token`,
                 clientId: env.APPLE_CLIENT_ID,

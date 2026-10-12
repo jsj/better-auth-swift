@@ -3,10 +3,10 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@emulators/apple": "^0.7.0",
-    "@emulators/core": "^0.7.0",
-    "@emulators/google": "^0.7.0",
-    "api-emulator": "^0.7.0"
+    "@emulators/apple": "0.12.1",
+    "@emulators/core": "0.12.1",
+    "@emulators/google": "0.12.1",
+    "api-emulator": "0.9.0"
   },
   "scripts": {
     "dev": "bun ./scripts/dev-stack.mjs",
