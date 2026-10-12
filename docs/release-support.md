@@ -81,6 +81,7 @@ Before tagging a release:
    - `BETTER_AUTH_CONTRACT_USERNAME` and `BETTER_AUTH_CONTRACT_USERNAME_PASSWORD`
    - `BETTER_AUTH_CONTRACT_EXPECT_JWKS=true`
    - `BETTER_AUTH_CONTRACT_SUPPORTS_ANONYMOUS=true`
+   - `BETTER_AUTH_CONTRACT_SUPPORTS_GENERIC_OAUTH=true` for the local `fixture-generic` provider
 
    For the repository's Cloudflare Workers fixture backend, the email/password
    contract can self-provision its configured user before sign-in:

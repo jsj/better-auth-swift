@@ -113,6 +113,7 @@ echo "Running live Better Auth contract tests against $BASE_URL..."
     BETTER_AUTH_CONTRACT_REQUEST_ORIGIN="$BASE_URL" \
     BETTER_AUTH_CONTRACT_PROVISION_WITH_FIXTURES=true \
     BETTER_AUTH_CONTRACT_SUPPORTS_ANONYMOUS=true \
+    BETTER_AUTH_CONTRACT_SUPPORTS_GENERIC_OAUTH=true \
     BETTER_AUTH_CONTRACT_EXPECT_JWKS=true \
     swift test --enable-swift-testing --filter LiveBetterAuthContractTests
 )

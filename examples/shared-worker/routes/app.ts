@@ -233,6 +233,49 @@ appRoutes.post('/api/auth/sign-in/oauth2', async (c) => {
   });
 });
 
+appRoutes.get('/api/auth/oauth2/callback/:providerId', async (c) => {
+  const auth = c.get('auth');
+  const query = new URL(c.req.url).searchParams;
+  if (!query.get('code') || !query.get('state')) {
+    return c.json({ error: 'Missing OAuth code or state.' }, 400);
+  }
+
+  const callbackURL = new URL(`/api/auth/callback/${encodeURIComponent(c.req.param('providerId'))}`, c.env.BETTER_AUTH_URL);
+  callbackURL.search = query.toString();
+  const response = await callPublicAuthEndpoint(c, auth, callbackURL.pathname + callbackURL.search, {
+    method: 'GET',
+    cookie: c.req.header('cookie'),
+  });
+  const responseCookies = copySetCookies(response.headers);
+  if (response.status >= 500) {
+    return mapAuthFailureWithHeaders(response, responseCookies);
+  }
+  if (!isSuccessfulOAuthRedirect(response)) {
+    return Response.json({ error: 'OAuth callback failed.' }, {
+      status: 401,
+      headers: appendSetCookies(new Headers(), responseCookies),
+    });
+  }
+
+  const accessToken = response.headers.get('set-auth-token') ?? extractBearerToken(c.req.raw.headers);
+  if (!accessToken) {
+    return c.json({ error: 'OAuth callback returned no session token.' }, 401);
+  }
+  const session = await auth.api.getSession({
+    headers: new Headers({ Authorization: `Bearer ${accessToken}` }),
+  }) as BetterAuthSessionResponse | null;
+  if (!session?.session || !session.user) {
+    return c.json({ error: 'Unable to load Better Auth session.' }, 401);
+  }
+
+  return Response.json({
+    session: { ...session.session, accessToken },
+    user: session.user,
+  }, {
+    headers: appendSetCookies(new Headers(), responseCookies),
+  });
+});
+
 appRoutes.post('/api/auth/oauth2/link', async (c) => {
   const auth = c.get('auth');
   const accessToken = extractBearerToken(c.req.raw.headers);

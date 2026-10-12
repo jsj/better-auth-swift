@@ -522,6 +522,41 @@ describe('better auth example worker', () => {
     expect(handler).toHaveBeenCalledOnce();
   });
 
+  it('native OAuth callback requires code and state', async () => {
+    const handler = vi.fn();
+    const response = await createApp(handler).fetch(new Request(
+      'http://localhost/api/auth/oauth2/callback/fixture-generic?code=fixture-code',
+    ), env);
+    expect(response.status).toBe(400);
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('native OAuth callback preserves state cookies and rejects upstream errors', async () => {
+    const handler = vi.fn(async (request: Request) => {
+      expect(new URL(request.url).pathname).toBe('/api/auth/callback/fixture-generic');
+      expect(new URL(request.url).searchParams.get('state')).toBe('bad-state');
+      expect(request.headers.get('cookie')).toBe('better-auth.oauth_state=state');
+      return new Response(null, {
+        status: 302,
+        headers: { location: 'http://localhost/error?error=state_mismatch' },
+      });
+    });
+    const response = await createApp(handler).fetch(new Request(
+      'http://localhost/api/auth/oauth2/callback/fixture-generic?code=fixture-code&state=bad-state',
+      { headers: { cookie: 'better-auth.oauth_state=state', authorization: 'Bearer old-token' } },
+    ), env);
+    expect(response.status).toBe(401);
+    expect(response.headers.get('location')).toBeNull();
+    await expect(response.json()).resolves.toEqual({ error: 'OAuth callback failed.' });
+  });
+
+  it('native OAuth callback preserves upstream server failures', async () => {
+    const response = await createApp(async () => new Response(null, { status: 503 })).fetch(new Request(
+      'http://localhost/api/auth/oauth2/callback/fixture-generic?code=fixture-code&state=state',
+    ), env);
+    expect(response.status).toBe(503);
+  });
+
   it('generic OAuth link bridge requires a bearer token', async () => {
     const response = await app.fetch(new Request('http://localhost/api/auth/oauth2/link', {
       method: 'POST',

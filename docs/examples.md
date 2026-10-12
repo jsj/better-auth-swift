@@ -56,6 +56,13 @@ The workers send these requests to the current Better Auth social endpoints.
 The workers translate `providerId` to `provider` and preserve OAuth state cookies.
 The Swift endpoint defaults remain unchanged.
 
+The native OAuth callback route returns session JSON to the Swift `complete()` method.
+The route preserves the upstream state validation and rejects invalid or reused state.
+Use the same cookie-enabled transport for `begin()` and `complete()`.
+Supply the provider code and state before the browser completes the upstream callback.
+An upstream callback consumes the state, so a second completion request fails.
+The browser flow and native completion flow have separate contract tests.
+
 Migration `0002_remove_account_issuer.sql` removes the obsolete required `issuer` column.
 The migration preserves existing accounts and sessions.
 The migration rejects duplicate provider and account identities before it changes the schema.

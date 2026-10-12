@@ -1,5 +1,6 @@
 import BetterAuthAnonymous
 import BetterAuthEmailPassword
+import BetterAuthSocialOAuth
 import BetterAuthUsername
 import Foundation
 import Testing
@@ -82,6 +83,53 @@ private enum LiveBetterAuthContract {
 
 @Suite(.serialized)
 struct LiveBetterAuthContractTests {
+    @Test(.enabled(if: LiveBetterAuthContract.baseURL != nil &&
+            LiveBetterAuthContract.environment["BETTER_AUTH_CONTRACT_SUPPORTS_GENERIC_OAUTH"] == "true"))
+    func genericOAuthCompletionCreatesNativeSessionAndRejectsReplay() async throws {
+        let baseURL = try #require(LiveBetterAuthContract.baseURL)
+        let configuration = URLSessionConfiguration.ephemeral
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        let store = InMemorySessionStore()
+        let client = BetterAuthClient(configuration: .init(baseURL: baseURL,
+                                                           storage: .init(key: "oauth.contract"),
+                                                           autoRefreshToken: false,
+                                                           requestOrigin: baseURL.absoluteString),
+                                      sessionStore: store,
+                                      transport: URLSessionTransport(session: session),
+                                      modules: [BetterAuthSocialOAuthModule()])
+        let oauth = try client.requireSocialOAuth()
+        let authorization = try await oauth.begin(.init(providerId: "fixture-generic",
+                                                        callbackURL: baseURL.appending(path: "native-complete")
+                                                            .absoluteString,
+                                                        disableRedirect: true))
+        let components = try #require(URLComponents(string: authorization.url))
+        let state = try #require(components.queryItems?.first(where: { $0.name == "state" })?.value)
+        let callback = GenericOAuthCallbackRequest(providerId: "fixture-generic", code: "fixture-code", state: state)
+        let isolatedSession = LiveBetterAuthContract.makeIsolatedURLSession()
+        defer { isolatedSession.invalidateAndCancel() }
+        let isolatedClient = BetterAuthClient(configuration: .init(baseURL: baseURL,
+                                                                   autoRefreshToken: false,
+                                                                   requestOrigin: baseURL.absoluteString),
+                                              sessionStore: InMemorySessionStore(),
+                                              transport: URLSessionTransport(session: isolatedSession),
+                                              modules: [BetterAuthSocialOAuthModule()])
+        await #expect(throws: (any Error).self) {
+            try await isolatedClient.requireSocialOAuth().complete(callback)
+        }
+        #expect(await isolatedClient.auth.currentSession() == nil)
+        await isolatedClient.auth.shutdown()
+        let signedIn = try await oauth.complete(callback)
+        #expect(signedIn.user.email == "fixture-generic@example.com")
+        #expect(!signedIn.session.accessToken.isEmpty)
+        #expect(await client.auth.currentSession()?.user.id == signedIn.user.id)
+        #expect(try store.loadSession(for: "oauth.contract")?.user.id == signedIn.user.id)
+        #expect(try await client.auth.fetchCurrentSession().user.id == signedIn.user.id)
+        await #expect(throws: (any Error).self) { try await oauth.complete(callback) }
+        try await client.auth.signOut()
+        await client.auth.shutdown()
+    }
+
     @Test(.enabled(if: LiveBetterAuthContract.isConfigured))
     func emailSignInSessionLifecycleAndRemoteSignOutAgainstRealServer() async throws {
         let client = try LiveBetterAuthContract.makeClient(storageKey: "better-auth.contract.email")

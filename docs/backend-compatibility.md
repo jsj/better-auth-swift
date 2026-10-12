@@ -79,6 +79,21 @@ For bearer-token mobile clients, the default session refresh contract is:
 - Authenticated app requests retry once after a `401` by refreshing the current
   session and rebuilding the request with the new access token.
 
+## Native generic OAuth
+
+The example workers expose `GET /api/auth/oauth2/callback/{providerId}` for native completion.
+This route exchanges a provider code and state through the upstream OAuth callback.
+The route returns session JSON and a bearer token to the Swift `complete()` method.
+The standard upstream callback returns a browser redirect instead of session JSON.
+Generic Better Auth deployments require an equivalent adapter for this SDK method.
+
+Use one cookie-enabled transport for OAuth initiation and completion.
+Supply the code and state before a browser consumes the upstream callback.
+Do not disable the upstream state cookie validation.
+
+The local contract suite covers session storage, authenticated access, missing state cookies, and replay rejection.
+Set `BETTER_AUTH_CONTRACT_SUPPORTS_GENERIC_OAUTH=true` only for a backend with the `fixture-generic` test provider.
+
 ## Contract test coverage
 
 The release contract suite is intentionally split into required core coverage and optional feature coverage.
