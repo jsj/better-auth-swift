@@ -1,0 +1,14 @@
+# Historical false positives: alphabet-and-digits dummy tokens in AuthModelsTests.
+# Scope exclusions to exact commit/path/rule/line fingerprints; new findings still fail.
+57f8fe1b52a4fbe8371e664547363fd3ab1e75d9:examples/cf-workers-swiftui/ios/App/Tests/AuthModelsTests.swift:generic-api-key:10
+57f8fe1b52a4fbe8371e664547363fd3ab1e75d9:examples/cf-workers-swiftui/ios/App/Tests/AuthModelsTests.swift:generic-api-key:23
+57f8fe1b52a4fbe8371e664547363fd3ab1e75d9:examples/cf-workers-swiftui/ios/App/Tests/AuthModelsTests.swift:generic-api-key:29
+57f8fe1b52a4fbe8371e664547363fd3ab1e75d9:examples/cf-workers-swiftui/ios/App/Tests/AuthModelsTests.swift:generic-api-key:38
+57f8fe1b52a4fbe8371e664547363fd3ab1e75d9:examples/cf-workers-uikit/ios/App/Tests/AuthModelsTests.swift:generic-api-key:10
+57f8fe1b52a4fbe8371e664547363fd3ab1e75d9:examples/cf-workers-uikit/ios/App/Tests/AuthModelsTests.swift:generic-api-key:23
+57f8fe1b52a4fbe8371e664547363fd3ab1e75d9:examples/cf-workers-uikit/ios/App/Tests/AuthModelsTests.swift:generic-api-key:29
+57f8fe1b52a4fbe8371e664547363fd3ab1e75d9:examples/cf-workers-uikit/ios/App/Tests/AuthModelsTests.swift:generic-api-key:38
+72a96728e6e71f3b1388272748411c48df651781:examples/cf-workers-swiftui/ios/App/Tests/AuthModelsTests.swift:generic-api-key:26
+72a96728e6e71f3b1388272748411c48df651781:examples/cf-workers-swiftui/ios/App/Tests/AuthModelsTests.swift:generic-api-key:9
+72a96728e6e71f3b1388272748411c48df651781:examples/cf-workers-uikit/ios/App/Tests/AuthModelsTests.swift:generic-api-key:26
+72a96728e6e71f3b1388272748411c48df651781:examples/cf-workers-uikit/ios/App/Tests/AuthModelsTests.swift:generic-api-key:9
