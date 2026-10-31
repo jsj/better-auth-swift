@@ -247,7 +247,7 @@ let report = await client.diagnostics.check(
 Email/password defaults use Better Auth's standard `/api/auth/sign-up/email`,
 `/api/auth/sign-in/email`, and `/api/auth/request-password-reset` routes. Enable
 the server's `bearer()` plugin for native session requests. The upstream contract
-suite exercises these routes against Better Auth 1.7.1 without example adapters.
+suite exercises these routes against Better Auth 1.7.14 without example adapters.
 A sign-up response with `token: null` succeeds without signing in; its
 `requiresVerification` value is `nil` when the server does not supply that information.
 

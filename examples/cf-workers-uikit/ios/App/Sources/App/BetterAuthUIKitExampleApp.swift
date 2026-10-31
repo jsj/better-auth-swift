@@ -45,7 +45,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             await viewModel.handleIncomingURL(url)
             if let navigationController = window?.rootViewController as? UINavigationController,
                let authOptionsViewController = navigationController.viewControllers
-               .first as? AuthOptionsViewController
+                   .first as? AuthOptionsViewController
             {
                 authOptionsViewController.reloadState()
             }

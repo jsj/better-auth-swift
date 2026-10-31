@@ -1,5 +1,9 @@
 # Release and Support Policy
 
+## Release notes
+
+- [v0.1.1 preparation](./release-notes-v0.1.1.md)
+
 ## Versioning
 
 `better-auth-swift` uses semantic versioning for tagged releases:
@@ -63,7 +67,15 @@ Before tagging a release:
    Scripts/run_local_contracts.sh
    ```
 
-   This command starts the Cloudflare Workers example with a new local D1 database.
+   Also run the upstream contract suite:
+
+   ```sh
+   Scripts/run_upstream_contracts.sh
+   ```
+
+   This command tests Better Auth 1.7.14 through an unmodified handler with the bearer plugin.
+
+   The local fixture command starts the Cloudflare Workers example with a new local D1 database.
    It creates a contract user through the fixture capture endpoint.
    Then it runs the live contract suite with email, session lifecycle, JWKS, and anonymous account coverage.
 

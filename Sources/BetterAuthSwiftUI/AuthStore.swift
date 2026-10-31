@@ -65,8 +65,7 @@ public final class AuthStore {
         let sessionAuth = sessionAuth
         authStateObservation.task = Task { [weak self, sessionAuth] in
             for await change in sessionAuth.authStateChanges {
-                guard !Task.isCancelled else { return }
-                guard let self else { return }
+                guard !Task.isCancelled, let self else { return }
                 self.applyAuthStateChange(change)
             }
         }

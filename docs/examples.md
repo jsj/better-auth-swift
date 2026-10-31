@@ -46,7 +46,7 @@ Both example apps default to `http://127.0.0.1:8787` for local development.
 
 ## Backend versions
 
-Both workers use Better Auth 1.7.7 and `better-auth-cloudflare` 0.4.0.
+Both workers use Better Auth 1.7.14 and `better-auth-cloudflare` 0.4.0.
 The SwiftUI stack uses API Emulator 0.9.0 and provider plugins 0.12.1.
 The worker dependencies include Hono 4.13.13, JOSE 6.2.12, and Drizzle 0.45.4.
 The development dependencies include Wrangler 4.149.0, Workers types 5, and Vitest 4.1.11.

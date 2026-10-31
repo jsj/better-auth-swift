@@ -79,6 +79,17 @@ For bearer-token mobile clients, the default session refresh contract is:
 - Authenticated app requests retry once after a `401` by refreshing the current
   session and rebuilding the request with the new access token.
 
+## Tested server version
+
+The example workers and upstream contract suite use Better Auth 1.7.14.
+The upstream suite uses an unmodified handler with the bearer plugin.
+It covers email signup, signin, session refresh, reauthentication, password reset, and revoked-session cleanup.
+
+When upgrading from 1.7.7, review the upstream [1.7.12 release notes](https://github.com/better-auth/better-auth/releases/tag/v1.7.12).
+ID-token signin now requires a configured provider client ID for audience validation.
+Configure each provider with the client IDs used by your apps.
+The Apple examples supply `clientId` and use the app bundle identifier as the native token audience.
+
 ## Native generic OAuth
 
 The example workers expose `GET /api/auth/oauth2/callback/{providerId}` for native completion.
